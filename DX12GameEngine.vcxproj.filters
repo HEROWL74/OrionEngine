@@ -289,5 +289,8 @@
     <FxCompile Include="engine-assets\shaders\PBR_VS.hlsl">
       <Filter>ソース ファイル\assets\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="engine-assets\shaders\PBR_Lite_PS.hlsl">
+      <Filter>ソース ファイル\assets\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

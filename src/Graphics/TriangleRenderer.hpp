@@ -76,7 +76,7 @@ namespace Engine::Graphics
         D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView{};      // 頂点バッファビュー
 
         // 三角形の頂点データ
-        std::array<Vertex, 3> m_triangleVertices;
+        std::array<Vertex, 6> m_triangleVertices;
 
         // 初期化用メソッド
         [[nodiscard]] Utils::VoidResult createRootSignature();
