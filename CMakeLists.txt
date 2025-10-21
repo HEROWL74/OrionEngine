@@ -19,7 +19,21 @@ set(VCPKG_TARGET_TRIPLET "x64-windows")
 # --------------------------------------------------
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/ThirdParty)
-include_directories("C:/vcpkg/installed/x64-windows/include")
+
+# --------------------------------------------------
+# VCPKG 自動検出
+# --------------------------------------------------
+if(DEFINED ENV{VCPKG_ROOT})
+    message(STATUS "Using VCPKG_ROOT from environment: $ENV{VCPKG_ROOT}")
+    include_directories("$ENV{VCPKG_ROOT}/installed/x64-windows/include")
+    link_directories("$ENV{VCPKG_ROOT}/installed/x64-windows/lib")
+elseif(EXISTS "C:/vcpkg")
+    message(STATUS "Using local vcpkg at C:/vcpkg")
+    include_directories("C:/vcpkg/installed/x64-windows/include")
+    link_directories("C:/vcpkg/installed/x64-windows/lib")
+else()
+    message(WARNING "⚠️ Could not locate vcpkg include/lib path. Set VCPKG_ROOT.")
+endif()
 
 # --------------------------------------------------
 # ソースコードを再帰的に収集
