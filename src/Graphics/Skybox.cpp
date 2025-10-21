@@ -15,10 +15,4 @@ namespace Engine::Graphics
 		static_assert(sizeof(CameraCB) % 256 == 0 || sizeof(CameraCB) < 256, "CB must be 256-aligned-ish");
 	}
 
-	class Skybox
-	{
-	public:
-
-	};
-
 }
