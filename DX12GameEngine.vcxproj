@@ -183,6 +183,7 @@
     <ClInclude Include="src\Graphics\MaterialSerialization.hpp" />
     <ClInclude Include="src\Graphics\RenderComponent.hpp" />
     <ClInclude Include="src\Graphics\ShaderManager.hpp" />
+    <ClInclude Include="src\Graphics\Skybox.hpp" />
     <ClInclude Include="src\Graphics\stb_image.h" />
     <ClInclude Include="src\Graphics\stb_image_resize2.h" />
     <ClInclude Include="src\Graphics\Texture.hpp" />
@@ -226,6 +227,7 @@
     <ClCompile Include="src\Graphics\MaterialSerialization.cpp" />
     <ClCompile Include="src\Graphics\RenderComponent.cpp" />
     <ClCompile Include="src\Graphics\ShaderManager.cpp" />
+    <ClCompile Include="src\Graphics\Skybox.cpp" />
     <ClCompile Include="src\Graphics\Texture.cpp" />
     <ClCompile Include="src\Graphics\TriangleRenderer.cpp" />
     <ClCompile Include="src\Input\InputManager.cpp" />
