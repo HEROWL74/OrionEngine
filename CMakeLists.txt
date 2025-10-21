@@ -36,9 +36,19 @@ include_directories(
 # --------------------------------------------------
 # リンク設定（Lua, DirectXなど）
 # --------------------------------------------------
+
+find_package(Lua REQUIRED)
+find_package(sol2 CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+
+target_include_directories(DX12GameEngine PRIVATE
+    ${LUA_INCLUDE_DIR}
+)
+
 target_link_libraries(DX12GameEngine PRIVATE
-    "C:/vcpkg/installed/x64-windows/lib/lua.lib"
-    d3d12 dxgi dxguid d3dcompiler
+    ${LUA_LIBRARIES}
+    sol2
+    nlohmann_json::nlohmann_json
 )
 
 # --------------------------------------------------
