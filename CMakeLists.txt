@@ -8,35 +8,13 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE AND EXISTS "${CMAKE_SOURCE_DIR}/vcpkg/script
     set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 endif()
 
-# ビルド設定
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(VCPKG_TARGET_TRIPLET "x64-windows")
 
 # --------------------------------------------------
-# インクルードパス
-# --------------------------------------------------
-include_directories(${CMAKE_SOURCE_DIR}/src)
-include_directories(${CMAKE_SOURCE_DIR}/ThirdParty)
-
-# --------------------------------------------------
-# VCPKG 自動検出
-# --------------------------------------------------
-if(DEFINED ENV{VCPKG_ROOT})
-    message(STATUS "Using VCPKG_ROOT from environment: $ENV{VCPKG_ROOT}")
-    include_directories("$ENV{VCPKG_ROOT}/installed/x64-windows/include")
-    link_directories("$ENV{VCPKG_ROOT}/installed/x64-windows/lib")
-elseif(EXISTS "C:/vcpkg")
-    message(STATUS "Using local vcpkg at C:/vcpkg")
-    include_directories("C:/vcpkg/installed/x64-windows/include")
-    link_directories("C:/vcpkg/installed/x64-windows/lib")
-else()
-    message(WARNING "⚠️ Could not locate vcpkg include/lib path. Set VCPKG_ROOT.")
-endif()
-
-# --------------------------------------------------
-# ソースコードを再帰的に収集
+# ソースファイル収集
 # --------------------------------------------------
 file(GLOB_RECURSE ENGINE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/*.cpp
@@ -44,23 +22,27 @@ file(GLOB_RECURSE ENGINE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/*.h
 )
 
-# --------------------------------------------------
-# 実行ファイルターゲット
-# --------------------------------------------------
-add_executable(DX12GameEngine ${ENGINE_SOURCES})
-
-# WinMain を使うため有効化
-set_target_properties(DX12GameEngine PROPERTIES WIN32_EXECUTABLE TRUE)
+add_executable(DX12GameEngine WIN32 ${ENGINE_SOURCES})
 
 # --------------------------------------------------
-# 依存ライブラリ
+# インクルードパス
 # --------------------------------------------------
-target_link_libraries(DX12GameEngine PRIVATE
-    "C:/vcpkg/installed/x64-windows/lib/lua.lib"
+include_directories(
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/ThirdParty
+    "C:/vcpkg/installed/x64-windows/include"
 )
 
 # --------------------------------------------------
-# Windows 用コンパイラ設定
+# リンク設定（Lua, DirectXなど）
+# --------------------------------------------------
+target_link_libraries(DX12GameEngine PRIVATE
+    "C:/vcpkg/installed/x64-windows/lib/lua.lib"
+    d3d12 dxgi dxguid d3dcompiler
+)
+
+# --------------------------------------------------
+# コンパイラ設定
 # --------------------------------------------------
 if(MSVC)
     target_compile_options(DX12GameEngine PRIVATE /W4 /EHsc)
@@ -68,47 +50,42 @@ if(MSVC)
 endif()
 
 # --------------------------------------------------
-# 🔹 Engine Assets コピー設定
+# アセットコピー（assets + engine-assets）
 # --------------------------------------------------
 set(OUT_DIR "$<TARGET_FILE_DIR:DX12GameEngine>")
 set(SRC_ASSETS_DIR         "${CMAKE_SOURCE_DIR}/assets")
 set(SRC_ENGINE_ASSETS_DIR  "${CMAKE_SOURCE_DIR}/engine-assets")
 
 add_custom_command(TARGET DX12GameEngine POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E echo "📦 Copying user assets → ${OUT_DIR}/assets"
+    COMMAND ${CMAKE_COMMAND} -E echo "📦 Copying assets to ${OUT_DIR}"
     COMMAND ${CMAKE_COMMAND} -E rm -rf "${OUT_DIR}/assets"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${OUT_DIR}/assets"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_ASSETS_DIR}" "${OUT_DIR}/assets"
 
-    COMMAND ${CMAKE_COMMAND} -E echo "📦 Copying engine-assets → ${OUT_DIR}/engine-assets"
+    COMMAND ${CMAKE_COMMAND} -E echo "📦 Copying engine-assets to ${OUT_DIR}"
     COMMAND ${CMAKE_COMMAND} -E rm -rf "${OUT_DIR}/engine-assets"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${OUT_DIR}/engine-assets"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_ENGINE_ASSETS_DIR}" "${OUT_DIR}/engine-assets"
 
-    COMMENT "Copying assets and engine-assets to runtime output"
+    COMMENT "Copying all runtime assets"
 )
 
 # --------------------------------------------------
-# 🔹 HLSL シェーダ自動ビルド設定
+# HLSLシェーダ自動ビルド
 # --------------------------------------------------
-# HLSL ソースを全検索
 file(GLOB_RECURSE HLSL_FILES ${CMAKE_SOURCE_DIR}/src/*.hlsl)
-
 set(HLSL_OUTPUT_DIR "${CMAKE_BINARY_DIR}/$<CONFIG>/shaders")
 
 foreach(HLSL ${HLSL_FILES})
     get_filename_component(FILE_NAME ${HLSL} NAME_WE)
     set(CSO_FILE "${HLSL_OUTPUT_DIR}/${FILE_NAME}.cso")
-
-    # fxc.exe でコンパイル（DirectX 12 用）
     add_custom_command(
         OUTPUT ${CSO_FILE}
         COMMAND ${CMAKE_COMMAND} -E make_directory "${HLSL_OUTPUT_DIR}"
         COMMAND fxc.exe /nologo /T ps_5_0 /E main /Fo ${CSO_FILE} ${HLSL}
         DEPENDS ${HLSL}
-        COMMENT "Compiling HLSL shader: ${FILE_NAME}.hlsl → ${CSO_FILE}"
+        COMMENT "Compiling shader: ${FILE_NAME}.hlsl"
     )
-
     list(APPEND COMPILED_SHADERS ${CSO_FILE})
 endforeach()
 
@@ -116,13 +93,11 @@ add_custom_target(Shaders ALL DEPENDS ${COMPILED_SHADERS})
 add_dependencies(DX12GameEngine Shaders)
 
 # --------------------------------------------------
-# ログ出力
+# 情報出力
 # --------------------------------------------------
 message(STATUS "===================================================")
-message(STATUS "✅  CMake Configuration Completed for DX12GameEngine")
-message(STATUS "🔹  Toolchain: ${CMAKE_TOOLCHAIN_FILE}")
+message(STATUS "✅  DX12GameEngine Configuration Completed")
 message(STATUS "🔹  Triplet: ${VCPKG_TARGET_TRIPLET}")
-message(STATUS "🔹  Linked: C:/vcpkg/installed/x64-windows/lib/lua.lib")
-message(STATUS "🔹  Assets: ${ENGINE_ASSET_DIR}")
+message(STATUS "🔹  Output Dir: ${OUT_DIR}")
 message(STATUS "🔹  Shaders: ${HLSL_OUTPUT_DIR}")
 message(STATUS "===================================================")

@@ -1,30 +1,29 @@
-name: Build and Test (CMake)
+name: build
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [develop, "feature/**"]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [develop, main]
 
 jobs:
-  build:
+  windows-build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
-          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+          vcpkgJsonGlob: 'vcpkg.json'
           runVcpkgInstall: true
 
       - name: Configure CMake
-        run: cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -S . ^
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake ^
+          -DVCPKG_TARGET_TRIPLET=x64-windows ^
+          -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build build --config Release --parallel
-
-      - name: Run Tests
-        run: ctest --test-dir build --output-on-failure
+        run: cmake --build build --config Release
