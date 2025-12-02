@@ -1,5 +1,7 @@
 # DirectX12 Game Engine Prototype
 
+![Build and Release](https://github.com/HEROWL74/DX12GameEngine/actions/workflows/release.yml/badge.svg)
+
 このプロジェクトは、高校生が独学で開発している**GameEngine**のプロトタイプです。  
 C++ と DirectX12 を使って、エンジン内部の仕組みを一から学びながら構築しています。
 Microsoftのリファレンスページや、サンプルコードを見ながら勉強しながらコーディングしています。
@@ -42,9 +44,23 @@ Microsoftのリファレンスページや、サンプルコードを見なが�
 
 ## 🙌 このプロジェクトについて
 
-高校生として、将来スクウェア・エニックスのゲームエンジニアになるために、基礎から丁寧に制作中です。
+高校生として、将来ゲームエンジニアになるために、基礎から丁寧に制作中です。
 
 ---
+
+
+## このプロジェクトのダウンロード方法
+🎮 **[最新版のダウンロードはこちら](https://github.com/HEROWL74/DX12GameEngine/releases/latest)**  
+
+- DX12GameEngine.zip は、Asset と exe ファイルが入っているフォルダです。  
+- DX12GameEngine-with-src.zip は、ソースファイルも一緒に入っているので、ただエンジンに触れたい方は DX12GameEngine.zip をおすすめします。  
+- ダウンロード後、zip を解凍して exe をクリックすると、Windows が SmartScreen を表示します。  
+  詳細情報 → 実行ボタン をクリックしてください。  
+
+### SmartScreen の例
+![SmartScreen の詳細画面](https://github.com/user-attachments/assets/58bb6fa6-d59e-43a3-b1cf-9ed16e860753)  
+![SmartScreen の実行ボタン](https://github.com/user-attachments/assets/6ff98076-17f1-4f36-88d8-4dcbc1686140)
+
 
 ## 📧 作者について
 
