@@ -11,7 +11,7 @@
 namespace Engine::Graphics
 {
 	//==================================================================================
-     //ƒV[ƒ“ŠÇ—ƒNƒ‰ƒX
+     //ã‚·ãƒ¼ãƒ³ç®¡ç†ã‚¯ãƒ©ã‚¹
 //==================================================================================
 	class Scene
 	{
@@ -19,29 +19,29 @@ namespace Engine::Graphics
 		Scene() = default;
 		~Scene() = default;
 
-		//ƒRƒs[Eƒ€[ƒu‹Ö~
+		//ã‚³ãƒ”ãƒ¼ãƒ»ãƒ ãƒ¼ãƒ–ç¦æ­¢
 		Scene(const Scene&) = delete;
 		Scene& operator=(const Scene&) = delete;
 		Scene(Scene&&) = delete;
 		Scene& operator=(Scene&&) = delete;
 
-		//ƒQ[ƒ€ƒIƒuƒWƒFƒNƒgŠÇ—
+		//ã‚²ãƒ¼ãƒ ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç®¡ç†
 		Core::GameObject* createGameObject(const std::string& name = "GameObject");
 		void destroyGameObject(Core::GameObject* gameObject);
 		Core::GameObject* findGameObject(const std::string& name) const;
 
-		//ƒ‰ƒCƒtƒTƒCƒNƒ‹
+		//ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«
 		void start();
 		void update(float deltaTime);
 		void lateUpdate(float deltaTime);
 
-		//ƒŒƒ“ƒ_ƒŠƒ“ƒO
+		//ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°
 		void render(ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex);
 
-		//‰Šú‰»
+		//åˆæœŸåŒ–
 		[[nodiscard]] Utils::VoidResult initialize(Device* device);
 
-		//ƒQ[ƒ€ƒIƒuƒWƒFƒNƒgˆê——æ“¾
+		//ã‚²ãƒ¼ãƒ ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆä¸€è¦§å–å¾—
 		const std::vector<std::unique_ptr<Core::GameObject>>& getGameObjects() const { return m_gameObjects; }
 		Core::GameObject* findObjectByName(const std::string& name);
 

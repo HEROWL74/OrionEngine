@@ -1,9 +1,10 @@
 {
-  "name": "dx12gameengine",
+  "name": "orionengine",
   "version-string": "1.0.0",
   "dependencies": [
     "sol2",
     "nlohmann-json",
-    "lua"
+    "lua",
+    "directxtex"
   ]
 }

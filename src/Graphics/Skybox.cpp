@@ -1,5 +1,6 @@
 #include "Skybox.hpp"
 #include <d3dcompiler.h>
+#include <DirectXTex.h>
 #include <format>
 #include "../ThirdParty/d3dx12.h"
 
@@ -7,12 +8,24 @@ namespace Engine::Graphics
 {
 	namespace 
 	{
-		struct SkyboxVertex { float x, y, z; }; // ˆÊ’u‚¾‚¯
+		struct SkyboxVertex { float x, y, z; }; // ä½ç½®ã ã‘
 		struct CameraCB {
-			Math::Matrix4 viewNoTrans;  // •½sˆÚ“®‚ğÁ‚µ‚½View
+			Math::Matrix4 viewNoTrans;  // å¹³è¡Œç§»å‹•ã‚’æ¶ˆã—ãŸView
 			Math::Matrix4 proj;
 		};
 		static_assert(sizeof(CameraCB) % 256 == 0 || sizeof(CameraCB) < 256, "CB must be 256-aligned-ish");
+	}
+
+	Utils::VoidResult Skybox::loadCubeTexture(const std::wstring& filepath)
+	{
+		using namespace DirectX;
+
+		// DDSãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ã‚­ãƒ¥ãƒ¼ãƒ–ãƒãƒƒãƒ—ã‚’èª­ã¿è¾¼ã¿
+		TexMetadata metadara{};
+		ScratchImage image;
+		CHECK_HR(LoadFromDDSFile(filepath.c_str(), DDS_FLAGS_NONE, &metadara, image),
+			Utils::ErrorType::FileI0, "Failed to load cube texture from file");
+		return {};
 	}
 
 }

@@ -16,11 +16,11 @@ namespace Engine::Graphics
 		Utils::VoidResult initialize(Device* device, ShaderManager* shaderManager);
 		void shutdown();
 
-		//–ˆƒtƒŒ[ƒ€ŒÄ‚Ño‚µ
+		//æ¯ãƒ•ãƒ¬ãƒ¼ãƒ å‘¼ã³å‡ºã—
 		void render(ID3D12GraphicsCommandList* cmd, const Camera& camera);
 
 	private:
-		//GPUƒŠƒ\[ƒX
+		//GPUãƒªã‚½ãƒ¼ã‚¹
 		ComPtr<ID3D12RootSignature> m_rootSig;
 		ComPtr<ID3D12PipelineState> m_pso;
 
@@ -30,13 +30,17 @@ namespace Engine::Graphics
 		D3D12_INDEX_BUFFER_VIEW m_ibv{};
 		UINT m_indexCount = 0;
 
+		ComPtr<ID3D12Resource> m_cubeTexture;
+		D3D12_CPU_DESCRIPTOR_HANDLE m_cubeSrv;
+
 		ComPtr<ID3D12Resource> m_cameraCB;
 
-		//QÆ
+		//å‚ç…§
 		Device* m_device = nullptr;
 		ShaderManager* m_shaderManager = nullptr;
 
-		//“à•”ŠÖ”
+		//å†…éƒ¨é–¢æ•°
+		Utils::VoidResult loadCubeTexture(const std::wstring& filepath);
 		Utils::VoidResult createRootSignature();
 		Utils::VoidResult createPipelineState();
 		Utils::VoidResult createGeometry();

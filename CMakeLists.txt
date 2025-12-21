@@ -40,6 +40,8 @@ include_directories(
 find_package(Lua REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(DirectXTex CONFIG REQUIRED)
+find_package(lua CONFIG REQUIRED)
 
 target_include_directories(OrionEngine PRIVATE
     ${LUA_INCLUDE_DIR}
@@ -47,8 +49,13 @@ target_include_directories(OrionEngine PRIVATE
 
 target_link_libraries(OrionEngine PRIVATE
     ${LUA_LIBRARIES}
+    d3d12
+    dxgi
+    dxguid
     sol2
     nlohmann_json::nlohmann_json
+    Microsoft::DirectXTex
+    lua
 )
 
 # --------------------------------------------------
