@@ -46,6 +46,16 @@ namespace Engine::Graphics
     };
 
     // =============================================================================
+    // DescriptorHandlePair
+    //==============================================================================
+    struct DescriptorHandlePair
+    {
+        D3D12_CPU_DESCRIPTOR_HANDLE CpuHandle;
+        D3D12_GPU_DESCRIPTOR_HANDLE GpuHandle;
+        UINT index;
+    };
+
+    // =============================================================================
     // Deviceクラス
     // =============================================================================
 
@@ -107,6 +117,22 @@ namespace Engine::Graphics
         }
         // 1つSRVを確保して、そのインデックスを返す（超簡易アロケータ）
         UINT allocateSrvIndex() noexcept { return m_srvAllocated++; }
+
+        // SRVディスクリプタを1つ確保し、CPUとGPUのハンドルペアを返す
+        [[nodiscard]] DescriptorHandlePair allocateSrvDescriptor() noexcept
+        {
+            UINT index = m_srvAllocated++;
+            UINT descriptorSize = getDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+            DescriptorHandlePair pair;
+            pair.index = index;
+            pair.CpuHandle = getSrvCpuStart();
+            pair.CpuHandle.ptr += index * descriptorSize;
+            pair.GpuHandle = getSrvGpuStart();
+            pair.GpuHandle.ptr += index * descriptorSize;
+
+            return pair;
+        }
 
         // グラフィックスキュー
         ID3D12CommandQueue* getGraphicsQueue() const noexcept { return m_graphicsQueue.Get(); }

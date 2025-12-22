@@ -116,28 +116,28 @@ namespace Engine::Graphics
 
     Utils::VoidResult CubeRenderer::createRootSignature()
     {
-        // 3縺､縺ｮ螳壽焚繝舌ャ繝輔ぃ逕ｨ繝ｫ繝ｼ繝医す繧ｰ繝阪メ繝｣・・amera, Object, Material・・
+        // 3Root Parameters camera, Object, Material・・
         D3D12_ROOT_PARAMETER rootParameters[3];
 
-        // 繧ｫ繝｡繝ｩ螳壽焚繝舌ャ繝輔ぃ (b0)
+        // \ (b0)
         rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[0].Descriptor.ShaderRegister = 0;
         rootParameters[0].Descriptor.RegisterSpace = 0;
         rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
-        // 繧ｪ繝悶ず繧ｧ繧ｯ繝亥ｮ壽焚繝舌ャ繝輔ぃ (b1)
+        // \ (b1)
         rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[1].Descriptor.ShaderRegister = 1;
         rootParameters[1].Descriptor.RegisterSpace = 0;
         rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
-        // 繝槭ユ繝ｪ繧｢繝ｫ螳壽焚繝舌ャ繝輔ぃ (b2)
+        //  (b2)
         rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[2].Descriptor.ShaderRegister = 2;
         rootParameters[2].Descriptor.RegisterSpace = 0;
         rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-        // Static Sampler繧定ｿｽ蜉・医す繧ｧ繝ｼ繝繝ｼ縺ｮs0縺ｫ蟇ｾ蠢懶ｼ・
+        // Static Sampler
         D3D12_STATIC_SAMPLER_DESC samplerDesc{};
         samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
         samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -156,7 +156,7 @@ namespace Engine::Graphics
         D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
         rootSignatureDesc.NumParameters = _countof(rootParameters);
         rootSignatureDesc.pParameters = rootParameters;
-        rootSignatureDesc.NumStaticSamplers = 1; // 1縺､縺ｮ繧ｵ繝ｳ繝励Λ繝ｼ繧定ｿｽ蜉
+        rootSignatureDesc.NumStaticSamplers = 1;
         rootSignatureDesc.pStaticSamplers = &samplerDesc;
         rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
@@ -183,7 +183,7 @@ namespace Engine::Graphics
 
     Utils::VoidResult CubeRenderer::createPBRRootSignature()
     {
-        // 4縺､縺ｮ繝ｫ繝ｼ繝医ヱ繝ｩ繝｡繝ｼ繧ｿ: Camera, Object, Material, Textures
+        // 4つのRootParameter定義
         D3D12_ROOT_PARAMETER rootParameters[4];
 
         // (b0)

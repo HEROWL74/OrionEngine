@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(DX12GameEngine LANGUAGES CXX)
+project(OrionEngine LANGUAGES CXX)
 
 # --------------------------------------------------
 # VCPKG 統合
@@ -22,7 +22,7 @@ file(GLOB_RECURSE ENGINE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/*.h
 )
 
-add_executable(DX12GameEngine WIN32 ${ENGINE_SOURCES})
+add_executable(OrionEngine WIN32 ${ENGINE_SOURCES})
 
 # --------------------------------------------------
 # インクルードパス
@@ -40,33 +40,40 @@ include_directories(
 find_package(Lua REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(DirectXTex CONFIG REQUIRED)
+find_package(lua CONFIG REQUIRED)
 
-target_include_directories(DX12GameEngine PRIVATE
+target_include_directories(OrionEngine PRIVATE
     ${LUA_INCLUDE_DIR}
 )
 
-target_link_libraries(DX12GameEngine PRIVATE
+target_link_libraries(OrionEngine PRIVATE
     ${LUA_LIBRARIES}
+    d3d12
+    dxgi
+    dxguid
     sol2
     nlohmann_json::nlohmann_json
+    Microsoft::DirectXTex
+    lua
 )
 
 # --------------------------------------------------
 # コンパイラ設定
 # --------------------------------------------------
 if(MSVC)
-    target_compile_options(DX12GameEngine PRIVATE /W4 /EHsc)
+    target_compile_options(OrionEngine PRIVATE /W4 /EHsc)
     add_definitions(-DUNICODE -D_UNICODE)
 endif()
 
 # --------------------------------------------------
 # アセットコピー（assets + engine-assets）
 # --------------------------------------------------
-set(OUT_DIR "$<TARGET_FILE_DIR:DX12GameEngine>")
+set(OUT_DIR "$<TARGET_FILE_DIR:OrionEngine>")
 set(SRC_ASSETS_DIR         "${CMAKE_SOURCE_DIR}/assets")
 set(SRC_ENGINE_ASSETS_DIR  "${CMAKE_SOURCE_DIR}/engine-assets")
 
-add_custom_command(TARGET DX12GameEngine POST_BUILD
+add_custom_command(TARGET OrionEngine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "📦 Copying assets to ${OUT_DIR}"
     COMMAND ${CMAKE_COMMAND} -E rm -rf "${OUT_DIR}/assets"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${OUT_DIR}/assets"
@@ -100,13 +107,13 @@ foreach(HLSL ${HLSL_FILES})
 endforeach()
 
 add_custom_target(Shaders ALL DEPENDS ${COMPILED_SHADERS})
-add_dependencies(DX12GameEngine Shaders)
+add_dependencies(OrionEngine Shaders)
 
 # --------------------------------------------------
 # 情報出力
 # --------------------------------------------------
 message(STATUS "===================================================")
-message(STATUS "✅  DX12GameEngine Configuration Completed")
+message(STATUS "✅  OrionEngine Configuration Completed")
 message(STATUS "🔹  Triplet: ${VCPKG_TARGET_TRIPLET}")
 message(STATUS "🔹  Output Dir: ${OUT_DIR}")
 message(STATUS "🔹  Shaders: ${HLSL_OUTPUT_DIR}")

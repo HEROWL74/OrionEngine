@@ -11,8 +11,6 @@
 #include "../Utils/Common.hpp"
 #include "Device.hpp"
 
-#pragma comment(lib, "d3dcompiler.lib")
-
 using Microsoft::WRL::ComPtr;
 
 namespace Engine::Graphics
