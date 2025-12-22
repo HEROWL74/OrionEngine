@@ -31,7 +31,7 @@ namespace Engine::Graphics
 		UINT m_indexCount = 0;
 
 		ComPtr<ID3D12Resource> m_cubeTexture;
-		D3D12_CPU_DESCRIPTOR_HANDLE m_cubeSrv;
+		D3D12_GPU_DESCRIPTOR_HANDLE m_cubeSrv{};
 
 		ComPtr<ID3D12Resource> m_cameraCB;
 
@@ -45,6 +45,6 @@ namespace Engine::Graphics
 		Utils::VoidResult createPipelineState();
 		Utils::VoidResult createGeometry();
 		Utils::VoidResult createCameraCB();
-		void uodateCameraCB(const Camera& camera);
+		void updateCameraCB(const Camera& camera);
  	};
 }
