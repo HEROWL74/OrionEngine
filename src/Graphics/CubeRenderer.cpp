@@ -112,6 +112,8 @@ namespace Engine::Graphics
         commandList->IASetIndexBuffer(&m_indexBufferView);
 
         commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+
+        Utils::log_info("CubeRenderer render called!");
     }
 
     Utils::VoidResult CubeRenderer::createRootSignature()

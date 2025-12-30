@@ -33,12 +33,12 @@ namespace Engine::Graphics
 
     void Camera::lookAt(const Math::Vector3& target, const Math::Vector3& up)
     {
-        Math::Vector3 forward = (target - m_position).normalized();
-        Math::Vector3 right = Math::Vector3::cross(forward, up).normalized();
-        Math::Vector3 newUp = Math::Vector3::cross(right, forward);
+        Math::Vector3 zAxis = (target - m_position).normalized();
+        Math::Vector3 xAxis = Math::Vector3::cross(up, zAxis).normalized();
+        Math::Vector3 yAxis = Math::Vector3::cross(zAxis, xAxis);
 
-        m_rotation.y = Math::degrees(std::atan2(forward.x, forward.z));
-        m_rotation.x = Math::degrees(std::asin(-forward.y));
+        m_rotation.y = Math::degrees(std::atan2(zAxis.x, zAxis.z));
+        m_rotation.x = Math::degrees(-std::asin(zAxis.y));
         m_rotation.z = 0.0f;
 
         normalizeRotation();

@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.21)
-project(OrionEngine LANGUAGES CXX)
+﻿cmake_minimum_required(VERSION 3.21)
+project(OrionEngine LANGUAGES CXX RC)
 
 # --------------------------------------------------
 # VCPKG 統合
@@ -22,7 +22,14 @@ file(GLOB_RECURSE ENGINE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/*.h
 )
 
-add_executable(OrionEngine WIN32 ${ENGINE_SOURCES})
+set(ENGINE_RESOURCES
+    ${CMAKE_SOURCE_DIR}/resources/app.rc
+)
+
+add_executable(OrionEngine WIN32
+    ${ENGINE_SOURCES}
+    ${ENGINE_RESOURCES}
+)
 
 # --------------------------------------------------
 # インクルードパス

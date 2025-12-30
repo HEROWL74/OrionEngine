@@ -521,6 +521,57 @@ namespace Engine::UI
 		return result;
 	}
 
+	ImTextureID ImGuiManager::registerRenderTarget(ID3D12Resource* resource, DXGI_FORMAT format)
+	{
+		if (!resource || !m_device || !m_srvDescHeap || !m_initialized)
+		{
+			Utils::log_warning("Cannot register RenderTarget - ImGuiManager not properly initialized");
+			return {};
+		}
+
+		// 空きスロット確保
+		if (m_nextSrvIndex >= m_maxSrv)
+		{
+			Utils::log_warning("ImGui descriptor heap is full, cannot register RenderTarget");
+			return {};
+		}
+
+		const UINT idx = m_nextSrvIndex++;
+
+		// ImGui用ヒープのCPU/GPUハンドルを計算
+		D3D12_CPU_DESCRIPTOR_HANDLE cpu = m_srvCpuStart;
+		cpu.ptr += static_cast<SIZE_T>(idx) * m_srvIncSize;
+
+		D3D12_GPU_DESCRIPTOR_HANDLE gpu = m_srvGpuStart;
+		gpu.ptr += static_cast<UINT64>(idx) * m_srvIncSize;
+
+		// リソースのDescを取得
+		auto resDesc = resource->GetDesc();
+
+		// SRVを作成
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = format;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+		m_device->getDevice()->CreateShaderResourceView(resource, &srvDesc, cpu);
+
+		// GPUハンドル値をImTextureIDとして返す
+		ImTextureID result = (ImTextureID)(intptr_t)gpu.ptr;
+
+		Utils::log_info(std::format(
+			"RegisterRenderTarget: format={} mipLevels=1 cpu.ptr={} gpu.ptr={}",
+			static_cast<int>(format),
+			static_cast<uint64_t>(cpu.ptr),
+			static_cast<uint64_t>(gpu.ptr)
+		));
+
+		return result;
+	}
+
 	void ImGuiManager::createGUIStyle()
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -572,6 +623,15 @@ namespace Engine::UI
 		style.FrameRounding = 2.0f;
 		style.ScrollbarRounding = 3.0f;
 		style.GrabRounding = 2.0f;
+	}
+
+	void ImGuiManager::clearRenderTargetDescriptors()
+	{
+		if (m_device && m_device->getSrvHeap())
+		{
+			Utils::log_info("Clearing ImGui render target descriptors");
+			// ここでは何もしない（次のregisterRenderTargetで上書きされる）
+		}
 	}
 
 

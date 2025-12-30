@@ -54,7 +54,7 @@ namespace Engine::Graphics
 
 	private:
 		Device* m_device = nullptr;
-		ShaderManager* m_shaderManager = nullptr;  // ← これを追加
+		ShaderManager* m_shaderManager = nullptr;
 		RenderableType m_renderableType;
 		Math::Vector3 m_color = Math::Vector3(1.0f, 1.0f, 1.0f);
 		bool m_visible = true;

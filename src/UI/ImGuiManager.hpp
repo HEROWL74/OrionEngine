@@ -77,11 +77,12 @@ namespace Engine::UI
 		// リサイズ完了通知（新しく追加）
 		void invalidateDeviceObjects();
 		void createDeviceObjects();
+		void clearRenderTargetDescriptors();
 
         //色合い設定
 		void createGUIStyle();
 		ImTextureID registerTexture(Graphics::Texture* tex);
-
+		ImTextureID registerRenderTarget(ID3D12Resource* resource, DXGI_FORMAT format);
 	private:
 		bool m_initialized = false;
 		ImGuiContext* m_context = nullptr;
