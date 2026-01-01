@@ -14,12 +14,11 @@ namespace Engine::Graphics
         m_shaderManager = shaderManager;
         Utils::log_info("Initializing Cube Renderer...");
 
-        auto constantBufferResult = m_constantBufferManager.initialize(device);
+        auto constantBufferResult = m_constantBufferManager.initialize(device, 4);
         if (!constantBufferResult) {
             Utils::log_error(constantBufferResult.error());
             return constantBufferResult;
         }
-
     
         setupCubeVertices();
 
@@ -112,6 +111,13 @@ namespace Engine::Graphics
         commandList->IASetIndexBuffer(&m_indexBufferView);
 
         commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+
+        static int renderCounter = 0;
+        if (renderCounter++ % 120 == 0) {
+            auto pos = camera.getPosition();
+            Utils::log_info(std::format("CubeRenderer using camera at: ({:.2f}, {:.2f}, {:.2f})",
+                pos.x, pos.y, pos.z));
+        }
 
         Utils::log_info("CubeRenderer render called!");
     }

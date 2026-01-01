@@ -37,10 +37,6 @@ namespace Engine::Graphics
 			return;
 		}
 
-		Utils::log_info(std::format("EditorView::render - Using texture: 0x{:016X}, Current state: {}",
-			reinterpret_cast<uintptr_t>(m_renderTarget->getTexture()),
-			static_cast<int>(m_renderTarget->getCurrentState())));
-
 		m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_renderTarget->getRTV();
@@ -68,6 +64,14 @@ namespace Engine::Graphics
 		commandList->RSSetViewports(1, &viewport);
 		commandList->RSSetScissorRects(1, &scissorRect);
 
+		if (m_skybox)
+		{
+			m_skybox->render(commandList, camera);
+		}
+
+		//  EditorView 専用の frameIndex を使用（0, 1）
+		UINT editorFrameIndex = frameIndex % 2;  // 0 または 1
+
 		for (auto& gameObject : scene.getGameObjects())
 		{
 			if (gameObject->isActive())
@@ -75,15 +79,14 @@ namespace Engine::Graphics
 				auto* renderComponent = gameObject->getComponent<RenderComponent>();
 				if (renderComponent && renderComponent->isEnabled() && renderComponent->isVisible())
 				{
-					renderComponent->render(commandList, camera, frameIndex);
+					renderComponent->render(commandList, camera, editorFrameIndex);
 				}
 			}
 		}
 
-		renderEditorElements(commandList, camera, frameIndex);
+		renderEditorElements(commandList, camera, editorFrameIndex);
 
 		m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		Utils::log_info("EditorView::render - Completed");
 	}
 
 	void EditorView::renderEditorElements(ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex)

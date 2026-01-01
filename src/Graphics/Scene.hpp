@@ -49,7 +49,11 @@ namespace Engine::Graphics
 	private:
 		Device* m_device = nullptr;
 		std::vector<std::unique_ptr<Core::GameObject>> m_gameObjects;
+		std::vector<Core::GameObject*> m_pendingDestroy;
 		bool m_initialized = false;
+
+	private:
+		void processPendingDestroy();
 	};
 }
 

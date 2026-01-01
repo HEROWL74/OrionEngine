@@ -25,7 +25,7 @@ namespace Engine::Graphics
 	{
 	public:
 		explicit RenderComponent(RenderableType type = RenderableType::Cube);
-		~RenderComponent() = default;
+		~RenderComponent();
 
 		//初期化
 		[[nodiscard]] Utils::VoidResult initialize(Device* device, ShaderManager* shaderManager);

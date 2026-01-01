@@ -2,9 +2,6 @@
 
 namespace Engine::Graphics
 {
-	//==========================================================================================
-    //Scene実装
-    //==========================================================================================
 	Utils::VoidResult Scene::initialize(Device* device)
 	{
 		CHECK_CONDITION(device != nullptr, Utils::ErrorType::Unknown, "Device is null");
@@ -31,29 +28,11 @@ namespace Engine::Graphics
 			return;
 		}
 
-		std::string objectName = gameObject->getName();
+		// すぐに削除せず、リストに追加
+		m_pendingDestroy.push_back(gameObject);
+		gameObject->setActive(false);  // すぐに無効化
 
-		auto it = m_gameObjects.begin();
-		while (it != m_gameObjects.end())
-		{
-			if (it->get() == gameObject)
-			{
-				(*it)->setActive(false);
-
-				(*it)->destroy();
-
-				it = m_gameObjects.erase(it);
-
-				Utils::log_info(std::format("GameObject '{}' destroyed successfully", objectName));
-				return;
-			}
-			else
-			{
-				++it;
-			}
-		}
-
-		Utils::log_warning(std::format("GameObject '{}' not found in scene", objectName));
+		Utils::log_info(std::format("GameObject '{}' marked for destruction", gameObject->getName()));
 	}
 
 	Core::GameObject* Scene::findGameObject(const std::string& name) const
@@ -88,6 +67,9 @@ namespace Engine::Graphics
 				gameObject->update(deltaTime);
 			}
 		}
+
+		// フレームの最後に遅延削除を実行
+		processPendingDestroy();
 	}
 
 	void Scene::lateUpdate(float deltaTime)
@@ -129,5 +111,36 @@ namespace Engine::Graphics
 				return obj.get();
 		}
 		return nullptr;
+	}
+
+	void Scene::processPendingDestroy()
+	{
+		if (m_pendingDestroy.empty())
+		{
+			return;
+		}
+
+		// GPU同期
+		if (m_device)
+		{
+			m_device->waitForGpu();
+		}
+
+		// 削除実行
+		for (auto* gameObject : m_pendingDestroy)
+		{
+			auto it = std::find_if(m_gameObjects.begin(), m_gameObjects.end(),
+				[gameObject](const auto& obj) { return obj.get() == gameObject; });
+
+			if (it != m_gameObjects.end())
+			{
+				std::string name = (*it)->getName();
+				(*it)->destroy();
+				m_gameObjects.erase(it);
+				Utils::log_info(std::format("GameObject '{}' destroyed", name));
+			}
+		}
+
+		m_pendingDestroy.clear();
 	}
 }

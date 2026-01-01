@@ -37,10 +37,6 @@ namespace Engine::Graphics
 			return;
 		}
 
-		Utils::log_info(std::format("GameView::render - Using texture: 0x{:016X}, Current state: {}",
-			reinterpret_cast<uintptr_t>(m_renderTarget->getTexture()),
-			static_cast<int>(m_renderTarget->getCurrentState())));
-
 		m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_renderTarget->getRTV();
@@ -68,6 +64,13 @@ namespace Engine::Graphics
 		commandList->RSSetViewports(1, &viewport);
 		commandList->RSSetScissorRects(1, &scissorRect);
 
+		if (m_skybox)
+		{
+			m_skybox->render(commandList, camera);
+		}
+
+		UINT gameFrameIndex = 2 + (frameIndex % 2);
+
 		for (auto& gameObject : scene.getGameObjects())
 		{
 			if (gameObject->isActive())
@@ -75,13 +78,12 @@ namespace Engine::Graphics
 				auto* renderComponent = gameObject->getComponent<RenderComponent>();
 				if (renderComponent && renderComponent->isEnabled() && renderComponent->isVisible())
 				{
-					renderComponent->render(commandList, camera, frameIndex);
+					renderComponent->render(commandList, camera, gameFrameIndex);
 				}
 			}
 		}
 
 		m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		Utils::log_info("GameView::render - Completed");
 	}
 
 	ImTextureID GameView::getOutputTexture() const

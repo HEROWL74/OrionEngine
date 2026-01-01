@@ -2,12 +2,13 @@
 #pragma once
 #include <d3d12.h>
 #include <memory>
-#include "../Graphics/Camera.hpp"
-#include "../Graphics/Scene.hpp"
-#include "../Graphics/RenderComponent.hpp"
-#include "../Graphics/RenderTarget.hpp"
-#include "../Graphics/Device.hpp"
+#include "Camera.hpp"
+#include "Scene.hpp"
+#include "RenderComponent.hpp"
+#include "RenderTarget.hpp"
+#include "Device.hpp"
 #include "../UI/ImGuiManager.hpp"
+#include "Skybox.hpp"
 
 namespace Engine::Graphics
 {
@@ -45,11 +46,12 @@ namespace Engine::Graphics
 
 		void setSelectedObject(Core::GameObject* object) { m_selectedObject = object; }
 		Core::GameObject* getSelectedObject() const { return m_selectedObject; }
-
+		void setSkybox(Skybox* skybox) { m_skybox = skybox; }
 	private:
 		Device* m_device = nullptr;
 		UI::ImGuiManager* m_imguiManager = nullptr;
 		std::unique_ptr<RenderTarget> m_renderTarget;
+		Skybox* m_skybox = nullptr;
 		bool m_initialized = false;
 		uint32_t m_width = 0;
 		uint32_t m_height = 0;

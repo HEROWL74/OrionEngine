@@ -59,6 +59,12 @@ namespace Engine::UI
 					ImTextureID texId = m_editorView->getOutputTexture();
 					if (texId)
 					{
+						// デバッグ: 表示しているテクスチャIDをログ出力
+						static int sceneCounter = 0;
+						if (sceneCounter++ % 120 == 0) {
+							Utils::log_info(std::format("SceneWindow displaying texture: 0x{:016X}",
+								texId));
+						}
 						ImGui::Image(texId, viewportSize);
 					}
 					else
@@ -172,6 +178,14 @@ namespace Engine::UI
 					ImTextureID texId = m_gameView->getOutputTexture();
 					if (texId)
 					{
+						ImTextureID texId = m_gameView->getOutputTexture();
+
+						// デバッグ: 表示しているテクスチャIDをログ出力
+						static int sceneCounter = 0;
+						if (sceneCounter++ % 120 == 0) {
+							Utils::log_info(std::format("GameWindow displaying texture: 0x{:016X}",
+								texId));
+						}
 						ImGui::Image(texId, viewportSize);
 					}
 					else
