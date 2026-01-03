@@ -378,6 +378,7 @@ namespace Engine::Graphics
 		// DepthStencilState
 		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 		psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+		psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 
 		psoDesc.InputLayout = { inputLayout, _countof(inputLayout) };
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -397,19 +398,20 @@ namespace Engine::Graphics
 	Utils::VoidResult Skybox::createGeometry()
 	{
 		// 立方体の8頂点を定義
+		const float scale = 100.0f;  // スケールを追加
 		SkyboxVertex vertices[] =
 		{
 			//前面
-			{-1.0f,1.0f,-1.0f},
-			{1.0f,1.0f,-1.0f},
-			{1.0f,-1.0f,-1.0f},
-			{-1.0f,-1.0f,-1.0f},
+			{-scale, scale, -scale},
+			{ scale, scale, -scale},
+			{ scale,-scale, -scale},
+			{-scale,-scale, -scale},
 
 			//背面
-			{-1.0f,1.0f,1.0f},
-			{1.0f,1.0f,1.0f},
-			{1.0f,-1.0f,1.0f},
-			{-1.0f,-1.0f,1.0f}
+			{-scale, scale, scale},
+			{ scale, scale, scale},
+			{ scale,-scale, scale},
+			{-scale,-scale, scale}
 		};
 
 		// インデックスデータ
@@ -522,9 +524,9 @@ namespace Engine::Graphics
 		Math::Matrix4 view = camera.getViewMatrix();
 		Math::Matrix4 viewNoTrans = view;
 
-		viewNoTrans.m[0][3] = 0.0f;
-		viewNoTrans.m[1][3] = 0.0f;
-		viewNoTrans.m[2][3] = 0.0f;
+		viewNoTrans.m[3][0] = 0.0f;
+		viewNoTrans.m[3][1] = 0.0f;
+		viewNoTrans.m[3][2] = 0.0f;
 
 		Math::Matrix4 proj = camera.getProjectionMatrix();
 

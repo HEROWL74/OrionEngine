@@ -36,10 +36,15 @@ namespace Engine::UI
 			ImGui::SetNextWindowPos(scenePos, cond);
 			ImGui::SetNextWindowSize(sceneSize, cond);
 
-			ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+			ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar |
+				ImGuiWindowFlags_NoScrollWithMouse |
+				ImGuiWindowFlags_NoMove;
 
 			if (ImGui::Begin(m_title.c_str(), &m_visible, flags))
 			{
+				m_isFocused = ImGui::IsWindowFocused();
+				m_isHovered = ImGui::IsWindowHovered();
+
 				ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
 				if (std::abs(viewportSize.x - m_lastSize.x) > 1.0f ||
@@ -65,7 +70,26 @@ namespace Engine::UI
 							Utils::log_info(std::format("SceneWindow displaying texture: 0x{:016X}",
 								texId));
 						}
+
 						ImGui::Image(texId, viewportSize);
+
+						// Image上でのマウス操作を検出
+						if (ImGui::IsItemHovered())
+						{
+							// 左クリックされた
+							if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+							{
+								Utils::log_info(">>> SceneViewport: Left click detected on image!");
+								m_cameraControlRequested = true;
+							}
+						}
+
+						// 左ボタンが離された（どこで離されても検出）
+						if (m_cameraControlRequested && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+						{
+							Utils::log_info(">>> SceneViewport: Left button released!");
+							m_cameraControlRequested = false;
+						}
 					}
 					else
 					{
@@ -94,6 +118,9 @@ namespace Engine::UI
 		void setEditorView(Graphics::EditorView* view) { m_editorView = view; }
 		void setCamera(Graphics::Camera* camera) { m_camera = camera; }
 
+		bool isFocused() const { return m_isFocused; }
+		bool isHovered() const { return m_isHovered; }
+		bool isCameraControlRequested() const { return m_cameraControlRequested; }
 	private:
 		Graphics::EditorView* m_editorView = nullptr;
 		Graphics::Camera* m_camera = nullptr;
@@ -102,6 +129,9 @@ namespace Engine::UI
 		uint32_t m_pendingWidth = 0;
 		uint32_t m_pendingHeight = 0;
 
+		bool m_isFocused = false;
+		bool m_isHovered = false;
+		bool m_cameraControlRequested = false;
 		void drawOverlay()
 		{
 			ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - 120, 10));
