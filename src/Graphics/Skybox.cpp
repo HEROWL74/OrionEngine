@@ -33,7 +33,7 @@ namespace Engine::Graphics
 		if (!rootSigResult) return rootSigResult; 
 
 		// パイプラインステートの作成
-		auto psoResult = createPipelineState();
+		auto psoResult = createPipelineState(); 
 		if (!psoResult) return psoResult;
 
 		// ジオメトリの作成
@@ -50,6 +50,12 @@ namespace Engine::Graphics
 	}
 	void Skybox::shutdown()
 	{
+		if (m_cameraCB && m_cameraCbMapped)
+		{
+			m_cameraCB->Unmap(0, nullptr);
+			m_cameraCbMapped = nullptr;
+		}
+
 		m_cameraCB.Reset();
 		m_cubeTexture.Reset();
 		m_ib.Reset();
@@ -72,6 +78,9 @@ namespace Engine::Graphics
 
 		// カメラ定数バッファを更新
 		updateCameraCB(camera);
+
+		ID3D12DescriptorHeap* heaps[] = { m_device->getSrvHeap() };
+		cmd->SetDescriptorHeaps(_countof(heaps), heaps);
 
 		// ルートシグネチャとパイプラインステートを設定
 		cmd->SetGraphicsRootSignature(m_rootSig.Get());
@@ -219,7 +228,7 @@ namespace Engine::Graphics
 		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 			m_cubeTexture.Get(),
 			D3D12_RESOURCE_STATE_COPY_DEST,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
 		);
 		cmdList->ResourceBarrier(1, &barrier);
 
@@ -369,6 +378,7 @@ namespace Engine::Graphics
 		// DepthStencilState
 		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 		psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+		psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 
 		psoDesc.InputLayout = { inputLayout, _countof(inputLayout) };
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -376,7 +386,7 @@ namespace Engine::Graphics
 		psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 		psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 		psoDesc.SampleDesc.Count = 1;
-
+		
 		CHECK_HR(dev->CreateGraphicsPipelineState(
 			&psoDesc,
 			IID_PPV_ARGS(&m_pso)
@@ -388,19 +398,20 @@ namespace Engine::Graphics
 	Utils::VoidResult Skybox::createGeometry()
 	{
 		// 立方体の8頂点を定義
+		const float scale = 100.0f;  // スケールを追加
 		SkyboxVertex vertices[] =
 		{
 			//前面
-			{-1.0f,1.0f,-1.0f},
-			{1.0f,1.0f,-1.0f},
-			{1.0f,-1.0f,-1.0f},
-			{-1.0f,-1.0f,-1.0f},
+			{-scale, scale, -scale},
+			{ scale, scale, -scale},
+			{ scale,-scale, -scale},
+			{-scale,-scale, -scale},
 
 			//背面
-			{-1.0f,1.0f,1.0f},
-			{1.0f,1.0f,1.0f},
-			{1.0f,-1.0f,1.0f},
-			{-1.0f,-1.0f,1.0f}
+			{-scale, scale, scale},
+			{ scale, scale, scale},
+			{ scale,-scale, scale},
+			{-scale,-scale, scale}
 		};
 
 		// インデックスデータ
@@ -495,18 +506,27 @@ namespace Engine::Graphics
 			IID_PPV_ARGS(&m_cameraCB)
 		), Utils::ErrorType::ResourceCreation, "Failed to create camera constant buffer");
 
+		// 最初にマップして、そのままにする
+		D3D12_RANGE readRange(0, 0);
+		CHECK_HR(m_cameraCB->Map(0, &readRange, &m_cameraCbMapped),
+			Utils::ErrorType::ResourceCreation, "Failed to map camera constant buffer");
+
 		return {};
 	}
 
 	void Skybox::updateCameraCB(const Camera& camera)
 	{
+		if (!m_cameraCB || !m_cameraCbMapped)
+		{
+			return;
+		}
+
 		Math::Matrix4 view = camera.getViewMatrix();
 		Math::Matrix4 viewNoTrans = view;
 
-		// 平行移動成分を除去（4列目の上3要素をゼロに設定）
-		viewNoTrans.m[0][3] = 0.0f;
-		viewNoTrans.m[1][3] = 0.0f;
-		viewNoTrans.m[2][3] = 0.0f;
+		viewNoTrans.m[3][0] = 0.0f;
+		viewNoTrans.m[3][1] = 0.0f;
+		viewNoTrans.m[3][2] = 0.0f;
 
 		Math::Matrix4 proj = camera.getProjectionMatrix();
 
@@ -514,12 +534,8 @@ namespace Engine::Graphics
 		cbData.viewNoTrans = viewNoTrans;
 		cbData.proj = proj;
 
-		void* pCbDataBegin = nullptr;
-		D3D12_RANGE readRange(0, 0);
-		m_cameraCB->Map(0, &readRange, &pCbDataBegin);
-
-		memcpy(pCbDataBegin, &cbData, sizeof(CameraCB));
-		m_cameraCB->Unmap(0, nullptr);
+		// すでにマップされているポインタを使用
+		memcpy(m_cameraCbMapped, &cbData, sizeof(CameraCB));
 	}
 	
 }

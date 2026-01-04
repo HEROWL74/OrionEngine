@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.21)
-project(OrionEngine LANGUAGES CXX)
+﻿cmake_minimum_required(VERSION 3.21)
+project(OrionEngine LANGUAGES CXX RC)
 
 # --------------------------------------------------
 # VCPKG 統合
@@ -22,7 +22,14 @@ file(GLOB_RECURSE ENGINE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/*.h
 )
 
-add_executable(OrionEngine WIN32 ${ENGINE_SOURCES})
+set(ENGINE_RESOURCES
+    ${CMAKE_SOURCE_DIR}/resources/app.rc
+)
+
+add_executable(OrionEngine WIN32
+    ${ENGINE_SOURCES}
+    ${ENGINE_RESOURCES}
+)
 
 # --------------------------------------------------
 # インクルードパス
@@ -30,6 +37,7 @@ add_executable(OrionEngine WIN32 ${ENGINE_SOURCES})
 include_directories(
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/ThirdParty
+    ${CMAKE_SOURCE_DIR}/resources
     "C:/vcpkg/installed/x64-windows/include"
 )
 
@@ -67,17 +75,23 @@ if(MSVC)
 endif()
 
 # --------------------------------------------------
-# アセットコピー（assets + engine-assets）
+# アセットコピー（assets + engine-assets + resources）
 # --------------------------------------------------
 set(OUT_DIR "$<TARGET_FILE_DIR:OrionEngine>")
 set(SRC_ASSETS_DIR         "${CMAKE_SOURCE_DIR}/assets")
 set(SRC_ENGINE_ASSETS_DIR  "${CMAKE_SOURCE_DIR}/engine-assets")
+set(SRC_RESOURCES_DIR  "${CMAKE_SOURCE_DIR}/resources")
 
 add_custom_command(TARGET OrionEngine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "📦 Copying assets to ${OUT_DIR}"
     COMMAND ${CMAKE_COMMAND} -E rm -rf "${OUT_DIR}/assets"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${OUT_DIR}/assets"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_ASSETS_DIR}" "${OUT_DIR}/assets"
+
+    COMMAND ${CMAKE_COMMAND} -E echo "📦 Copying assets to ${OUT_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "${OUT_DIR}/resources"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${OUT_DIR}/resources"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_ASSETS_DIR}" "${OUT_DIR}/resources"
 
     COMMAND ${CMAKE_COMMAND} -E echo "📦 Copying engine-assets to ${OUT_DIR}"
     COMMAND ${CMAKE_COMMAND} -E rm -rf "${OUT_DIR}/engine-assets"

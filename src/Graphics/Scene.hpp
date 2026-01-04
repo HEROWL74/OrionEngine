@@ -11,8 +11,8 @@
 namespace Engine::Graphics
 {
 	//==================================================================================
-     //シーン管理クラス
-//==================================================================================
+    // シーン管理クラス
+    //==================================================================================
 	class Scene
 	{
 	public:
@@ -36,6 +36,7 @@ namespace Engine::Graphics
 		void lateUpdate(float deltaTime);
 
 		//レンダリング
+		[[deprecated("Use GameView instead")]]
 		void render(ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex);
 
 		//初期化
@@ -48,7 +49,11 @@ namespace Engine::Graphics
 	private:
 		Device* m_device = nullptr;
 		std::vector<std::unique_ptr<Core::GameObject>> m_gameObjects;
+		std::vector<Core::GameObject*> m_pendingDestroy;
 		bool m_initialized = false;
+
+	private:
+		void processPendingDestroy();
 	};
 }
 

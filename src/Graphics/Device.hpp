@@ -137,6 +137,9 @@ namespace Engine::Graphics
         // グラフィックスキュー
         ID3D12CommandQueue* getGraphicsQueue() const noexcept { return m_graphicsQueue.Get(); }
 
+        void resetSrvAllocator() noexcept { m_srvAllocated = 0; }  
+        UINT getSrvAllocatedCount() const noexcept { return m_srvAllocated; }  
+
         void waitForGpu(); // 簡易同期
 
     private:

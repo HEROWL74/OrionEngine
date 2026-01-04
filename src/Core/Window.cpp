@@ -1,5 +1,6 @@
 ﻿// src/Core/Window.cpp
 #include "Window.hpp"
+#include "../../resources/orion_resource.h"
 #include <format>
 #include "../UI/ImGuiManager.hpp"
 namespace Engine::Core {
@@ -83,6 +84,13 @@ namespace Engine::Core {
 			this
 		);
 
+		HICON hIcon = LoadIcon(m_hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
+		CHECK_CONDITION(hIcon != nullptr, Utils::ErrorType::WindowCreation,
+			"Failed to load window icon");
+
+		SendMessageW(m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+		SendMessageW(m_handle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+
 		CHECK_CONDITION(m_handle != nullptr, Utils::ErrorType::WindowCreation,
 			"Failed to create window");
 
@@ -165,12 +173,12 @@ namespace Engine::Core {
 		wcex.cbClsExtra = 0;
 		wcex.cbWndExtra = 0;
 		wcex.hInstance = hInstance;
-		wcex.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+		wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
 		wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
 		wcex.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
 		wcex.lpszMenuName = nullptr;
 		wcex.lpszClassName = m_className.c_str();
-		wcex.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
+		wcex.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
 
 		const ATOM atom = RegisterClassExW(&wcex);
 		CHECK_CONDITION(atom != 0, Utils::ErrorType::WindowCreation,

@@ -34,6 +34,7 @@ namespace Engine::Graphics
 		D3D12_GPU_DESCRIPTOR_HANDLE m_cubeSrv{};
 
 		ComPtr<ID3D12Resource> m_cameraCB;
+		void* m_cameraCbMapped = nullptr;
 
 		//参照
 		Device* m_device = nullptr;

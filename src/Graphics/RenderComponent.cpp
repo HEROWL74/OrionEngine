@@ -12,6 +12,19 @@ namespace Engine::Graphics
 	{
 	}
 
+	RenderComponent::~RenderComponent()
+	{
+		// デストラクタでGPU同期を行う
+		if (m_device && m_initialized)
+		{
+			m_device->waitForGpu();
+		}
+
+		// レンダラーを明示的に破棄
+		m_triangleRenderer.reset();
+		m_cubeRenderer.reset();
+		m_material.reset();
+	}
 
 	Utils::VoidResult RenderComponent::initialize(Device* device, ShaderManager* shaderManager)
 	{
