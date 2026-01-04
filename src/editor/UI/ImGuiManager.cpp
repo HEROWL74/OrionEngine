@@ -347,11 +347,11 @@ namespace Engine::UI
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 	}
 
-	void ImGuiManager::handleWindowMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+	bool ImGuiManager::handleWindowMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) const
 	{
 		if (!m_initialized || !m_context)
 		{
-			return;
+			return false;
 		}
 
 		ImGuiContext* currentContext = ImGui::GetCurrentContext();

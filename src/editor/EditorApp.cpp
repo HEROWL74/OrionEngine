@@ -115,7 +115,12 @@ namespace Editor
         auto imguiResult = m_imguiManager.initialize(&m_device, m_window.getHandle(), m_commandQueue.Get());
         if (!imguiResult) return imguiResult;
 
-        m_window.setImGuiManager(&m_imguiManager);
+        m_window.setMessageCallback(
+            [&](HWND hwnd, UINT msg, WPARAM w, LPARAM l) -> bool
+            {
+                return m_imguiManager.handleWindowMessage(hwnd, msg, w, l);
+            }
+        );
 
         // ShaderManager‰Šú‰»
         Utils::log_info("Initializing ShaderManager...");
@@ -986,7 +991,12 @@ namespace Editor
                 return;
             }
 
-            m_window.setImGuiManager(&m_imguiManager);
+            m_window.setMessageCallback(
+                [&](HWND hwnd, UINT msg, WPARAM w, LPARAM l)
+                {
+                    return m_imguiManager.handleWindowMessage(hwnd, msg, w, l);
+                }
+            );
 
             Utils::log_info("Re-registering ProjectWindow textures");
             if (m_projectWindow)
