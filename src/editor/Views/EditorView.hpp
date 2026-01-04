@@ -1,14 +1,14 @@
-//EditorView.hpp
+//// src/editor/Views/EditorView.hpp
 #pragma once
 #include <d3d12.h>
 #include <memory>
-#include "Camera.hpp"
-#include "Scene.hpp"
-#include "RenderComponent.hpp"
-#include "RenderTarget.hpp"
-#include "Device.hpp"
+#include "engine/Graphics/Camera.hpp"
+#include "engine/Graphics/Scene.hpp"
+#include "engine/Graphics/RenderComponent.hpp"
+#include "engine/Graphics/RenderTarget.hpp"
+#include "engine/Graphics/Device.hpp"
 #include "../UI/ImGuiManager.hpp"
-#include "Skybox.hpp"
+#include "engine/Graphics/Skybox.hpp"
 
 namespace Engine::Graphics
 {

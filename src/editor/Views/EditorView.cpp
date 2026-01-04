@@ -1,6 +1,6 @@
 // EditorView.cpp
 #include "EditorView.hpp"
-#include "../ThirdParty/d3dx12.h"
+#include "engine/ThirdParty/d3dx12.h"
 
 namespace Engine::Graphics
 {

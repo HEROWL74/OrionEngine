@@ -1,7 +1,7 @@
 // RenderTarget.hpp
 #pragma once
 #include "Device.hpp"
-#include "../UI/ImGuiManager.hpp"
+#include "editor/UI/ImGuiManager.hpp"
 
 namespace Engine::Graphics
 {
