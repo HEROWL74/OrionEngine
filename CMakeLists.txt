@@ -48,6 +48,7 @@ add_custom_target(Shaders ALL DEPENDS ${COMPILED_SHADERS})
 # --------------------------------------------------
 add_subdirectory(engine)
 add_subdirectory(editor)
+add_subdirectory(runtime)
 
 # --------------------------------------------------
 # 情報出力

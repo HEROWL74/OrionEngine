@@ -64,7 +64,7 @@ namespace Engine::UI
 		void render(ID3D12GraphicsCommandList* commandList) const;
 
 		//Win32メッセージ処理
-		void handleWindowMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
+		bool handleWindowMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) const;
 
 		// リサイズ処理（改善版）
 		void onWindowResize(int width, int height);
