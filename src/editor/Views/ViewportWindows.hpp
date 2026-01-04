@@ -1,7 +1,7 @@
 #pragma once
-#include "ImGuiManager.hpp"
-#include "../Graphics/EditorView.hpp"
-#include "../Graphics/GameView.hpp"
+#include "UI/ImGuiManager.hpp"
+#include "EditorView.hpp"
+#include "GameView.hpp"
 
 namespace Engine::UI
 {

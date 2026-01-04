@@ -7,9 +7,9 @@
 #include <filesystem>
 #include <unordered_map>
 #include "ImGuiManager.hpp"
-#include "../Graphics/Texture.hpp"
-#include "../Graphics/Material.hpp"
-#include "../Scripting/LuaScriptUtility.hpp"
+#include "engine/Graphics/Texture.hpp"
+#include "engine/Graphics/Material.hpp"
+#include "engine/Scripting/LuaScriptUtility.hpp"
 
 namespace Engine::UI
 {

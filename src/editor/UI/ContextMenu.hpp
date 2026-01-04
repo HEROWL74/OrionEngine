@@ -4,10 +4,10 @@
 #include <functional>
 #include <string>
 #include <unordered_map>
-#include "../Core/GameObject.hpp"
-#include "../Graphics/RenderComponent.hpp"
-#include "../Scripting/LuaScriptUtility.hpp"
-#include "../Scripting/CppScriptUtility.hpp"
+#include "engine/Core/GameObject.hpp"
+#include "engine/Graphics/RenderComponent.hpp"
+#include "engine/Scripting/LuaScriptUtility.hpp"
+#include "engine/Scripting/CppScriptUtility.hpp"
 
 namespace Engine::UI
 {

@@ -1,74 +1,37 @@
 ﻿// src/Core/Window.cpp
 #include "Window.hpp"
-#include "../../resources/orion_resource.h"
+#include "../resources/orion_resource.h"
 #include <format>
-#include "../UI/ImGuiManager.hpp"
+#include "editor/UI/ImGuiManager.hpp"
+
 namespace Engine::Core {
 	Window::~Window()
 	{
 		destroy();
 	}
 
-	Window::Window(Window&& other) noexcept
-		:m_handle(other.m_handle)
-		, m_className(std::move(other.m_className))
-		, m_hInstance(other.m_hInstance)
-		, m_inputManager(std::move(other.m_inputManager))
-		, m_resizeCallback(std::move(other.m_resizeCallback))
-		, m_closeCallback(std::move(other.m_closeCallback))
-	{
-		other.m_handle = nullptr;
-		other.m_hInstance = nullptr;
-	}
-
-	Window& Window::operator=(Window&& other) noexcept
-	{
-		if (this != &other)
-		{
-			destroy();
-
-			m_handle = other.m_handle;
-			m_className = std::move(other.m_className);
-			m_hInstance = other.m_hInstance;
-			m_inputManager = std::move(other.m_inputManager);
-			m_resizeCallback = std::move(other.m_resizeCallback);
-			m_closeCallback = std::move(other.m_closeCallback);
-
-			other.m_handle = nullptr;
-			other.m_hInstance = nullptr;
-
-		}
-		return *this;
-	}
-
-	// 繝代ヶ繝ｪ繝・け繝｡繧ｽ繝・ラ
-
 	Utils::VoidResult Window::create(HINSTANCE hInstance, const WindowSettings& settings)
 	{
 		m_hInstance = hInstance;
 
-		// 繧ｦ繧｣繝ｳ繝峨え繧ｯ繝ｩ繧ｹ繧堤匳骭ｲ縺吶ｋ
 		auto result = registerWindowClass(hInstance);
 		if (!result)
 		{
 			return result;
 		}
 
-		// 繧ｦ繧｣繝ｳ繝峨え繧ｹ繧ｿ繧､繝ｫ繧呈ｱｺ螳・
 		DWORD windowStyle = WS_OVERLAPPEDWINDOW;
 		if (!settings.resizable)
 		{
 			windowStyle &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
 		}
 
-		// 繧ｯ繝ｩ繧､繧｢繝ｳ繝磯伜沺縺ｮ繧ｵ繧､繧ｺ縺九ｉ繧ｦ繧｣繝ｳ繝峨え繧ｵ繧､繧ｺ繧定ｨ育ｮ・
 		RECT windowRect = { 0,0,settings.width, settings.height };
 		AdjustWindowRect(&windowRect, windowStyle, FALSE);
 
 		const int windowWidth = windowRect.right - windowRect.left;
 		const int windowHeight = windowRect.bottom - windowRect.top;
 
-		// 繧ｦ繧｣繝ｳ繝峨え菴懈・
 		m_handle = CreateWindowExW(
 			0,
 			m_className.c_str(),
@@ -94,7 +57,6 @@ namespace Engine::Core {
 		CHECK_CONDITION(m_handle != nullptr, Utils::ErrorType::WindowCreation,
 			"Failed to create window");
 
-		// 蜈･蜉帙す繧ｹ繝・Β繧貞・譛溷喧
 		m_inputManager = std::make_unique<Input::InputManager>();
 		m_inputManager->initialize(m_handle);
 
@@ -163,8 +125,7 @@ namespace Engine::Core {
 	Utils::VoidResult Window::registerWindowClass(HINSTANCE hInstance)
 	{
 		// クラスネーム登録
-		m_className = std::format(L"GameEngineWindow_{}",
-			reinterpret_cast<uintptr_t>(this));
+		m_className = L"OrionEngineWindow";
 
 		WNDCLASSEXW wcex{};
 		wcex.cbSize = sizeof(WNDCLASSEX);
@@ -207,7 +168,10 @@ namespace Engine::Core {
 			return window->windowProc(hWnd, uMsg, wParam, lParam);
 		}
 
-		return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+		if (!window)
+		{
+			return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+		}
 	}
 
 	LRESULT Window::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -405,12 +369,12 @@ namespace Engine::Core {
 		case WM_DESTROY:
 		{
 			Utils::log_info("WM_DESTROY received");
+			SetWindowLongPtrW(hWnd, GWLP_USERDATA, 0);
 			PostQuitMessage(0);
 		}
 		break;
 
 		default:
-			// 鬆ｻ郢√↑繝｡繝・そ繝ｼ繧ｸ縺ｯ髯､螟悶＠縺ｦ繝ｭ繧ｰ蜃ｺ蜉・
 			if (uMsg != WM_MOUSEMOVE && uMsg != WM_NCHITTEST && uMsg != WM_SETCURSOR &&
 				uMsg != WM_GETTEXT && uMsg != WM_GETTEXTLENGTH && uMsg != WM_PAINT)
 			{
@@ -422,15 +386,11 @@ namespace Engine::Core {
 		return 0;
 	}
 
-	void Window::destroy() noexcept {
-		if (m_inputManager)
-		{
-			m_inputManager->shutdown();
-			m_inputManager.reset();
-		}
-
+	void Window::destroy() noexcept
+	{
 		if (m_handle)
 		{
+			SetWindowLongPtrW(m_handle, GWLP_USERDATA, 0);
 			DestroyWindow(m_handle);
 			m_handle = nullptr;
 		}
@@ -443,4 +403,5 @@ namespace Engine::Core {
 
 		m_hInstance = nullptr;
 	}
+
 }

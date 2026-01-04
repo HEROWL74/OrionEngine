@@ -76,7 +76,7 @@ namespace Engine::Graphics
 		const Math::Vector3& rayDirection,
 		Core::GameObject* targetObject) const
 	{
-
+		return GizmoAxis::None;
 	}
 
 	// Gizmoの操作
@@ -110,7 +110,7 @@ namespace Engine::Graphics
 		float threshold,
 		float& outDistance) const
 	{
-
+		return false;
 	}
 
 	// Rayと平面の交差判定
@@ -120,29 +120,29 @@ namespace Engine::Graphics
 		const Math::Vector3& planeNormal,
 		Math::Vector3& outIntersection)
 	{
-
+		return false;
 	}
 
 	// Gizmoのスケール計算
 	float Gizmo::calculateGizmoScale(const Camera& camera, const Math::Vector3& position)
 	{
-
+		return 0.0f;
 	}
 
 	[[nodiscard]] Utils::VoidResult Gizmo::createRootSignature()
 	{
-
+		return {};
 	}
 	[[nodiscard]] Utils::VoidResult Gizmo::createPipelineState()
 	{
-
+		return {};
 	}
 	[[nodiscard]] Utils::VoidResult Gizmo::createGeometry()
 	{
-
+		return {};
 	}
 	[[nodiscard]] Utils::VoidResult Gizmo::createConstantBuffer()
 	{
-
+		return {};
 	}
 }
