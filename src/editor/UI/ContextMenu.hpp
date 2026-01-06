@@ -9,7 +9,7 @@
 #include "engine/Scripting/LuaScriptUtility.hpp"
 #include "engine/Scripting/CppScriptUtility.hpp"
 
-namespace Engine::UI
+namespace Editor::UI
 {
 	//3Dオブジェクト作成の種類
 	enum class PrimitiveType
@@ -41,35 +41,35 @@ namespace Engine::UI
 
 		//右クリックメニュー表示
 		bool drawHierarchyContextMenu();
-		bool drawGameObjectContextMenu(Core::GameObject* selectedObject);
+		bool drawGameObjectContextMenu(Engine::Core::GameObject* selectedObject);
 
 		//コールバック設定
-		void setCreateObjectCallback(std::function<Core::GameObject* (PrimitiveType, const std::string&)> callback)
+		void setCreateObjectCallback(std::function<Engine::Core::GameObject* (PrimitiveType, const std::string&)> callback)
 		{
 			m_createObjectCallback = callback;
 		}
 
-		void setDeleteObjectCallback(std::function<void(Core::GameObject*)> callback)
+		void setDeleteObjectCallback(std::function<void(Engine::Core::GameObject*)> callback)
 		{
 			m_deleteObjectCallback = callback;
 		}
 
-		void setDuplicateObjectCallback(std::function<Core::GameObject* (Core::GameObject*)> callback)
+		void setDuplicateObjectCallback(std::function<Engine::Core::GameObject* (Engine::Core::GameObject*)> callback)
 		{
 			m_duplicateObjectCallback = callback;
 		}
 
-		void setRenameObjectCallback(std::function<void(Core::GameObject*, const std::string&)> callback)
+		void setRenameObjectCallback(std::function<void(Engine::Core::GameObject*, const std::string&)> callback)
 		{
 			m_renameObjectCallback = callback;
 		}
 		void drawModals();
 	private:
 		//コールバック関数
-		std::function<Core::GameObject* (PrimitiveType, const std::string&)> m_createObjectCallback;
-		std::function<void(Core::GameObject*)> m_deleteObjectCallback;
-		std::function<Core::GameObject* (Core::GameObject*)> m_duplicateObjectCallback;
-		std::function<void(Core::GameObject*, const std::string&)> m_renameObjectCallback;
+		std::function<Engine::Core::GameObject* (PrimitiveType, const std::string&)> m_createObjectCallback;
+		std::function<void(Engine::Core::GameObject*)> m_deleteObjectCallback;
+		std::function<Engine::Core::GameObject* (Engine::Core::GameObject*)> m_duplicateObjectCallback;
+		std::function<void(Engine::Core::GameObject*, const std::string&)> m_renameObjectCallback;
 
 		//内部メソッド
 		void drawCreateMenu();
@@ -79,7 +79,7 @@ namespace Engine::UI
 		bool m_showRenameDialog = false;
 		bool m_showDeleteConfirm = false;
 		char m_renameBuffer[256] = "";
-		Core::GameObject* m_renameTarget = nullptr;
-		Core::GameObject* m_deleteTarget = nullptr;
+		Engine::Core::GameObject* m_renameTarget = nullptr;
+		Engine::Core::GameObject* m_deleteTarget = nullptr;
 	};
 }

@@ -2,17 +2,18 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <memory>
-#include "Device.hpp"
-#include "ShaderManager.hpp"
-#include "Camera.hpp"
-#include "../Core/GameObject.hpp"
-#include "../Math/Math.hpp"
-#include "../Utils/Common.hpp"
+#include "engine/Graphics/Device.hpp"
+#include "engine/Graphics/ShaderManager.hpp"
+#include "engine/Graphics/Camera.hpp"
+#include "engine/Core/GameObject.hpp"
+#include "engine/Math/Math.hpp"
+#include "engine/Utils/Common.hpp"
 
 using Microsoft::WRL::ComPtr;
 
-namespace Engine::Graphics
+namespace Editor::UI
 {
+	using namespace Engine;
 	// Gizmoの種類
 	enum class GizmoType
 	{
@@ -41,11 +42,11 @@ namespace Engine::Graphics
 		~Gizmo() = default;
 
 		[[nodiscard]] 
-		Utils::VoidResult initialize(Device* device, ShaderManager* shaderManager);
+		Utils::VoidResult initialize(Engine::Graphics::Device* device, Engine::Graphics::ShaderManager* shaderManager);
 		void shutdown();
 
 		// 描画
-		void render(ID3D12GraphicsCommandList* commandList, const Camera& camera, Core::GameObject* targetObject);
+		void render(ID3D12GraphicsCommandList* commandList, const Engine::Graphics::Camera& camera, Core::GameObject* targetObject);
 
 		// Ray との交差判定
 		GizmoAxis hitTest(const Math::Vector3& rayOrigin,
@@ -66,8 +67,8 @@ namespace Engine::Graphics
 		bool isDragging() const { return m_isDragging; }
 		GizmoAxis getSelectedAxis() const { return m_selectedAxis; }
 	private:
-		Device* m_device = nullptr;
-		ShaderManager* m_shaderManager;
+		Engine::Graphics::Device* m_device = nullptr;
+		Engine::Graphics::ShaderManager* m_shaderManager;
 
 		GizmoType m_type = GizmoType::Translation;
 		GizmoAxis m_selectedAxis = GizmoAxis::None;
@@ -114,7 +115,7 @@ namespace Engine::Graphics
 		[[nodiscard]] Utils::VoidResult createConstantBuffer();
 
 		void renderTranslationGizmo(ID3D12GraphicsCommandList* commandList,
-			const Camera& camera,
+			const Engine::Graphics::Camera& camera,
 			const Math::Vector3& position);
 
 		// Rayと軸の交差判定
@@ -133,6 +134,6 @@ namespace Engine::Graphics
 			Math::Vector3& outIntersection);
 
 		// Gizmoのスケール計算
-		float calculateGizmoScale(const Camera& camera, const Math::Vector3& position);
+		float calculateGizmoScale(const Engine::Graphics::Camera& camera, const Math::Vector3& position);
 	};
 }

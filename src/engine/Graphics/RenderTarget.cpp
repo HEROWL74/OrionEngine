@@ -113,37 +113,6 @@ namespace Engine::Graphics
 		return {};
 	}
 
-	void RenderTarget::registerToImGui(UI::ImGuiManager* imguiManager)
-	{
-		if (!imguiManager)
-		{
-			Utils::log_warning("Cannot register RenderTarget to ImGui - ImGuiManager is null");
-			return;
-		}
-
-		if (!m_texture)
-		{
-			Utils::log_warning("Cannot register RenderTarget to ImGui - texture is null");
-			return;
-		}
-
-		Utils::log_info(std::format("Registering RenderTarget texture to ImGui: 0x{:016X}",
-			reinterpret_cast<uintptr_t>(m_texture.Get())));
-
-		m_imguiTextureID = imguiManager->registerRenderTarget(m_texture.Get(), m_format);
-
-		if (m_imguiTextureID)
-		{
-			Utils::log_info(std::format("RenderTarget registered to ImGui successfully - TextureID: 0x{:016X}",
-				m_imguiTextureID));
-		}
-		else
-		{
-			Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
-				"Failed to register RenderTarget to ImGui - TextureID is null"));
-		}
-	}
-
 	void RenderTarget::transitionTo(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES newState)
 	{
 		if (m_currentState == newState || !m_texture || !commandList)
@@ -188,7 +157,6 @@ namespace Engine::Graphics
 		m_dsvHeap.Reset();
 		m_rtv = {};
 		m_dsv = {};
-		m_imguiTextureID = {};
 		m_currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 		Utils::log_info("RenderTarget released");

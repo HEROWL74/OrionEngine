@@ -17,7 +17,6 @@ target_link_libraries(OrionEngine PUBLIC
     dxgi
     dxguid
     sol2
-    nlohmann_json::nlohmann_json
     Microsoft::DirectXTex
     lua
 )

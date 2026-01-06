@@ -7,6 +7,7 @@
 #include <d3d12.h>
 #include <memory>
 #include <functional>
+#include "engine/ThirdParty/d3dx12.h"
 #include "engine/Graphics/Device.hpp"
 #include "engine/Graphics/Device.hpp"
 #include "engine/Utils/Common.hpp"
@@ -26,8 +27,9 @@
 
 using Microsoft::WRL::ComPtr;
 
-namespace Engine::UI
+namespace Editor::UI
 {
+	using namespace Engine;
 	//======================================================================
 	//ImGuiクラス
 	//======================================================================
@@ -99,7 +101,8 @@ namespace Engine::UI
 		UINT m_srvIncSize = 0;
 		D3D12_CPU_DESCRIPTOR_HANDLE m_srvCpuStart{};
 		D3D12_GPU_DESCRIPTOR_HANDLE m_srvGpuStart{};
-		UINT m_nextSrvIndex = 1;   
+		UINT m_nextFreeIndex = 0;
+		UINT m_descriptorSize = 0;
 		UINT m_maxSrv = 0;
 
 		//初期化ヘルパー

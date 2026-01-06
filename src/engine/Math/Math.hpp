@@ -506,6 +506,24 @@ namespace Engine::Math
             return result;
         }
 
+        static Matrix4 inverseAffine(const Matrix4& m)
+        {
+            Matrix4 r;
+
+            // 回転転置
+            r.m[0][0] = m.m[0][0]; r.m[0][1] = m.m[1][0]; r.m[0][2] = m.m[2][0];
+            r.m[1][0] = m.m[0][1]; r.m[1][1] = m.m[1][1]; r.m[1][2] = m.m[2][1];
+            r.m[2][0] = m.m[0][2]; r.m[2][1] = m.m[1][2]; r.m[2][2] = m.m[2][2];
+
+            // 平行移動
+            r.m[3][0] = -(m.m[3][0] * r.m[0][0] + m.m[3][1] * r.m[1][0] + m.m[3][2] * r.m[2][0]);
+            r.m[3][1] = -(m.m[3][0] * r.m[0][1] + m.m[3][1] * r.m[1][1] + m.m[3][2] * r.m[2][1]);
+            r.m[3][2] = -(m.m[3][0] * r.m[0][2] + m.m[3][1] * r.m[1][2] + m.m[3][2] * r.m[2][2]);
+
+            return r;
+        }
+
+
         // データポインターを取得（DirectX用）
         const float* data() const { return &m[0][0]; }
     };

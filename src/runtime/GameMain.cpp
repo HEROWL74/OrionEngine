@@ -14,9 +14,5 @@ int WINAPI WinMain(
 	if (!init)
 		return -1;
 
-#ifdef _DEBUG
-	MessageBoxA(nullptr, "WinMain entered", "DEBUG", MB_OK);
-#endif
-
 	return app.run();
 }

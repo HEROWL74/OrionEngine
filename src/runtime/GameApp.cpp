@@ -9,7 +9,7 @@ namespace Runtime
 	Engine::Utils::VoidResult GameApp::initialize(HINSTANCE hInstance, int nCmdShow)
 	{
 		Engine::Core::WindowSettings settings{};
-		settings.title = L"Orion Runtime";
+		settings.title = L"Orion Game";
 		settings.width = 1280;
 		settings.height = 720;
 		settings.resizable = true;
@@ -29,8 +29,6 @@ namespace Runtime
 
 	int GameApp::run()
 	{
-		MessageBoxA(nullptr, "Entering run()", "DEBUG", MB_OK);
-
 		while (m_running)
 		{
 			if (!g_window.processMessages())
@@ -38,8 +36,6 @@ namespace Runtime
 
 			Sleep(1);
 		}
-
-		MessageBoxA(nullptr, "Exiting run()", "DEBUG", MB_OK);
 		return 0;
 	}
 

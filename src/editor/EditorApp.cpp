@@ -183,30 +183,9 @@ namespace Editor
         m_editorView.setSkybox(&m_skybox);
         m_gameView.setSkybox(&m_skybox);
 
-        // ImGuiへの登録
-        Utils::log_info("Registering views to ImGui...");
-        m_editorView.registerToImGui(&m_imguiManager);
-        m_gameView.registerToImGui(&m_imguiManager);
 
         // GPU同期後に再度登録
         m_device.waitForGpu();
-
-        // 登録結果を確認
-        ImTextureID editorTex = m_editorView.getOutputTexture();
-        ImTextureID gameTex = m_gameView.getOutputTexture();
-
-        Utils::log_info(std::format("EditorView texture: 0x{:016X}",
-            editorTex));
-        Utils::log_info(std::format("GameView texture: 0x{:016X}",
-            gameTex));
-
-        if (!editorTex || !gameTex)
-        {
-            Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
-                "Failed to register RenderTargets to ImGui"));
-            return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown,
-                "RenderTarget registration failed"));
-        }
 
         // ShaderManagerポインタ取得
         if (!m_shaderManager || !m_shaderManager.get()) {
@@ -292,13 +271,13 @@ namespace Editor
         m_inspectorWindow = std::make_unique<UI::InspectorWindow>();
 
         // Viewport ウィンドウ作成
-        m_sceneWindow = std::make_unique<UI::SceneViewportWindow>();
-        m_sceneWindow->setEditorView(&m_editorView);
-        m_sceneWindow->setCamera(&m_editorCamera);
+        m_editorViewWindow = std::make_unique<UI::EditorViewWindow>();
+        m_editorViewWindow->initialize(&m_imguiManager, &m_editorView);
+        m_editorViewWindow->setCamera(&m_editorCamera);
 
-        m_gameWindow = std::make_unique<UI::GameViewportWindow>();
-        m_gameWindow->setGameView(&m_gameView);
-        m_gameWindow->setCamera(&m_gameCamera);
+        m_gameViewWindow = std::make_unique<UI::GameViewWindow>();
+        m_gameViewWindow->initialize(&m_imguiManager, &m_gameView);
+        m_gameViewWindow->setCamera(&m_gameCamera);
 
         // UIウィンドウ設定
         m_hierarchyWindow->setScene(&m_scene);
@@ -546,8 +525,8 @@ namespace Editor
     {
         updateDeltaTime();
 
-        m_sceneWindow->processResize();
-        m_gameWindow->processResize();
+        m_editorViewWindow->processResize();
+        m_gameViewWindow->processResize();
 
         //processInput();
 
@@ -677,8 +656,8 @@ namespace Editor
 
         m_imguiManager.newFrame();
 
-        m_sceneWindow->draw();
-        m_gameWindow->draw();
+        m_editorViewWindow->draw();
+        m_gameViewWindow->draw();
         m_hierarchyWindow->draw();
         m_inspectorWindow->draw();
         m_debugWindow->draw();
@@ -757,8 +736,8 @@ namespace Editor
 
         ImGuiIO& io = ImGui::GetIO();
 
-        bool isSceneWindowFocused = m_sceneWindow && m_sceneWindow->isFocused();
-        bool isSceneWindowHovered = m_sceneWindow && m_sceneWindow->isHovered();
+        bool isSceneWindowFocused = m_editorViewWindow && m_editorViewWindow->isFocused();
+        bool isSceneWindowHovered = m_editorViewWindow && m_editorViewWindow->isHovered();
 
         // キーボード入力
         bool allowKeyboardInput = isSceneWindowHovered && !ImGui::IsAnyItemActive();
@@ -778,7 +757,7 @@ namespace Editor
         // マウス入力：ViewportWindowから直接状態を取得
         static bool wasCameraControlActive = false;
 
-        bool cameraControlRequested = m_sceneWindow && m_sceneWindow->isCameraControlRequested();
+        bool cameraControlRequested = m_editorViewWindow && m_editorViewWindow->isCameraControlRequested();
 
         static int debugCounter = 0;
         if (debugCounter++ % 60 == 0)

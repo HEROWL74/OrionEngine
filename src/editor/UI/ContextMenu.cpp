@@ -4,7 +4,7 @@
 #include "engine/Utils/Common.hpp"
 #include <format>
 
-namespace Engine::UI
+namespace Editor::UI
 {
     bool ContextMenu::drawHierarchyContextMenu()
     {
@@ -20,7 +20,7 @@ namespace Engine::UI
         return actionPerformed;
     }
 
-    bool ContextMenu::drawGameObjectContextMenu(Core::GameObject* selectedObject)
+    bool ContextMenu::drawGameObjectContextMenu(Engine::Core::GameObject* selectedObject)
     {
         if (!selectedObject) return false;
 
@@ -81,7 +81,7 @@ namespace Engine::UI
                 {
                     if (m_deleteObjectCallback)
                     {
-                        Core::GameObject* toDelete = m_deleteTarget;
+                        Engine::Core::GameObject* toDelete = m_deleteTarget;
                         m_deleteTarget = nullptr;
                         m_showDeleteConfirm = false;
                         ImGui::CloseCurrentPopup();
@@ -117,7 +117,7 @@ namespace Engine::UI
                 {
                     if (m_renameObjectCallback && strlen(m_renameBuffer) > 0)
                     {
-                        Core::GameObject* toRename = m_renameTarget;
+                        Engine::Core::GameObject* toRename = m_renameTarget;
                         std::string newName = m_renameBuffer;
                         m_renameTarget = nullptr;
                         m_showRenameDialog = false;
@@ -130,7 +130,7 @@ namespace Engine::UI
                 {
                     if (m_renameObjectCallback && strlen(m_renameBuffer) > 0)
                     {
-                        Core::GameObject* toRename = m_renameTarget;
+                        Engine::Core::GameObject* toRename = m_renameTarget;
                         std::string newName = m_renameBuffer;
                         m_renameTarget = nullptr;
                         m_showRenameDialog = false;
@@ -196,7 +196,7 @@ namespace Engine::UI
                     auto* newObject = m_createObjectCallback(PrimitiveType::Cube, name);
                     if (newObject)
                     {
-                        Utils::log_info(std::format("Created Cube: {}", name));
+                        Engine::Utils::log_info(std::format("Created Cube: {}", name));
                     }
                 }
             }
@@ -209,7 +209,7 @@ namespace Engine::UI
                     auto* newObject = m_createObjectCallback(PrimitiveType::Sphere, name);
                     if (newObject)
                     {
-                        Utils::log_info(std::format("Created Sphere: {}", name));
+                        Engine::Utils::log_info(std::format("Created Sphere: {}", name));
                     }
                 }
             }
@@ -222,7 +222,7 @@ namespace Engine::UI
                     auto* newObject = m_createObjectCallback(PrimitiveType::Plane, name);
                     if (newObject)
                     {
-                        Utils::log_info(std::format("Created Plane: {}", name));
+                        Engine::Utils::log_info(std::format("Created Plane: {}", name));
                     }
                 }
             }
@@ -235,7 +235,7 @@ namespace Engine::UI
                     auto* newObject = m_createObjectCallback(PrimitiveType::Cylinder, name);
                     if (newObject)
                     {
-                        Utils::log_info(std::format("Created Cylinder: {}", name));
+                        Engine::Utils::log_info(std::format("Created Cylinder: {}", name));
                     }
                 }
             }

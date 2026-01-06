@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <fstream>
 
-namespace Engine::UI
+namespace Editor::UI
 {
     ProjectWindow::ProjectWindow()
         : ImGuiWindow("Project", true)
@@ -110,7 +110,7 @@ namespace Engine::UI
         }
         catch (const std::exception& e)
         {
-            Utils::log_warning(std::format("Failed to refresh assets: {}", e.what()));
+            Engine::Utils::log_warning(std::format("Failed to refresh assets: {}", e.what()));
         }
     }
 
@@ -189,12 +189,12 @@ namespace Engine::UI
                 ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
             }
             if (asset.type == AssetInfo::Type::Folder) {
-                Utils::log_info("Drawing folder icon, ID=" + std::to_string((uint64_t)m_folderIconID));
+                Engine::Utils::log_info("Drawing folder icon, ID=" + std::to_string((uint64_t)m_folderIconID));
                 if (m_folderIconID)
                     ImGui::Image(m_folderIconID, ImVec2(m_iconSize, m_iconSize));
             }
             else if (asset.extension == ".lua") {
-                Utils::log_info("Drawing lua icon, ID=" + std::to_string((uint64_t)m_luaIconID));
+                Engine::Utils::log_info("Drawing lua icon, ID=" + std::to_string((uint64_t)m_luaIconID));
                 if (m_luaIconID)
                     ImGui::Image(m_luaIconID, ImVec2(m_iconSize, m_iconSize));
             }
@@ -276,7 +276,7 @@ namespace Engine::UI
                         refreshAssets();
                     }
                     catch (...) {
-                        Utils::log_warning("Rename failed");
+                        Engine::Utils::log_warning("Rename failed");
                     }
                 }
 
@@ -338,7 +338,7 @@ namespace Engine::UI
                             refreshAssets();
                         }
                         catch (...) {
-                            Utils::log_warning("Rename failed");
+                            Engine::Utils::log_warning("Rename failed");
                         }
                     }
 
@@ -465,7 +465,7 @@ namespace Engine::UI
 
                     if (Engine::Scripting::LuaScriptUtility::createNewScript(newScriptPath))
                     {
-                        Utils::log_info(std::format("Lua script created: {}", newScriptPath));
+                        Engine::Utils::log_info(std::format("Lua script created: {}", newScriptPath));
                         refreshAssets();
 
                         for (auto& asset : m_assets)
@@ -486,7 +486,7 @@ namespace Engine::UI
                     path = Engine::Scripting::CppScriptUtility::normalizePath(path);
 
                     if (Engine::Scripting::CppScriptUtility::createNewScript(path)) {
-                        Utils::log_info(std::format("Created C++ script: {}", path));
+                        Engine::Utils::log_info(std::format("Created C++ script: {}", path));
                         refreshAssets();
 
                         for (auto& asset : m_assets) {
@@ -509,12 +509,12 @@ namespace Engine::UI
             {
                 try {
                     std::filesystem::remove(m_selectedAsset->path);
-                    Utils::log_info(std::format("Deleted asset: {}", m_selectedAsset->path.string()));
+                    Engine::Utils::log_info(std::format("Deleted asset: {}", m_selectedAsset->path.string()));
                     refreshAssets();
                     m_selectedAsset = nullptr;
                 }
                 catch (...) {
-                    Utils::log_warning("Failed to delete asset");
+                    Engine::Utils::log_warning("Failed to delete asset");
                 }
             }
             ImGui::EndPopup();
@@ -623,7 +623,7 @@ namespace Engine::UI
         return scriptPath.string(); // 拡張子なしで返す
     }
 
-    void ProjectWindow::setTextureManager(Graphics::TextureManager* textureManager)
+    void ProjectWindow::setTextureManager(Engine::Graphics::TextureManager* textureManager)
     {
         m_textureManager = textureManager;
 
@@ -634,18 +634,18 @@ namespace Engine::UI
 
             if (m_folderIcon) {
                 m_folderIconID = m_imguiManager->registerTexture(m_folderIcon.get());
-                Utils::log_info("FolderIcon registered, ID=" + std::to_string((uint64_t)m_folderIconID));
+                Engine::Utils::log_info("FolderIcon registered, ID=" + std::to_string((uint64_t)m_folderIconID));
             }
             else {
-                Utils::log_warning("Failed to load folder icon!");
+                Engine::Utils::log_warning("Failed to load folder icon!");
             }
 
             if (m_luaIcon) {
                 m_luaIconID = m_imguiManager->registerTexture(m_luaIcon.get());
-                Utils::log_info("LuaIcon registered, ID=" + std::to_string((uint64_t)m_luaIconID));
+                Engine::Utils::log_info("LuaIcon registered, ID=" + std::to_string((uint64_t)m_luaIconID));
             }
             else {
-                Utils::log_warning("Failed to load lua icon!");
+                Engine::Utils::log_warning("Failed to load lua icon!");
             }
         }
     }
