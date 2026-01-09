@@ -14,7 +14,7 @@ namespace Engine::Graphics
         m_shaderManager = shaderManager;
         Utils::log_info("Initializing Cube Renderer...");
 
-        auto constantBufferResult = m_constantBufferManager.initialize(device, 4);
+        auto constantBufferResult = m_constantBufferManager.initialize(device, Utils::GetRequiredConstantBufferCount());
         if (!constantBufferResult) {
             Utils::log_error(constantBufferResult.error());
             return constantBufferResult;
@@ -120,6 +120,77 @@ namespace Engine::Graphics
         }
 
         Utils::log_info("CubeRenderer render called!");
+    }
+
+    void CubeRenderer::render(const Utils::RenderContext& context)
+    {
+        if (!m_material && m_materialManager)
+        {
+            m_material = m_materialManager->getDefaultMaterial();
+        }
+
+        // デバッグログ
+        static int renderCounter = 0;
+        if (renderCounter++ % 120 == 0)
+        {
+            Utils::log_info(std::format("CubeRenderer - View: {}, BufferIndex: {}, Camera: ({:.2f}, {:.2f}, {:.2f})",
+                context.getViewTypeName(),
+                context.getConstantBufferIndex(),
+                context.camera->getPosition().x,
+                context.camera->getPosition().y,
+                context.camera->getPosition().z));
+        }
+
+        // カメラ定数
+        CameraConstants cameraConstants{};
+        cameraConstants.viewMatrix = context.camera->getViewMatrix();
+        cameraConstants.projectionMatrix = context.camera->getProjectionMatrix();
+        cameraConstants.viewProjectionMatrix = context.camera->getViewProjectionMatrix();
+        cameraConstants.cameraPosition = context.camera->getPosition();
+
+        // オブジェクト定数
+        ObjectConstants objectConstants{};
+        objectConstants.worldMatrix = m_worldMatrix;
+        objectConstants.worldViewProjectionMatrix = context.camera->getViewProjectionMatrix() * m_worldMatrix;
+        objectConstants.objectPosition = m_position;
+
+        // RenderContext からバッファインデックスを取得
+        uint32_t bufferIndex = context.getConstantBufferIndex();
+
+        m_constantBufferManager.updateCameraConstants(bufferIndex, cameraConstants);
+        m_constantBufferManager.updateObjectConstants(bufferIndex, objectConstants);
+
+        context.commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+        context.commandList->SetPipelineState(m_pipelineState.Get());
+
+        context.commandList->SetGraphicsRootConstantBufferView(0,
+            m_constantBufferManager.getCameraConstantsGPUAddress(bufferIndex));
+        context.commandList->SetGraphicsRootConstantBufferView(1,
+            m_constantBufferManager.getObjectConstantsGPUAddress(bufferIndex));
+
+        if (m_material && m_material->getConstantBuffer())
+        {
+            context.commandList->SetGraphicsRootConstantBufferView(2,
+                m_material->getConstantBuffer()->GetGPUVirtualAddress());
+        }
+
+        ID3D12DescriptorHeap* heaps[] = { m_device->getSrvHeap() };
+        context.commandList->SetDescriptorHeaps(1, heaps);
+
+        if (m_material)
+        {
+            auto tex = m_material->getTexture(TextureType::Albedo);
+            if (tex)
+            {
+                context.commandList->SetGraphicsRootDescriptorTable(3, tex->getSRVHandle());
+            }
+        }
+
+        context.commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        context.commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+        context.commandList->IASetIndexBuffer(&m_indexBufferView);
+
+        context.commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
     }
 
     Utils::VoidResult CubeRenderer::createRootSignature()

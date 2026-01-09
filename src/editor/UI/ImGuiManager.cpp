@@ -5,7 +5,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-namespace Engine::UI
+namespace Editor::UI
 {
 	//================================================================
 	//ImGuiManager実装
@@ -66,6 +66,8 @@ namespace Engine::UI
 				m_context = nullptr;
 				return heapResult;
 			}
+
+			m_nextFreeIndex = 1;
 
 			if (!ImGui_ImplWin32_Init(hwnd))
 			{
@@ -347,11 +349,11 @@ namespace Engine::UI
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 	}
 
-	void ImGuiManager::handleWindowMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) const
+	bool ImGuiManager::handleWindowMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) const
 	{
 		if (!m_initialized || !m_context)
 		{
-			return;
+			return false;
 		}
 
 		ImGuiContext* currentContext = ImGui::GetCurrentContext();
@@ -374,6 +376,7 @@ namespace Engine::UI
 			Utils::ErrorType::ResourceCreation, "Failed to create ImGui descriptor heap");
 
 		m_srvIncSize = m_device->getDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		m_descriptorSize = m_srvIncSize;
 		m_srvCpuStart = m_srvDescHeap->GetCPUDescriptorHandleForHeapStart();
 		m_srvGpuStart = m_srvDescHeap->GetGPUDescriptorHandleForHeapStart();
 		m_maxSrv = desc.NumDescriptors;
@@ -483,13 +486,13 @@ namespace Engine::UI
 		}
 
 		// 空きスロット確保
-		if (m_nextSrvIndex >= m_maxSrv)
+		if (m_nextFreeIndex >= m_maxSrv)
 		{
 			Utils::log_warning("ImGui descriptor heap is full, cannot register more textures");
 			return 0;
 		}
 
-		const UINT idx = m_nextSrvIndex++;
+		const UINT idx = m_nextFreeIndex++;
 
 		// この"ImGui用ヒープ"の CPU/GPU ハンドルを計算
 		D3D12_CPU_DESCRIPTOR_HANDLE cpu = m_srvCpuStart;
@@ -521,56 +524,57 @@ namespace Engine::UI
 		return result;
 	}
 
-	ImTextureID ImGuiManager::registerRenderTarget(ID3D12Resource* resource, DXGI_FORMAT format)
+	ImTextureID ImGuiManager::registerRenderTarget(
+		ID3D12Resource* texture,
+		DXGI_FORMAT format)
 	{
-		if (!resource || !m_device || !m_srvDescHeap || !m_initialized)
+		if (!texture || !m_device || !m_srvDescHeap || !m_initialized)
 		{
-			Utils::log_warning("Cannot register RenderTarget - ImGuiManager not properly initialized");
-			return {};
+			Utils::log_warning("Cannot register render target - invalid parameters");
+			return -1;
 		}
 
-		// 空きスロット確保
-		if (m_nextSrvIndex >= m_maxSrv)
+		if (m_nextFreeIndex >= m_maxSrv)
 		{
-			Utils::log_warning("ImGui descriptor heap is full, cannot register RenderTarget");
-			return {};
+			Utils::log_warning("ImGui descriptor heap is full");
+			return -1;
 		}
 
-		const UINT idx = m_nextSrvIndex++;
+		const UINT idx = m_nextFreeIndex++;
 
-		// ImGui用ヒープのCPU/GPUハンドルを計算
-		D3D12_CPU_DESCRIPTOR_HANDLE cpu = m_srvCpuStart;
-		cpu.ptr += static_cast<SIZE_T>(idx) * m_srvIncSize;
-
-		D3D12_GPU_DESCRIPTOR_HANDLE gpu = m_srvGpuStart;
-		gpu.ptr += static_cast<UINT64>(idx) * m_srvIncSize;
-
-		// リソースのDescを取得
-		auto resDesc = resource->GetDesc();
-
-		// SRVを作成
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = format;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Texture2D.MipLevels = 1;
-		srvDesc.Texture2D.MostDetailedMip = 0;
-		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-		m_device->getDevice()->CreateShaderResourceView(resource, &srvDesc, cpu);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(
+			m_srvDescHeap->GetCPUDescriptorHandleForHeapStart(),
+			idx,
+			m_srvIncSize  // m_descriptorSize ではなく m_srvIncSize を使用
+		);
 
-		// GPUハンドル値をImTextureIDとして返す
-		ImTextureID result = (ImTextureID)(intptr_t)gpu.ptr;
+		m_device->getDevice()->CreateShaderResourceView(
+			texture,
+			&srvDesc,
+			cpuHandle
+		);
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(
+			m_srvDescHeap->GetGPUDescriptorHandleForHeapStart(),
+			idx,
+			m_srvIncSize  // m_descriptorSize ではなく m_srvIncSize を使用
+		);
+
+		ImTextureID result = static_cast<ImTextureID>(gpuHandle.ptr);
 
 		Utils::log_info(std::format(
-			"RegisterRenderTarget: format={} mipLevels=1 cpu.ptr={} gpu.ptr={}",
-			static_cast<int>(format),
-			static_cast<uint64_t>(cpu.ptr),
-			static_cast<uint64_t>(gpu.ptr)
-		));
+			"RegisterRenderTarget: idx={} format={} gpu.ptr=0x{:016X}",
+			idx, static_cast<int>(format), gpuHandle.ptr));
 
 		return result;
 	}
+
 
 	void ImGuiManager::createGUIStyle()
 	{

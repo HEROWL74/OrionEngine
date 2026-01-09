@@ -48,7 +48,6 @@ namespace Engine::Input
         }
 
         setRelativeMouseMode(false);
-
         setRawMouseInput(false);
 
         if (m_mouseCaptured)
@@ -58,11 +57,6 @@ namespace Engine::Input
         }
 
         showCursor(true);
-
-        POINT centerPoint;
-        centerPoint.x = GetSystemMetrics(SM_CXSCREEN) / 2;
-        centerPoint.y = GetSystemMetrics(SM_CYSCREEN) / 2;
-        SetCursorPos(centerPoint.x, centerPoint.y);
 
         m_initialized = false;
         m_windowHandle = nullptr;
@@ -77,17 +71,12 @@ namespace Engine::Input
             return;
         }
 
-        // 前フレームの状態を保存
         m_prevKeyStates = m_keyStates;
         m_mouseState.savePreviousState();
 
-        // キーボード状態更新を GetAsyncKeyState に変更
         updateKeyboardState();
-
-        // マウス状態を更新
         updateMouseState();
 
-        // フレーム終わりのデータをリセット
         resetFrameData();
     }
 
@@ -99,6 +88,7 @@ namespace Engine::Input
             m_keyStates[i] = (keyState & 0x8000) != 0;
         }
     }
+
     bool InputManager::isKeyDown(KeyCode keyCode) const
     {
         if (!isValidKeyCode(keyCode))
@@ -190,7 +180,6 @@ namespace Engine::Input
             {
                 count = ShowCursor(TRUE);
             }
-            Utils::log_info(std::format("Cursor shown, final count: {}", count));
         }
         else
         {
@@ -199,7 +188,6 @@ namespace Engine::Input
             {
                 count = ShowCursor(FALSE);
             }
-            Utils::log_info(std::format("Cursor hidden, final count: {}", count)); 
         }
     }
 
@@ -227,7 +215,6 @@ namespace Engine::Input
         }
     }
 
-    
     void InputManager::setRelativeMouseMode(bool relative)
     {
         if (!m_initialized)
@@ -238,7 +225,6 @@ namespace Engine::Input
 
         if (m_relativeMode == relative)
         {
-            Utils::log_info(std::format("setRelativeMouseMode: already in state {}", relative));
             return;
         }
 
@@ -249,37 +235,25 @@ namespace Engine::Input
 
         if (relative)
         {
-            Utils::log_info(">>> Step 1: Calculating window center");
             calculateWindowCenter();
-            Utils::log_info(std::format("    Window center: ({}, {})", m_windowCenter.x, m_windowCenter.y));
-
-            Utils::log_info(">>> Step 2: Capturing mouse");
             captureMouse(true);
-            Utils::log_info(std::format("    Mouse captured: {}", m_mouseCaptured));
-
-            Utils::log_info(">>> Step 3: Enabling Raw Input");
             setRawMouseInput(true);
 
-            Utils::log_info(">>> Step 4: Setting mouse position to center");
-            setMousePosition(m_windowCenter.x, m_windowCenter.y);
+            // 相対モード開始時に delta をリセット
+            m_mouseState.deltaX = 0;
+            m_mouseState.deltaY = 0;
 
-            Utils::log_info(">>> Step 5: Hiding cursor");
+            setMousePosition(m_windowCenter.x, m_windowCenter.y);
             showCursor(false);
-            Utils::log_info(std::format("    Cursor visible: {}", m_cursorVisible));
 
             Utils::log_info("=== Relative mouse mode ENABLED ===");
         }
         else
         {
-            Utils::log_info(">>> Showing cursor");
             showCursor(true);
-
-            Utils::log_info(">>> Disabling Raw Input");
-            setRawMouseInput(false);
-
-            Utils::log_info(">>> Releasing mouse capture");
             captureMouse(false);
 
+            // 相対モード終了時に delta をリセット
             m_mouseState.deltaX = 0;
             m_mouseState.deltaY = 0;
 
@@ -346,7 +320,6 @@ namespace Engine::Input
         return info;
     }
 
-    //  updateMouseState
     void InputManager::updateMouseState()
     {
         if (!m_initialized)
@@ -398,8 +371,8 @@ namespace Engine::Input
     void InputManager::setRawMouseInput(bool enable)
     {
         RAWINPUTDEVICE rid;
-        rid.usUsagePage = 0x01;  // Generic Desktop Controls
-        rid.usUsage = 0x02;      // Mouse
+        rid.usUsagePage = 0x01;
+        rid.usUsage = 0x02;
 
         if (enable)
         {
@@ -516,62 +489,42 @@ namespace Engine::Input
             sizeof(RAWINPUTHEADER)
         );
 
-        // Raw Inputデータ取得の確認
         if (result == static_cast<UINT>(-1))
         {
-            Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
-                "GetRawInputData failed"));
             return false;
         }
 
-        if (result != dwSize)
+        if (raw.header.dwType == RIM_TYPEMOUSE && m_relativeMode)
         {
-            Utils::log_warning(std::format("GetRawInputData size mismatch: expected {}, got {}",
-                dwSize, result));
-        }
+            int deltaX = raw.data.mouse.lLastX;
+            int deltaY = raw.data.mouse.lLastY;
 
-        if (raw.header.dwType == RIM_TYPEMOUSE)
-        {
-            // Raw Inputが届いていることを確認
-            static int rawCounter = 0;
-            if (rawCounter++ % 30 == 0)
+            // 感度を適用
+            float adjustedDeltaX = deltaX * m_mouseSensitivity;
+            float adjustedDeltaY = deltaY * m_mouseSensitivity;
+
+            // 相対モードでは delta を累積（上書きではなく加算）
+            // これにより複数のRAW INPUT イベントのデルタが失われない
+            m_mouseState.deltaX += static_cast<int>(adjustedDeltaX);
+            m_mouseState.deltaY += static_cast<int>(adjustedDeltaY);
+
+            // デバッグログ（デルタがある場合のみ）
+            if (deltaX != 0 || deltaY != 0)
             {
-                Utils::log_info(std::format("### RAW INPUT RECEIVED ### Type: MOUSE, RelativeMode: {}",
-                    m_relativeMode));
+                Utils::log_info(std::format(
+                    "RAW INPUT: Raw Delta=({}, {}), Adjusted Delta=({}, {}), Accumulated=({}, {})",
+                    deltaX, deltaY,
+                    static_cast<int>(adjustedDeltaX), static_cast<int>(adjustedDeltaY),
+                    m_mouseState.deltaX, m_mouseState.deltaY
+                ));
             }
 
-            if (m_relativeMode)
-            {
-                int deltaX = raw.data.mouse.lLastX;
-                int deltaY = raw.data.mouse.lLastY;
-
-                // Raw Inputの値をログ出力
-                if (rawCounter % 30 == 0 || deltaX != 0 || deltaY != 0)
-                {
-                    Utils::log_info(std::format("### RAW MOUSE DELTA ### X: {}, Y: {}", deltaX, deltaY));
-                }
-
-                float adjustedDeltaX = deltaX * m_mouseSensitivity;
-                float adjustedDeltaY = deltaY * m_mouseSensitivity;
-
-                m_mouseState.deltaX = static_cast<int>(adjustedDeltaX);
-                m_mouseState.deltaY = static_cast<int>(adjustedDeltaY);
-
-                // 設定後の値を確認
-                if (rawCounter % 30 == 0 || m_mouseState.deltaX != 0 || m_mouseState.deltaY != 0)
-                {
-                    Utils::log_info(std::format("### ADJUSTED DELTA ### X: {}, Y: {}",
-                        m_mouseState.deltaX, m_mouseState.deltaY));
-                }
-
-                setMousePosition(m_windowCenter.x, m_windowCenter.y);
-
-                return true;
-            }
+            return true;
         }
 
         return false;
     }
+
 
     bool InputManager::isValidKeyCode(KeyCode keyCode) const
     {

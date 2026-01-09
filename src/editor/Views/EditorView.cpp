@@ -2,9 +2,11 @@
 #include "EditorView.hpp"
 #include "engine/ThirdParty/d3dx12.h"
 
-namespace Engine::Graphics
+namespace Editor::UI
 {
-	Utils::VoidResult EditorView::initialize(Device* device, uint32_t width, uint32_t height, ShaderManager* shaderManager)
+	using namespace Engine;
+
+	Utils::VoidResult EditorView::initialize(Graphics::Device* device, uint32_t width, uint32_t height, Graphics::ShaderManager* shaderManager)
 	{
 		CHECK_CONDITION(device != nullptr, Utils::ErrorType::Unknown, "Device is null");
 		CHECK_CONDITION(device->isValid(), Utils::ErrorType::Unknown, "Device is not valid");
@@ -16,7 +18,7 @@ namespace Engine::Graphics
 
 		Utils::log_info(std::format("EditorView::initialize - Creating RenderTarget {}x{}", width, height));
 
-		m_renderTarget = std::make_unique<RenderTarget>();
+		m_renderTarget = std::make_unique<Graphics::RenderTarget>();
 		auto result = m_renderTarget->initialize(device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
 		if (!result)
 		{
@@ -32,6 +34,20 @@ namespace Engine::Graphics
 			{
 				Utils::log_warning("Failed to initialize grid - grid will not be rendered");
 			}
+
+			// Gizmoの初期化を追加
+			m_gizmo = std::make_unique<Gizmo>();
+			auto gizmoResult = m_gizmo->initialize(device, shaderManager);
+			if (!gizmoResult)
+			{
+				Utils::log_warning("Failed to initialize Gizmo - gizmos will not be rendered");
+				m_gizmo.reset();
+			}
+			else
+			{
+				// デフォルトでTranslation Gizmoを設定
+				m_gizmo->setType(GizmoType::Translation);
+			}
 		}
 
 		m_initialized = true;
@@ -39,7 +55,7 @@ namespace Engine::Graphics
 		return {};
 	}
 
-	void EditorView::render(Scene& scene, ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex)
+	void EditorView::render(Graphics::Scene& scene, ID3D12GraphicsCommandList* commandList, const Graphics::Camera& camera, UINT frameIndex)
 	{
 		if (!m_initialized || !m_renderTarget || !commandList)
 		{
@@ -85,31 +101,42 @@ namespace Engine::Graphics
 		}
 
 
-		//  EditorView 専用の frameIndex を使用（0, 1）
-		UINT editorFrameIndex = frameIndex % 2;  // 0 または 1
+		Utils::RenderContext context;
+		context.commandList = commandList;
+		context.camera = &camera;
+		context.viewType = Utils::RenderViewType::Editor;
+		context.frameIndex = frameIndex;
+
+		frameIndex = context.frameIndex;
 
 		for (auto& gameObject : scene.getGameObjects())
 		{
 			if (gameObject->isActive())
 			{
-				auto* renderComponent = gameObject->getComponent<RenderComponent>();
+				auto* renderComponent = gameObject->getComponent<Graphics::RenderComponent>();
 				if (renderComponent && renderComponent->isEnabled() && renderComponent->isVisible())
 				{
-					renderComponent->render(commandList, camera, editorFrameIndex);
+					renderComponent->render(context);
 				}
 			}
 		}
 
-		renderEditorElements(commandList, camera, editorFrameIndex);
+		renderEditorElements(commandList, camera, context.frameIndex);
 
 		m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
 
-	void EditorView::renderEditorElements(ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex)
+	void EditorView::renderEditorElements(ID3D12GraphicsCommandList* commandList, const Graphics::Camera& camera, UINT frameIndex)
 	{
 		if (!commandList)
 		{
 			return;
+		}
+
+
+		if (m_showGizmos && m_selectedObject && m_gizmo)
+		{
+			m_gizmo->render(commandList, camera, m_selectedObject);
 		}
 
 		if (m_showGizmos && m_selectedObject)
@@ -118,7 +145,7 @@ namespace Engine::Graphics
 		}
 	}
 
-	void EditorView::renderGrid(ID3D12GraphicsCommandList* commandList, const Camera& camera)
+	void EditorView::renderGrid(ID3D12GraphicsCommandList* commandList, const Graphics::Camera& camera)
 	{
 		if (!m_gridInitialized || !m_gridVertexBuffer || !m_gridCameraBuffer)
 		{
@@ -143,37 +170,12 @@ namespace Engine::Graphics
 		commandList->DrawInstanced(m_gridVertexCount, 1, 0, 0);
 	}
 
-	void EditorView::renderSelectionOutline(ID3D12GraphicsCommandList* commandList, const Camera& camera, Core::GameObject* object)
+	void EditorView::renderSelectionOutline(ID3D12GraphicsCommandList* commandList, const Graphics::Camera& camera, Core::GameObject* object)
 	{
 		if (!object)
 		{
 			return;
 		}
-	}
-
-	ImTextureID EditorView::getOutputTexture() const
-	{
-		if (!m_renderTarget)
-		{
-			return {};
-		}
-
-		return m_renderTarget->getImGuiTextureID();
-	}
-
-	void EditorView::registerToImGui(UI::ImGuiManager* imguiManager)
-	{
-		if (!m_renderTarget || !imguiManager)
-		{
-			Utils::log_warning("Cannot register EditorView to ImGui - invalid state");
-			return;
-		}
-
-		m_imguiManager = imguiManager;
-
-		Utils::log_info("EditorView::registerToImGui - Starting registration");
-		m_renderTarget->registerToImGui(imguiManager);
-		Utils::log_info("EditorView registered to ImGui");
 	}
 
 	void EditorView::resize(uint32_t width, uint32_t height)
@@ -202,26 +204,11 @@ namespace Engine::Graphics
 		}
 
 		Utils::log_info("EditorView::resize - Creating new RenderTarget");
-		m_renderTarget = std::make_unique<RenderTarget>();
+		m_renderTarget = std::make_unique<Graphics::RenderTarget>();
 		auto result = m_renderTarget->initialize(m_device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
-
-		if (!result)
-		{
-			Utils::log_error(result.error());
-			Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown, "Failed to resize EditorView render target"));
-		}
-		else
-		{
-			if (m_imguiManager)
-			{
-				m_renderTarget->registerToImGui(m_imguiManager);
-				Utils::log_info("EditorView re-registered to ImGui after resize");
-			}
-			Utils::log_info(std::format("EditorView resized successfully to {}x{}", width, height));
-		}
 	}
 
-	Utils::VoidResult EditorView::initializeGrid(ShaderManager* shaderManager)
+	Utils::VoidResult EditorView::initializeGrid(Graphics::ShaderManager* shaderManager)
 	{
 		if (!m_device || !shaderManager)
 		{
@@ -377,7 +364,7 @@ namespace Engine::Graphics
 		return {};
 	}
 
-	Utils::VoidResult EditorView::createGridPipelineState(ShaderManager* shaderManager)
+	Utils::VoidResult EditorView::createGridPipelineState(Graphics::ShaderManager* shaderManager)
 	{
 		auto dev = m_device->getDevice();
 
@@ -388,10 +375,10 @@ namespace Engine::Graphics
 		}
 
 		// シェーダー読み込み
-		ShaderCompileDesc vsDesc;
+		Graphics::ShaderCompileDesc vsDesc;
 		vsDesc.filePath = "engine-assets/shaders/GridVS.hlsl";
 		vsDesc.entryPoint = "main";
-		vsDesc.type = ShaderType::Vertex;
+		vsDesc.type = Graphics::ShaderType::Vertex;
 		vsDesc.enableDebug = true;
 
 		auto vertexShaderResult = shaderManager->loadShader(vsDesc);
@@ -401,10 +388,10 @@ namespace Engine::Graphics
 				"Failed to load grid vertex shader"));
 		}
 
-		ShaderCompileDesc psDesc;
+		Graphics::ShaderCompileDesc psDesc;
 		psDesc.filePath = "engine-assets/shaders/GridPS.hlsl";
 		psDesc.entryPoint = "main";
-		psDesc.type = ShaderType::Pixel;
+		psDesc.type = Graphics::ShaderType::Pixel;
 		psDesc.enableDebug = true;
 
 		auto pixelShaderResult = shaderManager->loadShader(psDesc);

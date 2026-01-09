@@ -70,6 +70,12 @@ namespace Engine::Input
         // マウスホイール取得
         float getMouseWheelDelta() const { return m_mouseState.wheelDelta; }
 
+        void resetMouseDelta()
+        {
+            m_mouseState.deltaX = 0;
+            m_mouseState.deltaY = 0;
+        }
+
         // マウス制御
         void setMousePosition(int x, int y);
         void showCursor(bool show);
@@ -96,6 +102,7 @@ namespace Engine::Input
 
         // 有効性チェック
         bool isInitialized() const { return m_initialized; }
+        bool handleRawInput(LPARAM lParam);
 
     private:
         // 内部状態
@@ -125,7 +132,7 @@ namespace Engine::Input
         MouseButtonCallback m_mouseButtonReleasedCallback;
         MouseMoveCallback m_mouseMoveCallback;
         MouseWheelCallback m_mouseWheelCallback;
-
+   
         // 内部メソッド
         void updateKeyboardState();
         void updateMouseState();
@@ -136,7 +143,6 @@ namespace Engine::Input
         // Win32メッセージハンドラ（内部）
         bool handleKeyboardMessage(UINT message, WPARAM wParam, LPARAM lParam);
         bool handleMouseMessage(UINT message, WPARAM wParam, LPARAM lParam);
-        bool handleRawInput(LPARAM lParam);
 
         // ユーティリティメソッド
         bool isValidKeyCode(KeyCode keyCode) const;

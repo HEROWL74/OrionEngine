@@ -14,6 +14,7 @@
 #include "../Math/Math.hpp"
 #include "../Utils/Common.hpp"
 #include "Texture.hpp"
+#include "../Utils/RenderContext.hpp"
 
 using Microsoft::WRL::ComPtr;
 
@@ -36,6 +37,9 @@ namespace Engine::Graphics
         [[nodiscard]] Utils::VoidResult initialize(Device* device, ShaderManager* shaderManager);
 
         // 立方体を描画
+        void render(const Utils::RenderContext& context);
+
+        [[deprecated("Use render(const RenderContext&) instead")]]
         void render(ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex);
 
         // 3D空間での位置・回転・スケールを設定

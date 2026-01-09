@@ -1,5 +1,6 @@
 file(GLOB_RECURSE EDITOR_SOURCES
     ${CMAKE_SOURCE_DIR}/src/editor/*.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/*.hpp
 )
 
 add_executable(OrionEditor WIN32

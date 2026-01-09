@@ -2,7 +2,6 @@
 #include "Window.hpp"
 #include "../resources/orion_resource.h"
 #include <format>
-#include "editor/UI/ImGuiManager.hpp"
 
 namespace Engine::Core {
 	Window::~Window()
@@ -154,8 +153,8 @@ namespace Engine::Core {
 
 		if (uMsg == WM_NCCREATE)
 		{
-			CREATESTRUCTW* createStruct = reinterpret_cast<CREATESTRUCTW*>(lParam);
-			window = static_cast<Window*>(createStruct->lpCreateParams);
+			auto* cs = reinterpret_cast<CREATESTRUCTW*>(lParam);
+			window = static_cast<Window*>(cs->lpCreateParams);
 			SetWindowLongPtrW(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 		}
 		else
@@ -164,227 +163,58 @@ namespace Engine::Core {
 		}
 
 		if (window)
-		{
 			return window->windowProc(hWnd, uMsg, wParam, lParam);
-		}
 
-		if (!window)
-		{
-			return DefWindowProcW(hWnd, uMsg, wParam, lParam);
-		}
+		return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 	}
+
+
 
 	LRESULT Window::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
-		if (uMsg == WM_SIZE || uMsg == WM_SIZING || uMsg == WM_ENTERSIZEMOVE || uMsg == WM_EXITSIZEMOVE)
+		// Editor / Runtime に先に投げる
+		if (m_messageCallback)
 		{
-			Utils::log_info(std::format("Window message received: 0x{:04x}", uMsg));
-			if (uMsg == WM_SIZE)
+			if (m_messageCallback(hWnd, uMsg, wParam, lParam))
 			{
-				int width = LOWORD(lParam);
-				int height = HIWORD(lParam);
-				Utils::log_info(std::format("WM_SIZE: {}x{}, wParam: {}", width, height, wParam));
+				return 0; // 外部が処理した
 			}
 		}
 
-		if (m_imguiManager) {
-			Utils::log_info(std::format("Forwarding message 0x{:04x} to ImGui", uMsg));
-			m_imguiManager->handleWindowMessage(hWnd, uMsg, wParam, lParam);
-
-
-			ImGui::SetCurrentContext(m_imguiManager->getContext());
-			ImGuiIO& io = ImGui::GetIO();
-
-			if ((uMsg == WM_KEYDOWN || uMsg == WM_KEYUP || uMsg == WM_CHAR) && io.WantCaptureKeyboard)
-			{
-				Utils::log_info("ImGui captured keyboard message");
-				return 0;
-			}
-
-
-			if ((uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP || uMsg == WM_RBUTTONDOWN ||
-				uMsg == WM_RBUTTONUP || uMsg == WM_MBUTTONDOWN || uMsg == WM_MBUTTONUP ||
-				uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEMOVE) && io.WantCaptureMouse)
-			{
-				Utils::log_info("ImGui captured mouse message");
-				return 0;
-			}
-		}
-
-
-		if (m_inputManager)
+		if (uMsg == WM_INPUT)
 		{
-			ImGuiIO* io = nullptr;
-			if (m_imguiManager && m_imguiManager->isInitialized() && m_imguiManager->getContext())
+			if (m_inputManager)
 			{
-				ImGui::SetCurrentContext(m_imguiManager->getContext());
-				io = &ImGui::GetIO();
+				m_inputManager->handleRawInput(lParam);
 			}
-
-			bool shouldProcessInput = true;
-			if (io)
-			{
-				if ((uMsg == WM_KEYDOWN || uMsg == WM_KEYUP) && io->WantCaptureKeyboard)
-					shouldProcessInput = false;
-				if ((uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST) && io->WantCaptureMouse)
-					shouldProcessInput = false;
-			}
-
-			if (shouldProcessInput && m_inputManager->handleWindowMessage(hWnd, uMsg, wParam, lParam))
-			{
-				Utils::log_info(std::format("Input manager handled message 0x{:04x}", uMsg));
-				return 0;
-			}
+			return 0; // WM_INPUTを処理した場合は0を返す
 		}
 
+		// engine 内部の処理（Input / Resize 等）
 		switch (uMsg)
 		{
 		case WM_SIZE:
-		{
-			const int width = LOWORD(lParam);
-			const int height = HIWORD(lParam);
-
-			Utils::log_info(std::format("WM_SIZE received: {}x{}, wParam: {}", width, height, wParam));
-
-			if (wParam == SIZE_MINIMIZED || width <= 0 || height <= 0)
-			{
-				Utils::log_info("Skipping resize (minimized or invalid size)");
-				return 0;
-			}
-
-			static bool isResizing = false;
-			if (isResizing)
-			{
-				Utils::log_info("Resize already in progress, skipping");
-				return 0;
-			}
-
-			isResizing = true;
-
-
 			if (m_resizeCallback)
 			{
-				Utils::log_info("Calling application resize callback");
-				m_resizeCallback(width, height);
-				Utils::log_info("Application resize callback completed");
+				m_resizeCallback(LOWORD(lParam), HIWORD(lParam));
 			}
-
-			isResizing = false;
 			return 0;
-		}
-		break;
-
-		case WM_ENTERSIZEMOVE:
-			Utils::log_info("WM_ENTERSIZEMOVE received");
-			break;
-
-		case WM_EXITSIZEMOVE:
-			Utils::log_info("WM_EXITSIZEMOVE received");
-			break;
-
-		case WM_SIZING:
-			Utils::log_info("WM_SIZING received");
-			break;
-
-		case WM_ACTIVATE:
-		{
-			Utils::log_info(std::format("WM_ACTIVATE: wParam = {}", LOWORD(wParam)));
-
-			if (LOWORD(wParam) == WA_INACTIVE && m_inputManager)
-			{
-				if (m_inputManager->getMouseState().isRelativeMode)
-				{
-					m_inputManager->setRelativeMouseMode(false);
-					Utils::log_info("Window lost focus - disabled relative mouse mode");
-				}
-			}
-		}
-		break;
-
-		case WM_KILLFOCUS:
-		{
-			Utils::log_info("WM_KILLFOCUS received");
-
-			if (m_inputManager && m_inputManager->getMouseState().isRelativeMode)
-			{
-				m_inputManager->setRelativeMouseMode(false);
-				Utils::log_info("Window lost focus - disabled relative mouse mode");
-			}
-		}
-		break;
 
 		case WM_CLOSE:
-		{
-			Utils::log_info("WM_CLOSE received");
-
-			if (m_inputManager)
-			{
-				m_inputManager->setRelativeMouseMode(false);
-			}
 			if (m_closeCallback)
 			{
 				m_closeCallback();
 			}
-			PostQuitMessage(0);
-		}
-		break;
-
-		case WM_KEYDOWN:
-		{
-			Utils::log_info(std::format("WM_KEYDOWN: key = {}", wParam));
-
-			if (wParam == VK_F1)
-			{
-				if (m_inputManager)
-				{
-					bool currentMode = m_inputManager->getMouseState().isRelativeMode;
-					m_inputManager->setRelativeMouseMode(!currentMode);
-					Utils::log_info(std::format("Mouse relative mode: {}", !currentMode ? "ON" : "OFF"));
-				}
-			}
-
-			if (wParam == VK_F4 && (GetKeyState(VK_MENU) & 0x8000))
-			{
-				Utils::log_info("Alt+F4 pressed");
-				if (m_inputManager)
-				{
-					m_inputManager->setRelativeMouseMode(false);
-				}
-				PostQuitMessage(0);
-				return 0;
-			}
-			else if (wParam == VK_ESCAPE)
-			{
-				Utils::log_info("ESC pressed");
-				if (m_inputManager)
-				{
-					m_inputManager->setRelativeMouseMode(false);
-				}
-				PostQuitMessage(0);
-				return 0;
-			}
-		}
-		break;
-
+			return 0;
 		case WM_DESTROY:
-		{
-			Utils::log_info("WM_DESTROY received");
-			SetWindowLongPtrW(hWnd, GWLP_USERDATA, 0);
 			PostQuitMessage(0);
-		}
-		break;
-
-		default:
-			if (uMsg != WM_MOUSEMOVE && uMsg != WM_NCHITTEST && uMsg != WM_SETCURSOR &&
-				uMsg != WM_GETTEXT && uMsg != WM_GETTEXTLENGTH && uMsg != WM_PAINT)
-			{
-				Utils::log_info(std::format("Unhandled message: 0x{:04x}", uMsg));
-			}
-			return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+			return 0;
 		}
 
-		return 0;
+		// 未処理は OS に返す
+		return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 	}
+
 
 	void Window::destroy() noexcept
 	{

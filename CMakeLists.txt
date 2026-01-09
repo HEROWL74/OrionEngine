@@ -18,7 +18,6 @@ set(VCPKG_TARGET_TRIPLET "x64-windows")
 # --------------------------------------------------
 find_package(Lua REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
 find_package(DirectXTex CONFIG REQUIRED)
 find_package(lua CONFIG REQUIRED)
 
@@ -48,6 +47,7 @@ add_custom_target(Shaders ALL DEPENDS ${COMPILED_SHADERS})
 # --------------------------------------------------
 add_subdirectory(engine)
 add_subdirectory(editor)
+add_subdirectory(runtime)
 
 # --------------------------------------------------
 # 情報出力

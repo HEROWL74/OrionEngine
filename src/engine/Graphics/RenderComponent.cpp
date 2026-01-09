@@ -126,6 +126,51 @@ namespace Engine::Graphics
 		}
 	}
 
+	void RenderComponent::render(const Utils::RenderContext& context)
+	{
+		if (!m_visible || !m_initialized || !getGameObject())
+		{
+			return;
+		}
+
+		auto* transform = getGameObject()->getTransform();
+		if (!transform)
+		{
+			return;
+		}
+
+		if (!m_material && m_materialManager)
+		{
+			m_material = m_materialManager->getDefaultMaterial();
+		}
+
+		// レンダラーに RenderContext を渡す
+		switch (m_renderableType)
+		{
+		case RenderableType::Triangle:
+			if (m_triangleRenderer && m_triangleRenderer->isValid())
+			{
+				m_triangleRenderer->setPosition(transform->getPosition());
+				m_triangleRenderer->setRotation(transform->getRotation());
+				m_triangleRenderer->setScale(transform->getScale());
+				m_triangleRenderer->setMaterial(m_material);
+				//m_triangleRenderer->render(context);
+			}
+			break;
+
+		case RenderableType::Cube:
+			if (m_cubeRenderer && m_cubeRenderer->isValid())
+			{
+				m_cubeRenderer->setPosition(transform->getPosition());
+				m_cubeRenderer->setRotation(transform->getRotation());
+				m_cubeRenderer->setScale(transform->getScale());
+				m_cubeRenderer->setMaterial(m_material);
+				m_cubeRenderer->render(context);
+			}
+			break;
+		}
+	}
+
 	void RenderComponent::setRenderableType(RenderableType type)
 	{
 		if (m_renderableType != type)

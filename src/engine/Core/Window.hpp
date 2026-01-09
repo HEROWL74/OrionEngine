@@ -88,10 +88,15 @@ namespace Engine::Core {
 
         void setCloseCallback(CloseCallback callback) noexcept { m_closeCallback = std::move(callback); }
 
-        void setImGuiManager(UI::ImGuiManager* manager) { m_imguiManager = manager; }
-
         // 入力システムへのアクセス
         [[nodiscard]] Input::InputManager* getInputManager() const noexcept;
+
+        using MessageCallback = std::function<bool(HWND, UINT, WPARAM, LPARAM)>;
+
+        void setMessageCallback(MessageCallback cb)noexcept
+        {
+            m_messageCallback = std::move(cb);
+        }
 
     private:
         HWND m_handle = nullptr;
@@ -100,11 +105,11 @@ namespace Engine::Core {
 
         // 入力システム
         std::unique_ptr<Input::InputManager> m_inputManager;
-        UI::ImGuiManager* m_imguiManager = nullptr;
 
         // イベントコールバック
         ResizeCallback m_resizeCallback;
         CloseCallback m_closeCallback;
+        MessageCallback m_messageCallback;
 
         [[nodiscard]] Utils::VoidResult registerWindowClass(HINSTANCE hInstance);
 

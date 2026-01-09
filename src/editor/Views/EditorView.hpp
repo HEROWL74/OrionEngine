@@ -1,4 +1,4 @@
-//// src/editor/Views/EditorView.hpp
+// src/editor/Views/EditorView.hpp
 #pragma once
 #include <d3d12.h>
 #include <memory>
@@ -9,8 +9,9 @@
 #include "engine/Graphics/Device.hpp"
 #include "../UI/ImGuiManager.hpp"
 #include "engine/Graphics/Skybox.hpp"
+#include "Gizmo.hpp"
 
-namespace Engine::Graphics
+namespace Editor::UI
 {
 	class EditorView
 	{
@@ -18,22 +19,21 @@ namespace Engine::Graphics
 		EditorView() = default;
 		~EditorView() = default;
 
-		[[nodiscard]] Utils::VoidResult initialize(Device* device,
+		[[nodiscard]] Utils::VoidResult initialize(Graphics::Device* device,
 			uint32_t width,
 			uint32_t height,
-			ShaderManager* shaderManager);
+			Graphics::ShaderManager* shaderManager);
 
-		void render(Scene& scene,
+		void render(Graphics::Scene& scene,
 			ID3D12GraphicsCommandList* commandList,
-			const Camera& camera,
+			const Graphics::Camera& camera,
 			UINT frameIndex);
-		void registerToImGui(UI::ImGuiManager* imgui);
 
 		void renderEditorElements(ID3D12GraphicsCommandList* commandList,
-			const Camera& camera,
+			const Graphics::Camera& camera,
 			UINT frameIndex);
 
-		ImTextureID getOutputTexture() const;
+		Graphics::RenderTarget* getRenderTarget() const { return m_renderTarget.get(); }
 
 		void resize(uint32_t width, uint32_t height);
 
@@ -47,12 +47,17 @@ namespace Engine::Graphics
 
 		void setSelectedObject(Core::GameObject* object) { m_selectedObject = object; }
 		Core::GameObject* getSelectedObject() const { return m_selectedObject; }
-		void setSkybox(Skybox* skybox) { m_skybox = skybox; }
+		void setSkybox(Graphics::Skybox* skybox) { m_skybox = skybox; }
+
+		// Gizmoä÷òA
+		Gizmo* getGizmo() { return m_gizmo.get(); }
+		void setGizmoType(GizmoType type) { if (m_gizmo) m_gizmo->setType(type); }
+
 	private:
-		Device* m_device = nullptr;
+		Graphics::Device* m_device = nullptr;
 		UI::ImGuiManager* m_imguiManager = nullptr;
-		std::unique_ptr<RenderTarget> m_renderTarget;
-		Skybox* m_skybox = nullptr;
+		std::unique_ptr<Graphics::RenderTarget> m_renderTarget;
+		Graphics::Skybox* m_skybox = nullptr;
 		bool m_initialized = false;
 		uint32_t m_width = 0;
 		uint32_t m_height = 0;
@@ -61,9 +66,12 @@ namespace Engine::Graphics
 		bool m_showGizmos = true;
 		Core::GameObject* m_selectedObject = nullptr;
 
-		void renderGrid(ID3D12GraphicsCommandList* commandList, const Camera& camera);
+		// Gizmo
+		std::unique_ptr<Gizmo> m_gizmo;
+
+		void renderGrid(ID3D12GraphicsCommandList* commandList, const Graphics::Camera& camera);
 		void renderSelectionOutline(ID3D12GraphicsCommandList* commandList,
-			const Camera& camera,
+			const Graphics::Camera& camera,
 			Core::GameObject* object);
 
 	private:
@@ -88,11 +96,12 @@ namespace Engine::Graphics
 		void* m_gridCameraMapped = nullptr;
 		UINT m_gridVertexCount = 0;
 		bool m_gridInitialized = false;
+
 	private:
 		// Grid ä÷òAÇÃä÷êî
-		[[nodiscard]] Utils::VoidResult initializeGrid(ShaderManager* shaderManager);
+		[[nodiscard]] Utils::VoidResult initializeGrid(Graphics::ShaderManager* shaderManager);
 		[[nodiscard]] Utils::VoidResult createGridGeometry();
 		[[nodiscard]] Utils::VoidResult createGridRootSignature();
-		[[nodiscard]] Utils::VoidResult createGridPipelineState(ShaderManager* shaderManager);
+		[[nodiscard]] Utils::VoidResult createGridPipelineState(Graphics::ShaderManager* shaderManager);
 	};
 }
