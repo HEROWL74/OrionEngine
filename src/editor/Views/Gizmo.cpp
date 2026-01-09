@@ -1,12 +1,13 @@
-#include "Gizmo.hpp"
+ï»¿#include "Gizmo.hpp"
 #include "engine/ThirdParty/d3dx12.h"
+#include "../Utils/RayPicking.hpp"
 
 namespace Editor::UI
 {
-	Utils::VoidResult Gizmo::initialize(Engine::Graphics::Device* device, Engine::Graphics::ShaderManager* shaderManager)
+	Engine::Utils::VoidResult Gizmo::initialize(Engine::Graphics::Device* device, Engine::Graphics::ShaderManager* shaderManager)
 	{
-		CHECK_CONDITION(device != nullptr, Utils::ErrorType::Unknown, "Device is null");
-		CHECK_CONDITION(shaderManager != nullptr, Utils::ErrorType::Unknown, "ShaderManager is null");
+		CHECK_CONDITION(device != nullptr, Engine::Utils::ErrorType::Unknown, "Device is null");
+		CHECK_CONDITION(shaderManager != nullptr, Engine::Utils::ErrorType::Unknown, "ShaderManager is null");
 
 		m_device = device;
 		m_shaderManager = shaderManager;
@@ -23,7 +24,7 @@ namespace Editor::UI
 		auto cbResult = createConstantBuffer();
 		if (!cbResult) return cbResult;
 
-		Utils::log_info("Gizmo initialized successfully");
+		Engine::Utils::log_info("Gizmo initialized successfully");
 		return {};
 	}
 
@@ -43,37 +44,21 @@ namespace Editor::UI
 
 		m_device = nullptr;
 		m_shaderManager = nullptr;
-
-		Utils::log_info("Gizmo shutdown completed");
 	}
 
-	// •`‰æ
 	void Gizmo::render(ID3D12GraphicsCommandList* commandList, const Engine::Graphics::Camera& camera, Core::GameObject* targetObject)
 	{
 		if (!targetObject || !m_device || !m_rootSig || !m_pso)
-		{
 			return;
-		}
 
 		Math::Vector3 position = targetObject->getTransform()->getPosition();
 
-		switch (m_type)
+		if (m_type == GizmoType::Translation)
 		{
-		case GizmoType::None:
-			break;
-		case GizmoType::Translation:
 			renderTranslationGizmo(commandList, camera, position);
-			break;
-		case GizmoType::Rotation:
-			break;
-		case GizmoType::Scale:
-			break;
-		default:
-			break;
 		}
 	}
 
-	// Ray‚Æ‚ÌŒğ·”»’è
 	GizmoAxis Gizmo::hitTest(const Math::Vector3& rayOrigin,
 		const Math::Vector3& rayDirection,
 		Core::GameObject* targetObject) const
@@ -82,31 +67,26 @@ namespace Editor::UI
 			return GizmoAxis::None;
 
 		Math::Vector3 gizmoPos = targetObject->getTransform()->getPosition();
-		float gizmoLength = 1.0f; // ²‚Ì’·‚³
-		float threshold = 0.1f;   // ƒqƒbƒg”»’è‚Ìè‡’l
+		float gizmoLength = 2.0f;
+		float threshold = 0.2f;
 
-		float distance = 0.0f;
-
-		// X²‚ÌƒeƒXƒgiÔj
-		if (rayIntersectsAxis(rayOrigin, rayDirection,
-			gizmoPos, gizmoPos + Math::Vector3(gizmoLength, 0, 0),
-			threshold, distance))
+		Math::Vector3 xAxisCenter = gizmoPos + Math::Vector3::right() * (gizmoLength * 0.5f);
+		float distanceX;
+		if (Utils::RayPicking::rayIntersectsSphere(rayOrigin, rayDirection, xAxisCenter, threshold, distanceX))
 		{
 			return GizmoAxis::X;
 		}
 
-		// Y²‚ÌƒeƒXƒgi—Îj
-		if (rayIntersectsAxis(rayOrigin, rayDirection,
-			gizmoPos, gizmoPos + Math::Vector3(0, gizmoLength, 0),
-			threshold, distance))
+		Math::Vector3 yAxisCenter = gizmoPos + Math::Vector3::up() * (gizmoLength * 0.5f);
+		float distanceY;
+		if (Utils::RayPicking::rayIntersectsSphere(rayOrigin, rayDirection, yAxisCenter, threshold, distanceY))
 		{
 			return GizmoAxis::Y;
 		}
 
-		// Z²‚ÌƒeƒXƒgiÂj
-		if (rayIntersectsAxis(rayOrigin, rayDirection,
-			gizmoPos, gizmoPos + Math::Vector3(0, 0, gizmoLength),
-			threshold, distance))
+		Math::Vector3 zAxisCenter = gizmoPos + Math::Vector3::forward() * (gizmoLength * 0.5f);
+		float distanceZ;
+		if (Utils::RayPicking::rayIntersectsSphere(rayOrigin, rayDirection, zAxisCenter, threshold, distanceZ))
 		{
 			return GizmoAxis::Z;
 		}
@@ -114,51 +94,83 @@ namespace Editor::UI
 		return GizmoAxis::None;
 	}
 
-	// Gizmo‚Ì‘€ì
-	void Gizmo::startDrag(GizmoAxis axis, const Math::Vector3& rayOrigin,
-		const Math::Vector3& rayDirection)
+	void Gizmo::beginDrag(GizmoAxis axis,
+		const Math::Vector3& rayOrigin,
+		const Math::Vector3& rayDirection,
+		const Math::Vector3& objectPosition)
 	{
 		m_isDragging = true;
 		m_selectedAxis = axis;
-		m_dragStartPosition = rayOrigin;
+		m_dragStartObjectPosition = objectPosition;
 
-		// ƒhƒ‰ƒbƒO•½–Ê‚Ì–@ü‚ğİ’è
 		switch (axis)
 		{
 		case GizmoAxis::X:
-			m_dragPlaneNormal = Math::Vector3::right();
+			m_dragAxisDirection = Math::Vector3::right();
+			m_dragPlaneNormal = Math::Vector3::up();
 			break;
 		case GizmoAxis::Y:
-			m_dragPlaneNormal = Math::Vector3::up();
+			m_dragAxisDirection = Math::Vector3::up();
+			m_dragPlaneNormal = Math::Vector3::right();
 			break;
 		case GizmoAxis::Z:
-			m_dragPlaneNormal = Math::Vector3::forward();
+			m_dragAxisDirection = Math::Vector3::forward();
+			m_dragPlaneNormal = Math::Vector3::up();
 			break;
 		default:
+			m_dragAxisDirection = Math::Vector3::up();
 			m_dragPlaneNormal = Math::Vector3::up();
 			break;
 		}
-	}
 
-	void Gizmo::updateDrag(const Math::Vector3& rayOrigin,
-		const Math::Vector3& rayDirection)
-	{
-		if (!m_isDragging)
-			return;
-
-		// Ray‚Æ•½–Ê‚ÌŒğ·“_‚ğŒvZ
-		Math::Vector3 intersection;
-		if (rayIntersectsPlane(rayOrigin, rayDirection,
-			m_dragStartPosition, m_dragPlaneNormal, intersection))
+		float distance;
+		if (Utils::RayPicking::rayIntersectsPlane(rayOrigin, rayDirection, objectPosition, m_dragPlaneNormal, distance))
 		{
-			// TODO: Œğ·“_‚ÉŠî‚Ã‚¢‚ÄˆÚ“®—Ê‚ğŒvZ
+			m_dragStartPosition = rayOrigin + rayDirection * distance;
+		}
+		else
+		{
+			m_dragStartPosition = objectPosition;
 		}
 	}
 
-	void Gizmo::endDrag()
+	void Gizmo::processDrag(const Math::Vector3& rayOrigin,
+		const Math::Vector3& rayDirection,
+		Math::Vector3& outNewPosition)
+	{
+		if (!m_isDragging)
+		{
+			outNewPosition = m_dragStartObjectPosition;
+			return;
+		}
+
+		float distance;
+		if (Utils::RayPicking::rayIntersectsPlane(rayOrigin, rayDirection, m_dragStartObjectPosition, m_dragPlaneNormal, distance))
+		{
+			Math::Vector3 currentPoint = rayOrigin + rayDirection * distance;
+			Math::Vector3 projectedPoint = projectPointOnAxis(currentPoint, m_dragStartObjectPosition, m_dragAxisDirection);
+			Math::Vector3 delta = projectedPoint - m_dragStartObjectPosition;
+			outNewPosition = m_dragStartObjectPosition + delta;
+		}
+		else
+		{
+			outNewPosition = m_dragStartObjectPosition;
+		}
+	}
+
+	void Gizmo::finishDrag()
 	{
 		m_isDragging = false;
 		m_selectedAxis = GizmoAxis::None;
+	}
+
+	Math::Vector3 Gizmo::projectPointOnAxis(const Math::Vector3& point,
+		const Math::Vector3& axisOrigin,
+		const Math::Vector3& axisDirection) const
+	{
+		Math::Vector3 toPoint = point - axisOrigin;
+		float projection = Math::Vector3::dot(toPoint, axisDirection);
+		return axisOrigin + axisDirection * projection;
 	}
 
 	void Gizmo::renderTranslationGizmo(ID3D12GraphicsCommandList* commandList,
@@ -166,169 +178,64 @@ namespace Editor::UI
 		const Math::Vector3& position)
 	{
 		if (!commandList || !m_vertexBuffer || !m_indexBuffer || !m_constantBuffer)
-		{
 			return;
-		}
 
-		// Gizmo‚ÌƒXƒP[ƒ‹‚ğŒvZ
 		float gizmoScale = calculateGizmoScale(camera, position);
 
-		// ƒ[ƒ‹ƒhs—ñ‚ğì¬
 		Math::Matrix4 world = Math::Matrix4::translation(position);
 		Math::Matrix4 worldViewProjection = camera.getViewProjectionMatrix() * world;
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@‚ğXV
 		if (m_cbMapped)
 		{
 			GizmoConstants constants;
 			constants.worldViewProjection = worldViewProjection;
-			constants.selectedColor = Math::Vector4(1.0f, 1.0f, 0.0f, 1.0f); // ‘I‘ğ‚Í‰©F
+			constants.selectedColor = Math::Vector4(1.0f, 1.0f, 0.0f, 1.0f);
 			constants.scale = gizmoScale;
 
 			memcpy(m_cbMapped, &constants, sizeof(GizmoConstants));
 		}
 
-		// ƒpƒCƒvƒ‰ƒCƒ“ƒXƒe[ƒg‚Æƒ‹[ƒgƒVƒOƒlƒ`ƒƒ‚ğİ’è
 		commandList->SetPipelineState(m_pso.Get());
 		commandList->SetGraphicsRootSignature(m_rootSig.Get());
-
-		// ƒgƒ|ƒƒW[‚ğİ’è
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
-
-		// ’¸“_ƒoƒbƒtƒ@‚ÆƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ğİ’è
 		commandList->IASetVertexBuffers(0, 1, &m_vbv);
 		commandList->IASetIndexBuffer(&m_ibv);
-
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@‚ğİ’è
 		commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffer->GetGPUVirtualAddress());
-
-		// •`‰æ
 		commandList->DrawIndexedInstanced(m_indexCount, 1, 0, 0, 0);
 	}
 
-	// Ray‚Æ²‚ÌŒğ·”»’è
-	bool Gizmo::rayIntersectsAxis(const Math::Vector3& rayOrigin,
-		const Math::Vector3& rayDirection,
-		const Math::Vector3& axisStart,
-		const Math::Vector3& axisEnd,
-		float threshold,
-		float& outDistance) const
-	{
-		Math::Vector3 axisDir = (axisEnd - axisStart).normalized();
-		Math::Vector3 toRay = rayOrigin - axisStart;
-
-		float a = Math::Vector3::dot(rayDirection, rayDirection);
-		float b = -2.0f * Math::Vector3::dot(rayDirection, axisDir);
-		float c = Math::Vector3::dot(axisDir, axisDir);
-
-		float d = Math::Vector3::dot(toRay, rayDirection);
-		float e = -Math::Vector3::dot(toRay, axisDir);
-		float f = Math::Vector3::dot(toRay, toRay);
-
-		float det = a * c - b * b * 0.25f;
-		if (std::abs(det) < 1e-6f)
-			return false;
-
-		float s = (c * d + b * 0.5f * e) / det;
-		float t = (b * 0.5f * d + a * e) / det;
-
-		Math::Vector3 closestOnRay = rayOrigin + rayDirection * s;
-		Math::Vector3 closestOnAxis = axisStart + axisDir * t;
-
-		float distance = Math::Vector3::distance(closestOnRay, closestOnAxis);
-
-		if (distance < threshold && t >= 0.0f && t <= (axisEnd - axisStart).length())
-		{
-			outDistance = s;
-			return true;
-		}
-
-		return false;
-	}
-
-	// Ray‚Æ•½–Ê‚ÌŒğ·”»’è
-	bool Gizmo::rayIntersectsPlane(const Math::Vector3& rayOrigin,
-		const Math::Vector3& rayDirection,
-		const Math::Vector3& planePoint,
-		const Math::Vector3& planeNormal,
-		Math::Vector3& outIntersection)
-	{
-		float denom = Math::Vector3::dot(planeNormal, rayDirection);
-
-		if (std::abs(denom) < 1e-6f)
-			return false; // Ray‚ª•½–Ê‚É•½s
-
-		float t = Math::Vector3::dot(planePoint - rayOrigin, planeNormal) / denom;
-
-		if (t < 0.0f)
-			return false; // Œğ“_‚ªRay‚ÌŒã‚ë
-
-		outIntersection = rayOrigin + rayDirection * t;
-		return true;
-	}
-
-	// Gizmo‚ÌƒXƒP[ƒ‹ŒvZ
 	float Gizmo::calculateGizmoScale(const Engine::Graphics::Camera& camera, const Math::Vector3& position)
 	{
-		// ƒJƒƒ‰‚©‚çGizmo‚Ü‚Å‚Ì‹——£‚ğŒvZ
 		float distance = Math::Vector3::distance(camera.getPosition(), position);
-
-		// ‹——£‚É‰‚¶‚ÄƒXƒP[ƒ‹‚ğ’²®ií‚Éˆê’è‚Ì‰æ–ÊƒTƒCƒY‚ÉŒ©‚¦‚é‚æ‚¤‚Éj
-		float baseFov = 45.0f;
 		float fov = camera.getFov();
 		float scale = distance * std::tan(Math::radians(fov * 0.5f)) * 0.1f;
-
 		return scale;
 	}
 
-	Utils::VoidResult Gizmo::createRootSignature()
+	Engine::Utils::VoidResult Gizmo::createRootSignature()
 	{
 		auto dev = m_device->getDevice();
 
-		// ƒ‹[ƒgƒpƒ‰ƒ[ƒ^: ’è”ƒoƒbƒtƒ@ƒrƒ…[ (CBV)
 		CD3DX12_ROOT_PARAMETER1 rootParams[1] = {};
-		rootParams[0].InitAsConstantBufferView(
-			0,  // register(b0)
-			0,  // space
-			D3D12_ROOT_DESCRIPTOR_FLAG_NONE,
-			D3D12_SHADER_VISIBILITY_ALL
-		);
+		rootParams[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
 
-		// ƒ‹[ƒgƒVƒOƒlƒ`ƒƒ‚Ìì¬
 		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc{};
-		rootSigDesc.Init_1_1(
-			_countof(rootParams),
-			rootParams,
-			0,
-			nullptr,
-			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
-		);
+		rootSigDesc.Init_1_1(_countof(rootParams), rootParams, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-		// ƒVƒŠƒAƒ‰ƒCƒY
-		ComPtr<ID3DBlob> sig;
-		ComPtr<ID3DBlob> err;
-		CHECK_HR(D3DX12SerializeVersionedRootSignature(
-			&rootSigDesc,
-			D3D_ROOT_SIGNATURE_VERSION_1_1,
-			&sig,
-			&err
-		), Utils::ErrorType::ResourceCreation, "Failed to serialize Gizmo root signature");
+		ComPtr<ID3DBlob> sig, err;
+		CHECK_HR(D3DX12SerializeVersionedRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1_1, &sig, &err),
+			Engine::Utils::ErrorType::ResourceCreation, "Failed to serialize Gizmo root signature");
 
-		CHECK_HR(dev->CreateRootSignature(
-			0,
-			sig->GetBufferPointer(),
-			sig->GetBufferSize(),
-			IID_PPV_ARGS(&m_rootSig)
-		), Utils::ErrorType::ResourceCreation, "Failed to create Gizmo root signature");
+		CHECK_HR(dev->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(&m_rootSig)),
+			Engine::Utils::ErrorType::ResourceCreation, "Failed to create Gizmo root signature");
 
 		return {};
 	}
 
-	Utils::VoidResult Gizmo::createPipelineState()
+	Engine::Utils::VoidResult Gizmo::createPipelineState()
 	{
 		auto dev = m_device->getDevice();
 
-		// ƒVƒF[ƒ_[‚Ì“Ç‚İ‚İ
 		Engine::Graphics::ShaderCompileDesc vsDesc;
 		vsDesc.filePath = "engine-assets/shaders/GizmoVS.hlsl";
 		vsDesc.entryPoint = "main";
@@ -338,8 +245,7 @@ namespace Editor::UI
 		auto vertexShaderResult = m_shaderManager->loadShader(vsDesc);
 		if (!vertexShaderResult)
 		{
-			return std::unexpected(Utils::make_error(Utils::ErrorType::ShaderCompilation,
-				"Failed to load Gizmo vertex shader"));
+			return std::unexpected(Engine::Utils::make_error(Engine::Utils::ErrorType::ShaderCompilation, "Failed to load Gizmo vertex shader"));
 		}
 
 		Engine::Graphics::ShaderCompileDesc psDesc;
@@ -351,36 +257,26 @@ namespace Editor::UI
 		auto pixelShaderResult = m_shaderManager->loadShader(psDesc);
 		if (!pixelShaderResult)
 		{
-			return std::unexpected(Utils::make_error(Utils::ErrorType::ShaderCompilation,
-				"Failed to load Gizmo pixel shader"));
+			return std::unexpected(Engine::Utils::make_error(Engine::Utils::ErrorType::ShaderCompilation, "Failed to load Gizmo pixel shader"));
 		}
 
-		// “ü—ÍƒŒƒCƒAƒEƒg
 		D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 		{
-			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-			{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		};
 
-		// ƒpƒCƒvƒ‰ƒCƒ“ƒXƒe[ƒgİ’è
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
 		psoDesc.pRootSignature = m_rootSig.Get();
 		psoDesc.VS = { vertexShaderResult->getBytecode(), vertexShaderResult->getBytecodeSize() };
 		psoDesc.PS = { pixelShaderResult->getBytecode(), pixelShaderResult->getBytecodeSize() };
 		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		psoDesc.SampleMask = UINT_MAX;
-
-		// ƒ‰ƒXƒ^ƒ‰ƒCƒUİ’è
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-
-		// ƒfƒvƒXƒXƒeƒ“ƒVƒ‹İ’èiGizmo‚Íí‚Éè‘O‚É•\¦j
 		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 		psoDesc.DepthStencilState.DepthEnable = FALSE;
 		psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-
 		psoDesc.InputLayout = { inputLayout, _countof(inputLayout) };
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
 		psoDesc.NumRenderTargets = 1;
@@ -388,28 +284,27 @@ namespace Editor::UI
 		psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 		psoDesc.SampleDesc.Count = 1;
 
-		CHECK_HR(dev->CreateGraphicsPipelineState(
-			&psoDesc,
-			IID_PPV_ARGS(&m_pso)
-		), Utils::ErrorType::ResourceCreation, "Failed to create Gizmo pipeline state");
+		CHECK_HR(dev->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pso)),
+			Engine::Utils::ErrorType::ResourceCreation, "Failed to create Gizmo pipeline state");
 
 		return {};
 	}
-	Utils::VoidResult Gizmo::createGeometry()
+
+	Engine::Utils::VoidResult Gizmo::createGeometry()
 	{
 		auto dev = m_device->getDevice();
 
-		// Translation Gizmo‚Ì’¸“_ƒf[ƒ^i3–{‚Ì² + –îˆój
-		const float axisLength = 2.0f; // ’·‚³‚ğ2”{‚É
-		const float arrowSize = 0.8f;  // –îˆó‚ÌƒTƒCƒY
+		// Translation Gizmoã®é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆ3æœ¬ã®è»¸ + çŸ¢å°ï¼‰
+		const float axisLength = 2.0f; // é•·ã•ã‚’2å€ã«
+		const float arrowSize = 0.8f;  // çŸ¢å°ã®ã‚µã‚¤ã‚º
 		std::vector<GizmoVertex> vertices;
 
-		// === X²iÔj===
-		// ²‚Ìü
+		// === Xè»¸ï¼ˆèµ¤ï¼‰===
+		// è»¸ã®ç·š
 		vertices.push_back({ Math::Vector3(0, 0, 0), Math::Vector4(1, 0, 0, 1) });
 		vertices.push_back({ Math::Vector3(axisLength, 0, 0), Math::Vector4(1, 0, 0, 1) });
 
-		// –îˆóiOŠp‚Ì—ÖŠsj
+		// çŸ¢å°ï¼ˆä¸‰è§’éŒã®è¼ªéƒ­ï¼‰
 		Math::Vector3 arrowBase(axisLength - arrowSize, 0, 0);
 		Math::Vector3 arrowTip(axisLength, 0, 0);
 		vertices.push_back({ arrowBase + Math::Vector3(0, arrowSize, 0), Math::Vector4(1, 0, 0, 1) });
@@ -421,12 +316,12 @@ namespace Editor::UI
 		vertices.push_back({ arrowBase + Math::Vector3(0, 0, -arrowSize), Math::Vector4(1, 0, 0, 1) });
 		vertices.push_back({ arrowTip, Math::Vector4(1, 0, 0, 1) });
 
-		// === Y²i—Îj===
-		// ²‚Ìü
+		// === Yè»¸ï¼ˆç·‘ï¼‰===
+		// è»¸ã®ç·š
 		vertices.push_back({ Math::Vector3(0, 0, 0), Math::Vector4(0, 1, 0, 1) });
 		vertices.push_back({ Math::Vector3(0, axisLength, 0), Math::Vector4(0, 1, 0, 1) });
 
-		// –îˆó
+		// çŸ¢å°
 		Math::Vector3 arrowBaseY(0, axisLength - arrowSize, 0);
 		Math::Vector3 arrowTipY(0, axisLength, 0);
 		vertices.push_back({ arrowBaseY + Math::Vector3(arrowSize, 0, 0), Math::Vector4(0, 1, 0, 1) });
@@ -438,12 +333,12 @@ namespace Editor::UI
 		vertices.push_back({ arrowBaseY + Math::Vector3(0, 0, -arrowSize), Math::Vector4(0, 1, 0, 1) });
 		vertices.push_back({ arrowTipY, Math::Vector4(0, 1, 0, 1) });
 
-		// === Z²iÂj===
-		// ²‚Ìü
+		// === Zè»¸ï¼ˆé’ï¼‰===
+		// è»¸ã®ç·š
 		vertices.push_back({ Math::Vector3(0, 0, 0), Math::Vector4(0, 0, 1, 1) });
 		vertices.push_back({ Math::Vector3(0, 0, axisLength), Math::Vector4(0, 0, 1, 1) });
 
-		// –îˆó
+		// çŸ¢å°
 		Math::Vector3 arrowBaseZ(0, 0, axisLength - arrowSize);
 		Math::Vector3 arrowTipZ(0, 0, axisLength);
 		vertices.push_back({ arrowBaseZ + Math::Vector3(arrowSize, 0, 0), Math::Vector4(0, 0, 1, 1) });
@@ -455,7 +350,7 @@ namespace Editor::UI
 		vertices.push_back({ arrowBaseZ + Math::Vector3(0, -arrowSize, 0), Math::Vector4(0, 0, 1, 1) });
 		vertices.push_back({ arrowTipZ, Math::Vector4(0, 0, 1, 1) });
 
-		// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^i‘S‚Ä‚Ìü•ªj
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆå…¨ã¦ã®ç·šåˆ†ï¼‰
 		std::vector<uint16_t> indices;
 		for (uint16_t i = 0; i < static_cast<uint16_t>(vertices.size()); ++i)
 		{
@@ -463,7 +358,7 @@ namespace Editor::UI
 		}
 		m_indexCount = static_cast<UINT>(indices.size());
 
-		// ’¸“_ƒoƒbƒtƒ@‚Ìì¬
+		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
 		const UINT vertexBufferSize = static_cast<UINT>(sizeof(GizmoVertex) * vertices.size());
 		auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
@@ -475,21 +370,21 @@ namespace Editor::UI
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&m_vertexBuffer)
-		), Utils::ErrorType::ResourceCreation, "Failed to create Gizmo vertex buffer");
+		), Engine::Utils::ErrorType::ResourceCreation, "Failed to create Gizmo vertex buffer");
 
-		// ’¸“_ƒf[ƒ^‚ğƒRƒs[
+		// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚’ã‚³ãƒ”ãƒ¼
 		void* pData = nullptr;
 		D3D12_RANGE readRange{ 0, 0 };
 		m_vertexBuffer->Map(0, &readRange, &pData);
 		memcpy(pData, vertices.data(), vertexBufferSize);
 		m_vertexBuffer->Unmap(0, nullptr);
 
-		// ’¸“_ƒoƒbƒtƒ@ƒrƒ…[‚Ìİ’è
+		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ãƒ“ãƒ¥ãƒ¼ã®è¨­å®š
 		m_vbv.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
 		m_vbv.StrideInBytes = sizeof(GizmoVertex);
 		m_vbv.SizeInBytes = vertexBufferSize;
 
-		// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚Ìì¬
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
 		const UINT indexBufferSize = static_cast<UINT>(sizeof(uint16_t) * indices.size());
 		bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize);
 
@@ -500,14 +395,14 @@ namespace Editor::UI
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&m_indexBuffer)
-		), Utils::ErrorType::ResourceCreation, "Failed to create Gizmo index buffer");
+		), Engine::Utils::ErrorType::ResourceCreation, "Failed to create Gizmo index buffer");
 
-		// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^‚ğƒRƒs[
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’ã‚³ãƒ”ãƒ¼
 		m_indexBuffer->Map(0, &readRange, &pData);
 		memcpy(pData, indices.data(), indexBufferSize);
 		m_indexBuffer->Unmap(0, nullptr);
 
-		// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@ƒrƒ…[‚Ìİ’è
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ãƒ“ãƒ¥ãƒ¼ã®è¨­å®š
 		m_ibv.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
 		m_ibv.Format = DXGI_FORMAT_R16_UINT;
 		m_ibv.SizeInBytes = indexBufferSize;
@@ -515,28 +410,20 @@ namespace Editor::UI
 		return {};
 	}
 
-	Utils::VoidResult Gizmo::createConstantBuffer()
+	Engine::Utils::VoidResult Gizmo::createConstantBuffer()
 	{
 		auto dev = m_device->getDevice();
 
-		// 256ƒoƒCƒgƒAƒ‰ƒCƒƒ“ƒg
 		const UINT cbSize = (sizeof(GizmoConstants) + 255) & ~255;
 		auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(cbSize);
 
-		CHECK_HR(dev->CreateCommittedResource(
-			&heapProps,
-			D3D12_HEAP_FLAG_NONE,
-			&bufferDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&m_constantBuffer)
-		), Utils::ErrorType::ResourceCreation, "Failed to create Gizmo constant buffer");
+		CHECK_HR(dev->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_constantBuffer)),
+			Engine::Utils::ErrorType::ResourceCreation, "Failed to create Gizmo constant buffer");
 
-		// ƒ}ƒbƒv‚µ‚½‚Ü‚Ü‚É‚·‚é
 		D3D12_RANGE readRange{ 0, 0 };
 		CHECK_HR(m_constantBuffer->Map(0, &readRange, &m_cbMapped),
-			Utils::ErrorType::ResourceCreation, "Failed to map Gizmo constant buffer");
+			Engine::Utils::ErrorType::ResourceCreation, "Failed to map Gizmo constant buffer");
 
 		return {};
 	}

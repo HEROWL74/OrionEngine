@@ -77,6 +77,7 @@ namespace Editor
         Utils::log_info("Application terminated successfully.");
         return 0;
     }
+
     Engine::Utils::VoidResult EditorApp::initD3D()
     {
         Utils::log_info("Initializing DirectX 12...");
@@ -183,7 +184,6 @@ namespace Editor
         m_editorView.setSkybox(&m_skybox);
         m_gameView.setSkybox(&m_skybox);
 
-
         // GPU同期後に再度登録
         m_device.waitForGpu();
 
@@ -203,7 +203,7 @@ namespace Editor
         auto& scriptMgr = Scripting::ScriptManager::get();
         scriptMgr.initialize();
 
-        // バインディング登録（C++クラスをLuaに公開）
+        // バインディング登録(C++クラスをLuaに公開)
         Scripting::registerBindings(scriptMgr.getLuaState());
 
         // テストキューブ作成
@@ -272,7 +272,31 @@ namespace Editor
 
         // Viewport ウィンドウ作成
         m_editorViewWindow = std::make_unique<UI::EditorViewWindow>();
-        m_editorViewWindow->initialize(&m_imguiManager, &m_editorView);
+
+        // 重要: Window経由でInputManagerを取得
+        auto* inputManager = m_window.getInputManager();
+        if (!inputManager)
+        {
+            Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
+                "Failed to get InputManager from Window"));
+            return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown,
+                "InputManager is null"));
+        }
+
+        // InputManagerが初期化されているか確認
+        if (!inputManager->isInitialized())
+        {
+            Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
+                "InputManager is not initialized when creating EditorViewWindow"));
+            return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown,
+                "InputManager not initialized"));
+        }
+
+        Utils::log_info(std::format("Initializing EditorViewWindow with InputManager (initialized: {})",
+            inputManager->isInitialized()));
+
+        // EditorViewWindowを初期化（正しいInputManagerポインタを渡す）
+        m_editorViewWindow->initialize(&m_imguiManager, &m_editorView, inputManager);
         m_editorViewWindow->setCamera(&m_editorCamera);
 
         m_gameViewWindow = std::make_unique<UI::GameViewWindow>();
@@ -314,22 +338,34 @@ namespace Editor
         return {};
     }
 
-
-    Utils::VoidResult EditorApp::initializeInput()
+    Engine::Utils::VoidResult EditorApp::initializeInput()
     {
         Utils::log_info("Initializing input system...");
 
+        // Window経由でInputManagerを取得
         auto* inputManager = m_window.getInputManager();
         if (!inputManager)
         {
-            return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown, "InputManager not available"));
+            return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown,
+                "InputManager not available from Window"));
         }
 
+        // InputManagerが初期化されているか確認
+        if (!inputManager->isInitialized())
+        {
+            Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
+                "InputManager from Window is not initialized"));
+            return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown,
+                "InputManager not initialized"));
+        }
+
+        Utils::log_info(std::format("InputManager initialized: {}", inputManager->isInitialized()));
+
+        // 初期状態では相対モードOFF
         inputManager->setRelativeMouseMode(false);
-
-
         inputManager->setMouseSensitivity(0.1f);
 
+        // コールバック設定
         inputManager->setKeyPressedCallback([this](Input::KeyCode key) {
             onKeyPressed(key);
             });
@@ -536,12 +572,6 @@ namespace Editor
             m_scene.update(m_deltaTime);
             m_scene.lateUpdate(m_deltaTime);
         }
-        else if (m_playModeController.isPaused())
-        {
-        }
-        else
-        {
-        }
 
         m_debugWindow->setFPS(m_currentFPS);
         m_debugWindow->setFrameTime(m_deltaTime);
@@ -571,6 +601,17 @@ namespace Editor
                 static float extraRotation = 0.0f;
                 extraRotation += (60.0f + i * 20.0f) * m_deltaTime;
                 extraCube->getTransform()->setRotation(Math::Vector3(0.0f, extraRotation, 0.0f));
+            }
+        }
+
+        auto* inputManager = m_window.getInputManager();
+        if (inputManager)
+        {
+            // 相対モードでない場合のみリセット
+            // 相対モードの場合は processInput() でリセット済み
+            if (!inputManager->getMouseState().isRelativeMode)
+            {
+                inputManager->resetMouseDelta();
             }
         }
     }
@@ -726,6 +767,7 @@ namespace Editor
             m_window.setTitle(title);
         }
     }
+
     void EditorApp::processInput()
     {
         auto* inputManager = m_window.getInputManager();
@@ -734,12 +776,17 @@ namespace Editor
             return;
         }
 
+        if (!inputManager->isInitialized())
+        {
+            Utils::log_warning("processInput: InputManager not initialized");
+            return;
+        }
+
         ImGuiIO& io = ImGui::GetIO();
 
         bool isSceneWindowFocused = m_editorViewWindow && m_editorViewWindow->isFocused();
         bool isSceneWindowHovered = m_editorViewWindow && m_editorViewWindow->isHovered();
 
-        // キーボード入力
         bool allowKeyboardInput = isSceneWindowHovered && !ImGui::IsAnyItemActive();
 
         if (allowKeyboardInput)
@@ -754,61 +801,47 @@ namespace Editor
             m_cameraController->processKeyboard(forward, backward, left, right, up, down, m_deltaTime);
         }
 
-        // マウス入力：ViewportWindowから直接状態を取得
         static bool wasCameraControlActive = false;
-
         bool cameraControlRequested = m_editorViewWindow && m_editorViewWindow->isCameraControlRequested();
-
-        static int debugCounter = 0;
-        if (debugCounter++ % 60 == 0)
-        {
-            Utils::log_info(std::format("CameraControlRequested: {}, Active: {}",
-                cameraControlRequested, wasCameraControlActive));
-        }
 
         if (cameraControlRequested)
         {
             if (!wasCameraControlActive)
             {
-                Utils::log_info("==========================================");
                 Utils::log_info("!!! ACTIVATING CAMERA CONTROL MODE !!!");
-                Utils::log_info("==========================================");
-
                 inputManager->setRelativeMouseMode(true);
                 io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-                io.WantCaptureMouse = false;  // ImGuiのマウスキャプチャを強制解除
-
+                io.WantCaptureMouse = false;
                 wasCameraControlActive = true;
-
-                Utils::log_info(std::format("RelativeMode set: {}",
-                    inputManager->getMouseState().isRelativeMode));
             }
 
             int deltaX = inputManager->getMouseDeltaX();
             int deltaY = inputManager->getMouseDeltaY();
 
-            if (debugCounter % 10 == 0 || deltaX != 0 || deltaY != 0)
+            // ★ デバッグログを常に出力してデルタ値を確認
+            Utils::log_info(std::format(">>> Camera delta check: X={}, Y={}, RelativeMode={}",
+                deltaX, deltaY, inputManager->getMouseState().isRelativeMode));
+
+            if (deltaX != 0 || deltaY != 0)
             {
-                Utils::log_info(std::format(">>> Camera delta: X={}, Y={}", deltaX, deltaY));
+                m_cameraController->processMouseMovement(
+                    static_cast<float>(deltaX),
+                    static_cast<float>(deltaY)
+                );
             }
 
-            m_cameraController->processMouseMovement(
-                static_cast<float>(deltaX),
-                static_cast<float>(deltaY)
-            );
+            // ★ 毎フレームリセット（次のRAW INPUTイベントまで累積されない）
+            inputManager->resetMouseDelta();
         }
         else if (wasCameraControlActive)
         {
-            Utils::log_info("==========================================");
             Utils::log_info("!!! DEACTIVATING CAMERA CONTROL MODE !!!");
-            Utils::log_info("==========================================");
-
             inputManager->setRelativeMouseMode(false);
             io.ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+            inputManager->resetMouseDelta();
             wasCameraControlActive = false;
         }
 
-        // マウスホイール
         if (isSceneWindowHovered)
         {
             float wheelDelta = inputManager->getMouseWheelDelta();

@@ -181,6 +181,15 @@ namespace Engine::Core {
 			}
 		}
 
+		if (uMsg == WM_INPUT)
+		{
+			if (m_inputManager)
+			{
+				m_inputManager->handleRawInput(lParam);
+			}
+			return 0; // WM_INPUTを処理した場合は0を返す
+		}
+
 		// engine 内部の処理（Input / Resize 等）
 		switch (uMsg)
 		{
