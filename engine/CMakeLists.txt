@@ -1,3 +1,4 @@
+# engine/CMakeLists.txt
 file(GLOB_RECURSE ENGINE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/engine/*.cpp
     ${CMAKE_SOURCE_DIR}/src/engine/*.hpp
@@ -11,14 +12,15 @@ target_include_directories(OrionEngine PUBLIC
     ${CMAKE_SOURCE_DIR}/ThirdParty
 )
 
+find_package(lua CONFIG REQUIRED)
+find_package(sol2 CONFIG REQUIRED)
+find_package(DirectXTex CONFIG REQUIRED)
+
 target_link_libraries(OrionEngine PUBLIC
-    ${LUA_LIBRARIES}
-    d3d12
-    dxgi
-    dxguid
+    lua
     sol2
     Microsoft::DirectXTex
-    lua
+    d3d12 dxgi dxguid d3dcompiler
 )
 
 if(MSVC)
