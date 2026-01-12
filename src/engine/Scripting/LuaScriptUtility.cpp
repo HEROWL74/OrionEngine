@@ -12,9 +12,14 @@ namespace Engine::Scripting
 		if (!file.is_open()) return false;
 
 		file << "-- " << path << "\n";
+		file << "\n";
+		file << "---@type OnStartFunc" << "\n";
+		file << "---@diagnostic disable-next-line: lowercase-global" << "\n";
 		file << "function onStart(obj)\n";
-		file << "    print(\"Hello from " << path << "\")\n";
+		file << "    print(\"Hello lua" << "\")\n";
 		file << "end\n\n";
+		file << "---@type OnUpdateFunc" << "\n";
+		file << "---@diagnostic disable-next-line: lowercase-global" << "\n";
 		file << "function onUpdate(obj, dt)\n";
 		file << "    -- update logic here\n";
 		file << "end\n";
@@ -25,7 +30,7 @@ namespace Engine::Scripting
 	void LuaScriptUtility::openInVSCode(const std::string& path)
 	{
 		std::filesystem::path scriptPath(path);
-		std::string folder = scriptPath.parent_path().string();
+		std::string folder = scriptPath.parent_path().parent_path().string();
 
 		//"code"コマンドを使用
 		ShellExecuteA(

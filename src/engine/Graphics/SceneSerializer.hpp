@@ -5,12 +5,13 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include "Scene.hpp"
+#include "../Scripting/LuaScriptComponent.hpp"
 
 namespace Engine::Graphics
 {
 	using json = nlohmann::json;
 	// ===============================================
-	// Scene‚ÌƒVƒŠƒAƒ‰ƒCƒYAƒfƒVƒŠƒAƒ‰ƒCƒY‚ğs‚¤ƒNƒ‰ƒX
+	// Sceneã®ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚ºã€ãƒ‡ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚ºã‚’è¡Œã†ã‚¯ãƒ©ã‚¹
 	// ===============================================
 	class SceneSerializer
 	{
@@ -18,12 +19,12 @@ namespace Engine::Graphics
 		SceneSerializer() = default;
 		~SceneSerializer() = default;
 
-		// Scene‚ğJSON‚É•Û‘¶
+		// Sceneã‚’JSONã«ä¿å­˜
 		[[nodiscard]] Utils::VoidResult saveScene(
 			const Scene& scene,
 			const std::string& filePath);
 
-		// JSON‚©‚çScene‚ğ“Ç‚İ‚İ
+		// JSONã‹ã‚‰Sceneã‚’èª­ã¿è¾¼ã¿
 		[[nodiscard]] Utils::VoidResult loadScene(
 			Scene& scene,
 			Device* device,
@@ -33,10 +34,10 @@ namespace Engine::Graphics
 			const std::string& filePath);
 
 	private:
-		// GameObject‚ğJSON‰»
+		// GameObjectã‚’JSONåŒ–
 		json serializeGameObject(const Core::GameObject* gameObject);
 
-		// JSON‚©‚çGameObject‚ğ•œŒ³
+		// JSONã‹ã‚‰GameObjectã‚’å¾©å…ƒ
 		[[nodiscatd]] Utils::VoidResult deserializeGameObject(
 			Scene& scene,
 			Device* device,
@@ -46,11 +47,11 @@ namespace Engine::Graphics
 			const json& json
 		);
 
-		// Transformî•ñ‚ÌƒVƒŠƒAƒ‰ƒCƒY
+		// Transformæƒ…å ±ã®ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚º
 		json serializeTransform(const Core::Transform* transform);
 		void deserializeTransform(Core::Transform* transform, const json& json);
 
-		// RenderComponentî•ñ‚ÌƒVƒŠƒAƒ‰ƒCƒY
+		// RenderComponentæƒ…å ±ã®ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚º
 		json serializeRenderComponent(const RenderComponent* renderComponent);
 
 		[[nodiscard]] Utils::VoidResult deserializeRenderComponent(
@@ -61,7 +62,11 @@ namespace Engine::Graphics
 			TextureManager* textureManager,
 			const json& json);
 
-		// Materialî•ñ‚ÌƒVƒŠƒAƒ‰ƒCƒY
+		// Materialæƒ…å ±ã®ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚º
 		json serializeMaterial(const Material* material);
+
+		// Luaã‚¹ã‚¯ãƒªãƒ—ãƒˆæƒ…å ±ã®ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚º
+		json serializeLuaComponent(const Scripting::LuaScriptComponent* component);
+		void deserializeLuaComponent(Scripting::LuaScriptComponent* component, json& json);
 	};
 }

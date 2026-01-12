@@ -1,8 +1,13 @@
 -- assets\scripts\NewLuaScript.lua
+
+---@type OnStartFunc
+---@diagnostic disable-next-line: lowercase-global
 function onStart(obj)
-    print("Hello from NewLuaScript.lua")
+    print("Hello lua")
 end
 
+---@type OnUpdateFunc
+---@diagnostic disable-next-line: lowercase-global
 function onUpdate(obj, dt)
     -- update logic here
 end

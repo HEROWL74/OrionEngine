@@ -14,7 +14,7 @@ namespace Engine::Graphics
             sceneJson["version"] = "1.0";
             sceneJson["gameObjects"] = nlohmann::json::array();
 
-            // ‘SGameObject‚ğƒVƒŠƒAƒ‰ƒCƒY
+            // å…¨GameObjectã‚’ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚º
             for (const auto& gameObject : scene.getGameObjects())
             {
                 if (gameObject)
@@ -25,7 +25,7 @@ namespace Engine::Graphics
                 }
             }
 
-            // ƒtƒ@ƒCƒ‹‚É‘‚«‚İ
+            // ãƒ•ã‚¡ã‚¤ãƒ«ã«æ›¸ãè¾¼ã¿
             std::ofstream file(filepath);
             if (!file.is_open())
             {
@@ -35,7 +35,7 @@ namespace Engine::Graphics
                 ));
             }
 
-            file << sceneJson.dump(4); // 4ƒXƒy[ƒXƒCƒ“ƒfƒ“ƒg
+            file << sceneJson.dump(4); // 4ã‚¹ãƒšãƒ¼ã‚¹ã‚¤ãƒ³ãƒ‡ãƒ³ãƒˆ
             file.close();
 
             Utils::log_info(std::format("Scene saved to: {}", filepath));
@@ -60,7 +60,7 @@ namespace Engine::Graphics
     {
         try
         {
-            // ƒtƒ@ƒCƒ‹‚ğŠJ‚­
+            // ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‹ã
             std::ifstream file(filepath);
             if (!file.is_open())
             {
@@ -70,12 +70,12 @@ namespace Engine::Graphics
                 ));
             }
 
-            // JSON‚ğƒp[ƒX
+            // JSONã‚’ãƒ‘ãƒ¼ã‚¹
             nlohmann::json sceneJson;
             file >> sceneJson;
             file.close();
 
-            // ƒo[ƒWƒ‡ƒ“ƒ`ƒFƒbƒN
+            // ãƒãƒ¼ã‚¸ãƒ§ãƒ³ãƒã‚§ãƒƒã‚¯
             if (!sceneJson.contains("version"))
             {
                 return std::unexpected(Utils::make_error(
@@ -84,7 +84,7 @@ namespace Engine::Graphics
                 ));
             }
 
-            // GameObjects‚ğ•œŒ³
+            // GameObjectsã‚’å¾©å…ƒ
             if (sceneJson.contains("gameObjects"))
             {
                 for (const auto& objJson : sceneJson["gameObjects"])
@@ -134,8 +134,13 @@ namespace Engine::Graphics
             json["renderComponent"] = serializeRenderComponent(renderComponent);
         }
 
-        // LuaƒXƒNƒŠƒvƒgî•ñ
-        // TODO: LuaScriptComponent ‚Ìî•ñ‚àƒVƒŠƒAƒ‰ƒCƒY
+        // Luaã‚¹ã‚¯ãƒªãƒ—ãƒˆæƒ…å ±
+        // TODO: LuaScriptComponent ã®æƒ…å ±ã‚‚ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚º
+        auto* lua = gameObject->getComponent<Scripting::LuaScriptComponent>();
+        if (lua)
+        {
+            json["lua"] = serializeLuaComponent(lua);
+        }
 
         return json;
     }
@@ -148,7 +153,7 @@ namespace Engine::Graphics
         TextureManager* textureManager,
         const nlohmann::json& json)
     {
-        // GameObject‚ğì¬
+        // GameObjectã‚’ä½œæˆ
         std::string name = json.value("name", "GameObject");
         Utils::log_info(std::format("Loading GameObject: {}", name));
 
@@ -162,14 +167,14 @@ namespace Engine::Graphics
             ));
         }
 
-        // Transform‚ğ•œŒ³
+        // Transformã‚’å¾©å…ƒ
         if (json.contains("transform"))
         {
             deserializeTransform(gameObject->getTransform(), json["transform"]);
             Utils::log_info(std::format("  Transform loaded for {}", name));
         }
 
-        // RenderComponent‚ğ•œŒ³
+        // RenderComponentã‚’å¾©å…ƒ
         if (json.contains("renderComponent"))
         {
             Utils::log_info(std::format("  Loading RenderComponent for {}", name));
@@ -186,7 +191,7 @@ namespace Engine::Graphics
             Utils::log_info(std::format("  RenderComponent loaded for {}", name));
         }
 
-        // Activeó‘Ô‚ğİ’è
+        // ActiveçŠ¶æ…‹ã‚’è¨­å®š
         bool isActive = json.value("active", true);
         gameObject->setActive(isActive);
         Utils::log_info(std::format("GameObject {} created successfully (active: {})", name, isActive));
@@ -255,7 +260,7 @@ namespace Engine::Graphics
         json["renderableType"] = static_cast<int>(component->getRenderableType());
         json["visible"] = component->isVisible();
 
-        // Materialî•ñ
+        // Materialæƒ…å ±
         auto material = component->getMaterial();
         if (material)
         {
@@ -273,14 +278,14 @@ namespace Engine::Graphics
         TextureManager* textureManager,
         const nlohmann::json& json)
     {
-        // RenderableType‚ğæ“¾
+        // RenderableTypeã‚’å–å¾—
         auto renderType = static_cast<RenderableType>(
             json.value("renderableType", 0)
             );
 
         Utils::log_info(std::format("    RenderableType: {}", static_cast<int>(renderType)));
 
-        // RenderComponent‚ğ’Ç‰Á
+        // RenderComponentã‚’è¿½åŠ 
         auto* renderComponent = gameObject->addComponent<RenderComponent>(renderType);
         if (!renderComponent)
         {
@@ -290,10 +295,10 @@ namespace Engine::Graphics
             ));
         }
 
-        // MaterialManager‚ğİ’è
+        // MaterialManagerã‚’è¨­å®š
         renderComponent->setMaterialManager(materialManager);
 
-        // ‰Šú‰»
+        // åˆæœŸåŒ–
         Utils::log_info("Initializing RenderComponent...");
         auto initResult = renderComponent->initialize(device, shaderManager);
         if (!initResult)
@@ -302,22 +307,22 @@ namespace Engine::Graphics
         }
         Utils::log_info("RenderComponent initialized");
 
-        // Materialî•ñ‚ğ•œŒ³
+        // Materialæƒ…å ±ã‚’å¾©å…ƒ
         if (json.contains("material"))
         {
             const auto& matJson = json["material"];
 
-            // ƒ†ƒj[ƒN‚ÈMaterial–¼‚ğ¶¬iƒIƒuƒWƒFƒNƒg–¼‚ğŠÜ‚ß‚éj
+            // ãƒ¦ãƒ‹ãƒ¼ã‚¯ãªMaterialåã‚’ç”Ÿæˆï¼ˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆåã‚’å«ã‚ã‚‹ï¼‰
             std::string baseName = matJson.value("name", "Material");
             std::string matName = gameObject->getName() + "_" + baseName;
 
             Utils::log_info(std::format("Creating material: {}", matName));
 
-            // Material‚ğì¬
+            // Materialã‚’ä½œæˆ
             auto material = materialManager->createMaterial(matName);
             if (material)
             {
-                // ƒvƒƒpƒeƒB‚ğ•œŒ³
+                // ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã‚’å¾©å…ƒ
                 if (matJson.contains("properties"))
                 {
                     MaterialProperties props;
@@ -341,7 +346,7 @@ namespace Engine::Graphics
                     material->setProperties(props);
                 }
 
-                // ƒeƒNƒXƒ`ƒƒ‚ğ•œŒ³
+                // ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’å¾©å…ƒ
                 if (matJson.contains("textures"))
                 {
                     const auto& textures = matJson["textures"];
@@ -368,7 +373,7 @@ namespace Engine::Graphics
             }
         }
 
-        // Visibleó‘Ô‚ğİ’è
+        // VisibleçŠ¶æ…‹ã‚’è¨­å®š
         renderComponent->setVisible(json.value("visible", true));
 
         return {};
@@ -380,15 +385,31 @@ namespace Engine::Graphics
 
         json["name"] = "Material"; 
 
-        // ƒvƒƒpƒeƒB
+        // ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£
         auto props = material->getProperties();
         json["properties"]["albedo"] = { props.albedo.x, props.albedo.y, props.albedo.z };
         json["properties"]["metallic"] = props.metallic;
         json["properties"]["roughness"] = props.roughness;
 
-        // ƒeƒNƒXƒ`ƒƒƒpƒXi¡ŒãÀ‘•j
+        // ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ‘ã‚¹ï¼ˆä»Šå¾Œå®Ÿè£…ï¼‰
         json["textures"] = nlohmann::json::object();
 
         return json;
+    }
+
+    json SceneSerializer::serializeLuaComponent(const Scripting::LuaScriptComponent* component)
+    {
+        json json;
+        json["name"] = "Lua";
+        // ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£
+        auto& props = component->getScriptFileName();
+        json["fileName"] = props;
+
+        return json;
+    }
+
+    void SceneSerializer::deserializeLuaComponent(Scripting::LuaScriptComponent* component, json& json)
+    {
+        
     }
 }
