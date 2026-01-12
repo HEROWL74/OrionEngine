@@ -242,7 +242,7 @@ namespace Editor
         m_editorCamera.lookAt({ 0.0f, 0.0f, 0.0f });
 
         m_gameCamera.setPerspective(45.0f, static_cast<float>(clientWidth) / clientHeight, 0.1f, 100.0f);
-        m_gameCamera.setPosition({ -5.0f, 3.0f, 8.0f });
+        m_gameCamera.setPosition({ 0.0f, 5.0f, 8.0f });
         m_gameCamera.lookAt({ 0.0f, 0.0f, 0.0f });
 
         m_cameraController = std::make_unique<Graphics::FPSCameraController>(&m_editorCamera);

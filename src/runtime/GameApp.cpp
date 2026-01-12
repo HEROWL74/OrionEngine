@@ -19,6 +19,10 @@ namespace Runtime
 		auto result = m_window.create(hInstance, settings);
 		if (!result) return result;
 
+		m_window.setResizeCallback([this](int width, int height) {
+			onWindowResize(width, height);
+			});
+
 		m_window.setCloseCallback([this]()
 			{
 				onWindowClose();
@@ -51,6 +55,102 @@ namespace Runtime
 
 		cleanup();
 		return 0;
+	}
+
+	void GameApp::onWindowResize(int width, int height)
+	{
+		Engine::Utils::log_info(std::format("App::onWindowResize called: {}x{}", width, height));
+
+		if (width <= 0 || height <= 0)
+		{
+			Engine::Utils::log_warning(std::format("Invalid resize dimensions: {}x{}", width, height));
+			return;
+		}
+
+		if (!m_commandQueue || !m_swapChain || !m_fence)
+		{
+			Engine::Utils::log_info("DirectX 12 not initialized yet");
+			if (height > 0)
+			{
+				m_camera.updateAspect(static_cast<float>(width) / height);
+			}
+			return;
+		}
+
+		Engine::Utils::log_info("Starting safe DirectX resize process...");
+
+		try
+		{
+			Engine::Utils::log_info("Complete GPU synchronization BEFORE shutdown");
+			waitForPreviousFrame();
+
+			const UINT64 flushFence = m_fenceValue;
+			m_commandQueue->Signal(m_fence.Get(), flushFence);
+			m_fenceValue++;
+
+			if (m_fence->GetCompletedValue() < flushFence)
+			{
+				m_fence->SetEventOnCompletion(flushFence, m_fenceEvent);
+				WaitForSingleObject(m_fenceEvent, INFINITE);
+			}
+
+			Engine::Utils::log_info("GPU fully synchronized");
+
+			Engine::Utils::log_info("Clearing DirectX resources");
+			for (UINT i = 0; i < 2; i++)
+			{
+				if (m_renderTargets[i])
+				{
+					m_renderTargets[i].Reset();
+				}
+			}
+
+			if (m_depthStencilBuffer)
+			{
+				m_depthStencilBuffer.Reset();
+			}
+
+			Engine::Utils::log_info("Resizing swap chain");
+			HRESULT hr = m_swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+
+			if (FAILED(hr))
+			{
+				Engine::Utils::log_error(Engine::Utils::make_error(Engine::Utils::ErrorType::SwapChainCreation,
+					std::format("Failed to resize swap chain: 0x{:08x}", static_cast<unsigned>(hr)), hr));
+				return;
+			}
+
+			auto renderTargetResult = createRenderTargets();
+			if (!renderTargetResult)
+			{
+				Engine::Utils::log_error(renderTargetResult.error());
+				return;
+			}
+
+			auto depthStencilResult = createDepthStencilBuffer();
+			if (!depthStencilResult)
+			{
+				Engine::Utils::log_error(depthStencilResult.error());
+				return;
+			}
+
+			m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+
+			m_camera.updateAspect(static_cast<float>(width) / height);
+
+			Engine::Utils::log_info("Resizing EditorView and GameView");
+
+			Engine::Utils::log_info("DirectX resize completed successfully");
+		}
+		catch (const std::exception& e)
+		{
+			Engine::Utils::log_error(Engine::Utils::make_error(Engine::Utils::ErrorType::Unknown,
+				std::format("Exception during resize: {}", e.what())));
+		}
+		catch (...)
+		{
+			Engine::Utils::log_error(Engine::Utils::make_error(Engine::Utils::ErrorType::Unknown, "Unknown exception during resize"));
+		}
 	}
 
 	void GameApp::onWindowClose()
@@ -121,7 +221,7 @@ namespace Runtime
 		// カメラ初期化（GameCameraの設定）
 		const auto [width, height] = m_window.getClientSize();
 		m_camera.setPerspective(45.0f, static_cast<float>(width) / height, 0.1f, 100.0f);
-		m_camera.setPosition({ -5.0f, 3.0f, 8.0f });
+		m_camera.setPosition({ 0.0f, 0.0f, 8.0f });
 		m_camera.lookAt({ 0.0f, 0.0f, 0.0f });
 
 		// シーン開始

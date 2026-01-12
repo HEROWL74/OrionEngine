@@ -80,6 +80,7 @@ namespace Runtime
 		void updateDeltaTime();
 		void waitForPreviousFrame();
 		void cleanup();
+		void onWindowResize(int width, int height);
 		void onWindowClose();
 	};
 }
