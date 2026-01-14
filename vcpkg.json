@@ -4,6 +4,7 @@
   "dependencies": [
     "sol2",
     "lua",
-    "directxtex"
+    "directxtex",
+    "nlohmann-json"
   ]
 }

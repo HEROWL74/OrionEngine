@@ -1,6 +1,7 @@
 // src/editor/EditorApp.cpp
 #include "EditorApp.hpp"
 #include <format>
+#include <filesystem> 
 
 namespace Editor
 {
@@ -187,18 +188,6 @@ namespace Editor
         // GPU同期後に再度登録
         m_device.waitForGpu();
 
-        // ShaderManagerポインタ取得
-        if (!m_shaderManager || !m_shaderManager.get()) {
-            Utils::log_warning("ShaderManager became null before GameObject creation");
-            return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown, "ShaderManager is null before GameObject creation"));
-        }
-
-        Graphics::ShaderManager* shaderMgrPtr = m_shaderManager.get();
-        if (!shaderMgrPtr) {
-            Utils::log_warning("Failed to get valid ShaderManager pointer");
-            return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown, "ShaderManager pointer is null"));
-        }
-
         // Lua 初期化
         auto& scriptMgr = Scripting::ScriptManager::get();
         scriptMgr.initialize();
@@ -206,44 +195,39 @@ namespace Editor
         // バインディング登録(C++クラスをLuaに公開)
         Scripting::registerBindings(scriptMgr.getLuaState());
 
-        // テストキューブ作成
-        auto* cube = m_scene.createGameObject("Cube1");
-        cube->getTransform()->setPosition(Math::Vector3(0.0f, 0.0f, 0.0f));
-        auto* cube1 = cube->addComponent<Graphics::RenderComponent>(Graphics::RenderableType::Cube);
+        // 起動時にdefault.sceneがあれば読み込む、無ければ初期シーンを作成
+        Utils::log_info("Checking for default scene...");
+        if (std::filesystem::exists("assets/scenes/default.scene"))
+        {
+            Utils::log_info("Default scene found, loading...");
 
-        // マテリアルを作成
-        auto cubeTexMat = m_materialManager.createMaterial("CubeWithTexture_Material");
-        if (cubeTexMat) {
-            // テクスチャをロード
-            auto baseColorTex = m_textureManager.loadTexture("assets/textures/brick_BaseColor.jpg", true, true);
+            // シーンを読み込み
+            auto loadResult = m_sceneSerializer.loadScene(
+                m_scene,
+                &m_device,
+                m_shaderManager.get(),
+                &m_materialManager,
+                &m_textureManager,
+                "assets/scenes/default.scene"
+            );
 
-            // プロパティ設定
-            Graphics::MaterialProperties cubeProps;
-            cubeProps.metallic = 0.0f;
-            cubeProps.roughness = 0.5f;
-            cubeTexMat->setProperties(cubeProps);
-
-            // テクスチャが読めたら Albedo にセット
-            if (baseColorTex) {
-                cubeTexMat->setTexture(Graphics::TextureType::Albedo, baseColorTex);
+            if (loadResult)
+            {
+                m_currentScenePath = "assets/scenes/default.scene";
+                Utils::log_info(std::format("Default scene loaded successfully. Object count: {}",
+                    m_scene.getGameObjects().size()));
             }
-
-            // マテリアルをCubeにアタッチ
-            cube1->setMaterial(cubeTexMat);
+            else
+            {
+                Utils::log_warning("Failed to load default scene, creating initial scene");
+                createInitialScene();
+            }
         }
-
-        // MaterialManagerを設定
-        cube1->setMaterialManager(&m_materialManager);
-
-        // RenderComponentを初期化
-        auto cubeInitResult1 = cube1->initialize(&m_device, shaderMgrPtr);
-        if (!cubeInitResult1) {
-            Utils::log_error(cubeInitResult1.error());
-            return cubeInitResult1;
+        else
+        {
+            Utils::log_info("No default scene found, creating initial scene");
+            createInitialScene();
         }
-
-        // Lua スクリプトをアタッチ
-        cube->addLuaScriptComponent("assets/scripts/move.lua");
 
         // ProjectWindow作成
         m_projectWindow = std::make_unique<UI::ProjectWindow>();
@@ -258,7 +242,7 @@ namespace Editor
         m_editorCamera.lookAt({ 0.0f, 0.0f, 0.0f });
 
         m_gameCamera.setPerspective(45.0f, static_cast<float>(clientWidth) / clientHeight, 0.1f, 100.0f);
-        m_gameCamera.setPosition({ -5.0f, 3.0f, 8.0f });
+        m_gameCamera.setPosition({ 0.0f, 5.0f, 8.0f });
         m_gameCamera.lookAt({ 0.0f, 0.0f, 0.0f });
 
         m_cameraController = std::make_unique<Graphics::FPSCameraController>(&m_editorCamera);
@@ -269,8 +253,10 @@ namespace Editor
         m_debugWindow = std::make_unique<UI::DebugWindow>();
         m_hierarchyWindow = std::make_unique<UI::SceneHierarchyWindow>();
         m_inspectorWindow = std::make_unique<UI::InspectorWindow>();
+        m_toolbarWindow = std::make_unique<UI::ToolbarWindow>();
 
-        // Viewport ウィンドウ作成
+        m_toolbarWindow->setPlayModeController(&m_playModeController);
+
         m_editorViewWindow = std::make_unique<UI::EditorViewWindow>();
 
         // 重要: Window経由でInputManagerを取得
@@ -295,13 +281,22 @@ namespace Editor
         Utils::log_info(std::format("Initializing EditorViewWindow with InputManager (initialized: {})",
             inputManager->isInitialized()));
 
-        // EditorViewWindowを初期化（正しいInputManagerポインタを渡す）
+        // EditorViewWindowを初期化(正しいInputManagerポインタを渡す)
         m_editorViewWindow->initialize(&m_imguiManager, &m_editorView, inputManager);
         m_editorViewWindow->setCamera(&m_editorCamera);
 
         m_gameViewWindow = std::make_unique<UI::GameViewWindow>();
         m_gameViewWindow->initialize(&m_imguiManager, &m_gameView);
         m_gameViewWindow->setCamera(&m_gameCamera);
+
+        // ★ BuildSystemとBuildWindowを初期化
+        Utils::log_info("Initializing BuildSystem...");
+        m_buildSystem = std::make_unique<Build::BuildSystem>();
+        m_buildWindow = std::make_unique<UI::BuildWindow>();
+        m_buildWindow->initialize(m_buildSystem.get());
+
+        Utils::log_info("BuildSystem initialized successfully");
+        Utils::log_info("Build output will be created in: dist/OrionGame (Release only)");
 
         // UIウィンドウ設定
         m_hierarchyWindow->setScene(&m_scene);
@@ -310,6 +305,9 @@ namespace Editor
             m_editorView.setSelectedObject(selectedObject);  // EditorViewにも通知
             });
 
+        // PlayModeController初期化
+        m_playModeController.initialize(&m_scene);
+        Utils::log_info("PlayModeController initialized with scene");
         m_debugWindow->setPlayModeController(&m_playModeController);
 
         // コンテキストメニューのコールバック設定
@@ -389,6 +387,8 @@ namespace Editor
         Utils::log_info("Input system initialized successfully!");
         return {};
     }
+
+
 
     Utils::VoidResult EditorApp::createCommandQueue()
     {
@@ -568,6 +568,12 @@ namespace Editor
 
         if (m_playModeController.isPlaying())
         {
+            static int updateCount = 0;
+            if (updateCount < 5) {
+                Utils::log_info(std::format("Scene update called, frame: {}", updateCount));
+                updateCount++;
+            }
+
             Scripting::ScriptManager::get().checkForUpdates();
             m_scene.update(m_deltaTime);
             m_scene.lateUpdate(m_deltaTime);
@@ -697,13 +703,86 @@ namespace Editor
 
         m_imguiManager.newFrame();
 
+        setupFixedLayout();
+
+        m_toolbarWindow->draw();
+
+        // メニューバーを追加
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+                {
+                    createNewScene();
+                }
+
+                if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
+                {
+                    openScene();
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+                {
+                    saveScene();
+                }
+
+                if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
+                {
+                    saveSceneAs();
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Exit", "Alt+F4"))
+                {
+                    PostQuitMessage(0);
+                }
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Build"))
+            {
+                if (ImGui::MenuItem("Build Project", "Ctrl+B"))
+                {
+                    m_buildWindow->show();
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Open Build Folder"))
+                {
+                    // ビルドフォルダを開く
+                    std::filesystem::path root = std::filesystem::current_path();
+                    while (root.has_parent_path())
+                    {
+                        if (std::filesystem::exists(root / "CMakeLists.txt"))
+                            break;
+                        root = root.parent_path();
+                    }
+
+                    std::string buildPath = (root / "dist" / "OrionGame").string();
+                    std::string command = "explorer \"" + buildPath + "\"";
+                    system(command.c_str());
+                }
+
+                ImGui::EndMenu();
+            }
+
+
+            ImGui::EndMainMenuBar();
+        }
+
         m_editorViewWindow->draw();
         m_gameViewWindow->draw();
         m_hierarchyWindow->draw();
         m_inspectorWindow->draw();
         m_debugWindow->draw();
         m_projectWindow->draw();
-
+        m_buildWindow->draw();
         processInput();
 
         if (isResizing)
@@ -739,7 +818,6 @@ namespace Editor
 
         waitForPreviousFrame();
     }
-
 
     void EditorApp::updateDeltaTime()
     {
@@ -1028,6 +1106,86 @@ namespace Editor
         {
             Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown, "Unknown exception during resize"));
         }
+        m_dockNeedsRebuild = true;
+    }
+
+    void EditorApp::setupFixedLayout()
+    {
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGuiID dockspaceID = ImGui::GetID("MainDockSpace");
+
+        ImGuiDockNodeFlags dockspaceFlags =
+            ImGuiDockNodeFlags_NoDockingInCentralNode;;
+
+        ImVec2 workPos = viewport->WorkPos;
+        ImVec2 workSize = viewport->WorkSize;
+
+        const float toolbarHeight = 40.0f;
+        const float menuBarHeight = ImGui::GetFrameHeight();
+        workPos.y += toolbarHeight + menuBarHeight;
+        workSize.y -= toolbarHeight + menuBarHeight;
+
+        ImGui::SetNextWindowPos(workPos);
+        ImGui::SetNextWindowSize(workSize);
+        ImGui::SetNextWindowViewport(viewport->ID);
+
+        ImGuiWindowFlags hostWindowFlags =
+            ImGuiWindowFlags_NoTitleBar |
+            ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoBringToFrontOnFocus |
+            ImGuiWindowFlags_NoNavFocus |
+            ImGuiWindowFlags_NoBackground;
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+        ImGui::Begin("DockSpaceWindow", nullptr, hostWindowFlags);
+        ImGui::PopStyleVar(3);
+
+        // ★ DockSpaceは毎フレーム
+        ImGui::DockSpace(dockspaceID, ImVec2(0, 0), dockspaceFlags);
+
+        // ★ レイアウトは「初回 or resize時」
+        if (!m_layoutInitialized || m_dockNeedsRebuild)
+        {
+            ImGui::DockBuilderRemoveNode(dockspaceID);
+            ImGui::DockBuilderAddNode(
+                dockspaceID,
+                dockspaceFlags | ImGuiDockNodeFlags_DockSpace
+            );
+
+            ImGui::DockBuilderSetNodeSize(dockspaceID, workSize);
+
+            ImGuiID dockMain = dockspaceID;
+
+            ImGuiID dockBottom =
+                ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Down, 0.28f, nullptr, &dockMain);
+
+            ImGuiID dockLeft =
+                ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Left, 0.22f, nullptr, &dockMain);
+
+            ImGuiID dockRight =
+                ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Right, 0.33f, nullptr, &dockMain);
+
+            ImGuiID dockCenter = dockMain;
+
+            ImGui::DockBuilderDockWindow("Scene Hierarchy", dockLeft);
+            ImGui::DockBuilderDockWindow("Inspector", dockRight);
+            ImGui::DockBuilderDockWindow("Scene", dockCenter);
+            ImGui::DockBuilderDockWindow("Game", dockCenter);
+            ImGui::DockBuilderDockWindow("Project", dockBottom);
+            ImGui::DockBuilderDockWindow("Debug info", dockBottom);
+
+            ImGui::DockBuilderFinish(dockspaceID);
+
+            m_layoutInitialized = true;
+            m_dockNeedsRebuild = false;
+        }
+
+        ImGui::End();
     }
 
     void EditorApp::onWindowClose()
@@ -1035,6 +1193,7 @@ namespace Editor
         Utils::log_info("Window close requested.");
         PostQuitMessage(0);
     }
+
 
     void EditorApp::onKeyPressed(Input::KeyCode key)
     {
@@ -1309,5 +1468,203 @@ namespace Editor
             return UI::PrimitiveType::Cube;
         }
     }
+
+    void EditorApp::createInitialScene()
+    {
+        Utils::log_info("Creating initial scene with test objects...");
+
+        // ShaderManagerポインタ取得
+        if (!m_shaderManager || !m_shaderManager.get()) {
+            Utils::log_warning("ShaderManager is null");
+            return;
+        }
+
+        Graphics::ShaderManager* shaderMgrPtr = m_shaderManager.get();
+
+        // テストキューブ作成
+        auto* cube = m_scene.createGameObject("Cube1");
+        cube->getTransform()->setPosition(Math::Vector3(0.0f, 0.0f, 0.0f));
+        auto* cube1 = cube->addComponent<Graphics::RenderComponent>(Graphics::RenderableType::Cube);
+
+        // マテリアルを作成
+        auto cubeTexMat = m_materialManager.createMaterial("CubeWithTexture_Material");
+        if (cubeTexMat) {
+            // テクスチャをロード
+            auto baseColorTex = m_textureManager.loadTexture("assets/textures/brick_BaseColor.jpg", true, true);
+
+            // プロパティ設定
+            Graphics::MaterialProperties cubeProps;
+            cubeProps.metallic = 0.0f;
+            cubeProps.roughness = 0.5f;
+            cubeTexMat->setProperties(cubeProps);
+
+            // テクスチャが読めたら Albedo にセット
+            if (baseColorTex) {
+                cubeTexMat->setTexture(Graphics::TextureType::Albedo, baseColorTex);
+            }
+
+            // マテリアルをCubeにアタッチ
+            cube1->setMaterial(cubeTexMat);
+        }
+
+        // MaterialManagerを設定
+        cube1->setMaterialManager(&m_materialManager);
+
+        // RenderComponentを初期化
+        auto cubeInitResult1 = cube1->initialize(&m_device, shaderMgrPtr);
+        if (!cubeInitResult1) {
+            Utils::log_error(cubeInitResult1.error());
+            return;
+        }
+
+        Utils::log_info("Initial scene created successfully");
+    }
+
+    void EditorApp::createNewScene()
+    {
+        Utils::log_info("Creating new scene...");
+
+        // 既存のGameObjectを全て削除
+        auto& gameObjects = m_scene.getGameObjects();
+        std::vector<Core::GameObject*> objectsToDelete;
+
+        for (const auto& obj : gameObjects)
+        {
+            if (obj)
+            {
+                objectsToDelete.push_back(obj.get());
+            }
+        }
+
+        for (auto* obj : objectsToDelete)
+        {
+            deleteGameObject(obj);
+        }
+
+        // 選択状態をクリア
+        if (m_inspectorWindow)
+        {
+            m_inspectorWindow->setSelectedObject(nullptr);
+        }
+        if (m_hierarchyWindow)
+        {
+            m_hierarchyWindow->setSelectedObject(nullptr);
+        }
+
+        m_currentScenePath = "assets/scenes/untitled.scene";
+        Utils::log_info("New scene created");
+    }
+
+    void EditorApp::saveScene()
+    {
+        Utils::log_info(std::format("Saving scene to: {}", m_currentScenePath));
+
+        // ディレクトリが存在しない場合は作成
+        std::filesystem::path scenePath(m_currentScenePath);
+        auto parentPath = scenePath.parent_path();
+
+        if (!parentPath.empty() && !std::filesystem::exists(parentPath))
+        {
+            std::filesystem::create_directories(parentPath);
+        }
+
+        // シーンを保存
+        auto result = m_sceneSerializer.saveScene(m_scene, m_currentScenePath);
+
+        if (result)
+        {
+            Utils::log_info("Scene saved successfully");
+        }
+        else
+        {
+            Utils::log_error(result.error());
+        }
+    }
+
+    void EditorApp::saveSceneAs()
+    {
+        // TODO: ファイル選択ダイアログを実装
+        // 現在は固定パスで保存
+        Utils::log_info("Save Scene As...");
+
+        static int sceneCounter = 1;
+        m_currentScenePath = std::format("assets/scenes/scene_{}.scene", sceneCounter++);
+
+        saveScene();
+    }
+
+    void EditorApp::openScene()
+    {
+        Utils::log_info("Opening scene...");
+
+        std::string filepath = "assets/scenes/default.scene";
+
+        // ファイルが存在するかチェック
+        if (!std::filesystem::exists(filepath))
+        {
+            Utils::log_warning(std::format("Scene file not found: {}", filepath));
+            Utils::log_info("Creating new scene instead");
+            createNewScene();
+            return;
+        }
+
+        // まず選択状態をクリア
+        if (m_inspectorWindow)
+        {
+            m_inspectorWindow->setSelectedObject(nullptr);
+        }
+        if (m_hierarchyWindow)
+        {
+            m_hierarchyWindow->setSelectedObject(nullptr);
+        }
+
+        // 既存のGameObjectを削除
+        Utils::log_info("Clearing current scene...");
+        auto& gameObjects = m_scene.getGameObjects();
+        std::vector<Core::GameObject*> objectsToDelete;
+
+        for (const auto& obj : gameObjects)
+        {
+            if (obj)
+            {
+                objectsToDelete.push_back(obj.get());
+            }
+        }
+
+        for (auto* obj : objectsToDelete)
+        {
+            m_scene.destroyGameObject(obj);
+        }
+
+        // GPU同期を確実に行う
+        m_device.waitForGpu();
+
+        Utils::log_info(std::format("Loading scene from: {}", filepath));
+
+        // シーンを読み込み
+        auto result = m_sceneSerializer.loadScene(
+            m_scene,
+            &m_device,
+            m_shaderManager.get(),
+            &m_materialManager,
+            &m_textureManager,
+            filepath
+        );
+
+        if (result)
+        {
+            m_currentScenePath = filepath;
+            Utils::log_info(std::format("Scene loaded successfully. Object count: {}",
+                m_scene.getGameObjects().size()));
+
+            // 読み込んだシーンを開始
+            m_scene.start();
+        }
+        else
+        {
+            Utils::log_error(result.error());
+        }
+    }
+
 }
 

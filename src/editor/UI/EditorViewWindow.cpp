@@ -31,30 +31,9 @@ namespace Editor::UI
 		if (!m_texture)
 			return;
 
-		ImGuiViewport* vp = ImGui::GetMainViewport();
-		ImVec2 wp = vp->WorkPos;
-		ImVec2 ws = vp->WorkSize;
-
-		const float LEFT = 0.22f;
-		const float RIGHT = 0.26f;
-		const float BOTTOM = 0.28f;
-
-		ImVec2 scenePos = ImVec2(wp.x + ws.x * LEFT, wp.y);
-		ImVec2 sceneSize = ImVec2(ws.x * (1.0f - LEFT - RIGHT), ws.y * (1.0f - BOTTOM));
-
-		static ImVec2 prevDisplay(0, 0);
-		ImGuiIO& io = ImGui::GetIO();
-		bool resized = fabsf(prevDisplay.x - io.DisplaySize.x) > 1.0f ||
-			fabsf(prevDisplay.y - io.DisplaySize.y) > 1.0f;
-		prevDisplay = io.DisplaySize;
-		ImGuiCond cond = resized ? ImGuiCond_Always : ImGuiCond_FirstUseEver;
-
-		ImGui::SetNextWindowPos(scenePos, cond);
-		ImGui::SetNextWindowSize(sceneSize, cond);
-
+		// 位置とサイズ指定を削除し、ドッキングに任せる
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar |
-			ImGuiWindowFlags_NoScrollWithMouse |
-			ImGuiWindowFlags_NoMove;
+			ImGuiWindowFlags_NoScrollWithMouse;
 
 		if (ImGui::Begin("Scene", nullptr, flags))
 		{
@@ -113,6 +92,7 @@ namespace Editor::UI
 		ImGui::End();
 	}
 
+
 	void EditorViewWindow::handleMouseInput()
 	{
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !m_cameraControlRequested && !m_isDraggingGizmo)
@@ -161,7 +141,7 @@ namespace Editor::UI
 		float viewportWidth = static_cast<float>(m_pendingWidth > 0 ? m_pendingWidth : m_lastSize.x);
 		float viewportHeight = static_cast<float>(m_pendingHeight > 0 ? m_pendingHeight : m_lastSize.y);
 
-		Utils::RayPicking::screenToWorldRay(localX, localY, viewportWidth, viewportHeight, *m_camera, outOrigin, outDirection);
+		EditorUtils::RayPicking::screenToWorldRay(localX, localY, viewportWidth, viewportHeight, *m_camera, outOrigin, outDirection);
 	}
 
 	void EditorViewWindow::startGizmoDrag(GizmoAxis axis, const Math::Vector3& rayOrigin, const Math::Vector3& rayDirection)
@@ -246,7 +226,7 @@ namespace Editor::UI
 		Math::Vector3 rayOrigin, rayDirection;
 		getRayFromMouse(rayOrigin, rayDirection);
 
-		auto hit = Utils::RayPicking::raycast(rayOrigin, rayDirection, m_scene->getGameObjects());
+		auto hit = EditorUtils::RayPicking::raycast(rayOrigin, rayDirection, m_scene->getGameObjects());
 
 		if (hit.hit)
 		{

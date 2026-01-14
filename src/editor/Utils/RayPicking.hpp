@@ -6,7 +6,7 @@
 #include "engine/Graphics/RenderComponent.hpp"
 #include <vector>
 
-namespace Editor::Utils
+namespace Editor::EditorUtils
 {
 	using namespace Engine;
 

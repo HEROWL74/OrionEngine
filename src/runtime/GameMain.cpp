@@ -8,11 +8,32 @@ int WINAPI WinMain(
 	_In_ LPSTR,
 	_In_ int nCmdShow)
 {
+	// デバッグ用: コンソールウィンドウを表示
+#ifdef _DEBUG
+	AllocConsole();
+	FILE* fp;
+	freopen_s(&fp, "CONOUT$", "w", stdout);
+	freopen_s(&fp, "CONOUT$", "w", stderr);
+#endif
+
 	Runtime::GameApp app;
 
 	auto init = app.initialize(hInstance, nCmdShow);
 	if (!init)
+	{
+		// エラーメッセージを表示
+		MessageBoxA(nullptr,
+			init.error().message.c_str(),
+			"Initialization Error",
+			MB_OK | MB_ICONERROR);
 		return -1;
+	}
 
-	return app.run();
+	int result = app.run();
+
+#ifdef _DEBUG
+	FreeConsole();
+#endif
+
+	return result;
 }

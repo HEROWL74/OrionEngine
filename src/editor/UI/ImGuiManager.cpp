@@ -1,6 +1,7 @@
 ﻿//src/UI/ImGuiManager.cpp
 #include "ImGuiManager.hpp"
 #include "ProjectWindow.hpp"  // AssetInfoを使う
+#include "engine/Scripting/LuaScriptComponent.hpp"
 #include <format>
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -49,6 +50,7 @@ namespace Editor::UI
 
 			// ImGui設定
 			ImGuiIO& io = ImGui::GetIO();
+			io.IniFilename = nullptr;
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -249,18 +251,12 @@ namespace Editor::UI
 
 		try
 		{
+			if (!m_initialized || !m_context)
+				return;
+
 			ImGui_ImplDX12_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
-
-			//DockSpaceを作成
-			ImGuiIO& io = ImGui::GetIO();
-			if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-			{
-				// Viewport全体をDock領域にする場合
-				ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
-				ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f));
-			}
 		}
 		catch (const std::exception& e)
 		{
@@ -706,27 +702,7 @@ namespace Editor::UI
 	{
 		if (!m_visible || !m_scene) return;
 
-		ImGuiViewport* vp = ImGui::GetMainViewport();
-		ImVec2 wp = vp->WorkPos;
-		ImVec2 ws = vp->WorkSize;
-
-		const float LEFT = 0.22f;
-		const float RIGHT = 0.26f;
-		const float BOTTOM = 0.28f;
-
-		static ImVec2 prevDisplay(0, 0);
-		ImGuiIO& io = ImGui::GetIO();
-		bool resized = fabsf(prevDisplay.x - io.DisplaySize.x) > 1.0f ||
-			fabsf(prevDisplay.y - io.DisplaySize.y) > 1.0f;
-		prevDisplay = io.DisplaySize;
-		ImGuiCond cond = resized ? ImGuiCond_Always : ImGuiCond_FirstUseEver;
-
-		// 左上に配置（Hierarchy）
-		ImVec2 leftPos = ImVec2(wp.x, wp.y);
-		ImVec2 leftSize = ImVec2(ws.x * LEFT, ws.y * (1.0f - BOTTOM));
-		ImGui::SetNextWindowPos(leftPos, cond);
-		ImGui::SetNextWindowSize(leftSize, cond);
-
+		// 位置とサイズの指定を削除し、ドッキングシステムに任せる
 		if (ImGui::Begin(m_title.c_str(), &m_visible))
 		{
 			if (m_selectedObject)
@@ -752,7 +728,6 @@ namespace Editor::UI
 				}
 			}
 
-			// GameObject関連Gui描画
 			const auto& gameObjects = m_scene->getGameObjects();
 			for (const auto& gameObject : gameObjects)
 			{
@@ -762,7 +737,6 @@ namespace Editor::UI
 				}
 			}
 
-			// コンテキストメニュー描画
 			if (m_contextMenu)
 			{
 				m_contextMenu->drawHierarchyContextMenu();
@@ -873,28 +847,7 @@ namespace Editor::UI
 	{
 		if (!m_visible) return;
 
-		ImGuiViewport* vp = ImGui::GetMainViewport();
-		ImVec2 wp = vp->WorkPos;
-		ImVec2 ws = vp->WorkSize;
-
-		const float LEFT = 0.22f;
-		const float RIGHT = 0.26f;
-		const float BOTTOM = 0.28f;
-
-		static ImVec2 prevDisplay(0, 0);
-		ImGuiIO& io = ImGui::GetIO();
-		bool resized = fabsf(prevDisplay.x - io.DisplaySize.x) > 1.0f ||
-			fabsf(prevDisplay.y - io.DisplaySize.y) > 1.0f;
-		prevDisplay = io.DisplaySize;
-		ImGuiCond cond = resized ? ImGuiCond_Always : ImGuiCond_FirstUseEver;
-
-		// 右上に配置（Inspector）
-		ImVec2 inspPos = ImVec2(wp.x + ws.x * (1.0f - RIGHT), wp.y);
-		ImVec2 inspSize = ImVec2(ws.x * RIGHT, ws.y * (1.0f - BOTTOM));
-		ImGui::SetNextWindowPos(inspPos, cond);
-		ImGui::SetNextWindowSize(inspSize, cond);
-
-
+		// 位置とサイズの指定を削除
 		if (ImGui::Begin(m_title.c_str(), &m_visible))
 		{
 			if (m_selectedObject)
@@ -903,7 +856,6 @@ namespace Editor::UI
 				ImGui::Text("Object: %s", objectName.c_str());
 				ImGui::Separator();
 
-				// Transform / Render はそのまま
 				if (auto* transform = m_selectedObject->getTransform())
 					drawTransformComponent(transform);
 
@@ -914,7 +866,6 @@ namespace Editor::UI
 
 				ImGui::Spacing();
 
-				// ==== Script ====
 				auto* luaScriptComponent = m_selectedObject->getComponent<Engine::Scripting::LuaScriptComponent>();
 				if (luaScriptComponent)
 				{
@@ -933,13 +884,12 @@ namespace Editor::UI
 							const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
 							if (dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
 							{
-								m_selectedObject->addLuaScriptComponent(dropped->path);
+								m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
 								Utils::log_info(std::format("Lua script attached: {}", dropped->path));
 							}
 						}
 						ImGui::EndDragDropTarget();
 					}
-
 				}
 			}
 			else
@@ -949,8 +899,6 @@ namespace Editor::UI
 		}
 		ImGui::End();
 	}
-
-
 
 	void InspectorWindow::drawTransformComponent(Core::Transform* transform)
 	{
@@ -1233,7 +1181,7 @@ namespace Editor::UI
 	{
 		if (ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			std::string fileName = luaScriptComponent->getScriptFileName();
+			std::string fileName = luaScriptComponent->getScriptPath();
 
 			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Attached Script:");
 			ImGui::SameLine();
@@ -1248,7 +1196,7 @@ namespace Editor::UI
 					const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
 					if (dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
 					{
-						m_selectedObject->addLuaScriptComponent(dropped->path);
+						m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
 						Utils::log_info(std::format("Lua script re-attached: {}", dropped->path));
 					}
 				}

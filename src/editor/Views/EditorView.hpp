@@ -19,7 +19,7 @@ namespace Editor::UI
 		EditorView() = default;
 		~EditorView() = default;
 
-		[[nodiscard]] Utils::VoidResult initialize(Graphics::Device* device,
+		[[nodiscard]] Engine::Utils::VoidResult initialize(Graphics::Device* device,
 			uint32_t width,
 			uint32_t height,
 			Graphics::ShaderManager* shaderManager);
@@ -99,9 +99,9 @@ namespace Editor::UI
 
 	private:
 		// Grid ä÷òAÇÃä÷êî
-		[[nodiscard]] Utils::VoidResult initializeGrid(Graphics::ShaderManager* shaderManager);
-		[[nodiscard]] Utils::VoidResult createGridGeometry();
-		[[nodiscard]] Utils::VoidResult createGridRootSignature();
-		[[nodiscard]] Utils::VoidResult createGridPipelineState(Graphics::ShaderManager* shaderManager);
+		[[nodiscard]] Engine::Utils::VoidResult initializeGrid(Graphics::ShaderManager* shaderManager);
+		[[nodiscard]] Engine::Utils::VoidResult createGridGeometry();
+		[[nodiscard]] Engine::Utils::VoidResult createGridRootSignature();
+		[[nodiscard]] Engine::Utils::VoidResult createGridPipelineState(Graphics::ShaderManager* shaderManager);
 	};
 }

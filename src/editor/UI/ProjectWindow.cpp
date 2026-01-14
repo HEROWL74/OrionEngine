@@ -16,29 +16,6 @@ namespace Editor::UI
     {
         if (!m_visible) return;
 
-        ImGuiViewport* vp = ImGui::GetMainViewport();
-        ImVec2 wp = vp->WorkPos;
-        ImVec2 ws = vp->WorkSize;
-
-        // レイアウト比率（好みで微調整OK）
-        const float LEFT = 0.22f; // 左カラム (Hierarchy)
-        const float RIGHT = 0.26f; // 右カラム (Inspector)
-        const float BOTTOM = 0.28f; // 下カラム (Project)
-
-        // 画面サイズ変更を検知して、その時だけ強制反映
-        static ImVec2 prevDisplay(0, 0);
-        ImGuiIO& io = ImGui::GetIO();
-        bool resized = fabsf(prevDisplay.x - io.DisplaySize.x) > 1.0f ||
-            fabsf(prevDisplay.y - io.DisplaySize.y) > 1.0f;
-        prevDisplay = io.DisplaySize;
-        ImGuiCond cond = resized ? ImGuiCond_Always : ImGuiCond_FirstUseEver;
-
-        // Project は最下段フル幅
-        ImVec2 projPos = ImVec2(wp.x, wp.y + ws.y * (1.0f - BOTTOM));
-        ImVec2 projSize = ImVec2(ws.x, ws.y * BOTTOM);
-        ImGui::SetNextWindowPos(projPos, cond);
-        ImGui::SetNextWindowSize(projSize, cond);
-
         if (ImGui::Begin(m_title.c_str(), &m_visible))
         {
             drawToolbar();
@@ -52,11 +29,10 @@ namespace Editor::UI
                 }
                 if (m_showGrid) drawAssetGrid();
                 else            drawAssetList();
-                // drawContextMenu(); ← ここは削除
+                 
+                drawContextMenu();
             }
             ImGui::EndChild();
-
-            drawContextMenu();
 
             // ここで一括処理
             if (!m_pendingPathChange.empty()) {
@@ -247,7 +223,7 @@ namespace Editor::UI
                     try {
                         std::filesystem::rename(asset.path, newPath);
 
-                        // 🔧 C++ の場合、中の class 名も置換
+                        // class 名も置換
                         if (asset.extension == ".cpp") {
                             std::ifstream in(newPath);
                             std::stringstream buffer;
