@@ -384,6 +384,8 @@ namespace Editor
             onMouseButtonReleased(button, x, y);
             });
 
+        Input::InputSystem::get().setInputManager(inputManager);
+
         Utils::log_info("Input system initialized successfully!");
         return {};
     }
