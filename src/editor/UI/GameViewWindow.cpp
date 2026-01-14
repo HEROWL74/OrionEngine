@@ -23,27 +23,6 @@ namespace Editor::UI
 		if (!m_texture)
 			return;
 
-		ImGuiViewport* vp = ImGui::GetMainViewport();
-		ImVec2 wp = vp->WorkPos;
-		ImVec2 ws = vp->WorkSize;
-
-		const float LEFT = 0.22f;
-		const float RIGHT = 0.26f;
-		const float BOTTOM = 0.28f;
-
-		ImVec2 gamePos = ImVec2(wp.x + ws.x * LEFT, wp.y);
-		ImVec2 gameSize = ImVec2(ws.x * (1.0f - LEFT - RIGHT), ws.y * (1.0f - BOTTOM));
-
-		static ImVec2 prevDisplay(0, 0);
-		ImGuiIO& io = ImGui::GetIO();
-		bool resized = fabsf(prevDisplay.x - io.DisplaySize.x) > 1.0f ||
-			fabsf(prevDisplay.y - io.DisplaySize.y) > 1.0f;
-		prevDisplay = io.DisplaySize;
-		ImGuiCond cond = resized ? ImGuiCond_Always : ImGuiCond_FirstUseEver;
-
-		ImGui::SetNextWindowPos(gamePos, cond);
-		ImGui::SetNextWindowSize(gameSize, cond);
-
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar |
 			ImGuiWindowFlags_NoScrollWithMouse;
 
@@ -51,7 +30,6 @@ namespace Editor::UI
 		{
 			ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
-			// リサイズ検出
 			if (std::abs(viewportSize.x - m_lastSize.x) > 1.0f ||
 				std::abs(viewportSize.y - m_lastSize.y) > 1.0f)
 			{
@@ -64,18 +42,10 @@ namespace Editor::UI
 				}
 			}
 
-			// テクスチャ表示
 			if (viewportSize.x > 0 && viewportSize.y > 0)
 			{
 				if (m_texture)
 				{
-					// デバッグ: 表示しているテクスチャIDをログ出力
-					static int gameCounter = 0;
-					if (gameCounter++ % 120 == 0) {
-						Utils::log_info(std::format("GameViewWindow displaying texture: 0x{:016X}",
-							m_texture));
-					}
-
 					ImGui::Image(m_texture, viewportSize);
 				}
 				else

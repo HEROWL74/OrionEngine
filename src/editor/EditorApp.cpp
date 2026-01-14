@@ -253,8 +253,10 @@ namespace Editor
         m_debugWindow = std::make_unique<UI::DebugWindow>();
         m_hierarchyWindow = std::make_unique<UI::SceneHierarchyWindow>();
         m_inspectorWindow = std::make_unique<UI::InspectorWindow>();
+        m_toolbarWindow = std::make_unique<UI::ToolbarWindow>();
 
-        // Viewport ウィンドウ作成
+        m_toolbarWindow->setPlayModeController(&m_playModeController);
+
         m_editorViewWindow = std::make_unique<UI::EditorViewWindow>();
 
         // 重要: Window経由でInputManagerを取得
@@ -287,14 +289,6 @@ namespace Editor
         m_gameViewWindow->initialize(&m_imguiManager, &m_gameView);
         m_gameViewWindow->setCamera(&m_gameCamera);
 
-        // EditorViewWindowを初期化(正しいInputManagerポインタを渡す)
-        m_editorViewWindow->initialize(&m_imguiManager, &m_editorView, inputManager);
-        m_editorViewWindow->setCamera(&m_editorCamera);
-
-        m_gameViewWindow = std::make_unique<UI::GameViewWindow>();
-        m_gameViewWindow->initialize(&m_imguiManager, &m_gameView);
-        m_gameViewWindow->setCamera(&m_gameCamera);
-
         // ★ BuildSystemとBuildWindowを初期化
         Utils::log_info("Initializing BuildSystem...");
         m_buildSystem = std::make_unique<Build::BuildSystem>();
@@ -311,6 +305,9 @@ namespace Editor
             m_editorView.setSelectedObject(selectedObject);  // EditorViewにも通知
             });
 
+        // PlayModeController初期化
+        m_playModeController.initialize(&m_scene);
+        Utils::log_info("PlayModeController initialized with scene");
         m_debugWindow->setPlayModeController(&m_playModeController);
 
         // コンテキストメニューのコールバック設定
@@ -390,6 +387,8 @@ namespace Editor
         Utils::log_info("Input system initialized successfully!");
         return {};
     }
+
+
 
     Utils::VoidResult EditorApp::createCommandQueue()
     {
@@ -569,6 +568,12 @@ namespace Editor
 
         if (m_playModeController.isPlaying())
         {
+            static int updateCount = 0;
+            if (updateCount < 5) {
+                Utils::log_info(std::format("Scene update called, frame: {}", updateCount));
+                updateCount++;
+            }
+
             Scripting::ScriptManager::get().checkForUpdates();
             m_scene.update(m_deltaTime);
             m_scene.lateUpdate(m_deltaTime);
@@ -698,6 +703,10 @@ namespace Editor
 
         m_imguiManager.newFrame();
 
+        setupFixedLayout();
+
+        m_toolbarWindow->draw();
+
         // メニューバーを追加
         if (ImGui::BeginMainMenuBar())
         {
@@ -809,7 +818,6 @@ namespace Editor
 
         waitForPreviousFrame();
     }
-
 
     void EditorApp::updateDeltaTime()
     {
@@ -1098,6 +1106,86 @@ namespace Editor
         {
             Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown, "Unknown exception during resize"));
         }
+        m_dockNeedsRebuild = true;
+    }
+
+    void EditorApp::setupFixedLayout()
+    {
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGuiID dockspaceID = ImGui::GetID("MainDockSpace");
+
+        ImGuiDockNodeFlags dockspaceFlags =
+            ImGuiDockNodeFlags_NoDockingInCentralNode;;
+
+        ImVec2 workPos = viewport->WorkPos;
+        ImVec2 workSize = viewport->WorkSize;
+
+        const float toolbarHeight = 40.0f;
+        const float menuBarHeight = ImGui::GetFrameHeight();
+        workPos.y += toolbarHeight + menuBarHeight;
+        workSize.y -= toolbarHeight + menuBarHeight;
+
+        ImGui::SetNextWindowPos(workPos);
+        ImGui::SetNextWindowSize(workSize);
+        ImGui::SetNextWindowViewport(viewport->ID);
+
+        ImGuiWindowFlags hostWindowFlags =
+            ImGuiWindowFlags_NoTitleBar |
+            ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoBringToFrontOnFocus |
+            ImGuiWindowFlags_NoNavFocus |
+            ImGuiWindowFlags_NoBackground;
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+        ImGui::Begin("DockSpaceWindow", nullptr, hostWindowFlags);
+        ImGui::PopStyleVar(3);
+
+        // ★ DockSpaceは毎フレーム
+        ImGui::DockSpace(dockspaceID, ImVec2(0, 0), dockspaceFlags);
+
+        // ★ レイアウトは「初回 or resize時」
+        if (!m_layoutInitialized || m_dockNeedsRebuild)
+        {
+            ImGui::DockBuilderRemoveNode(dockspaceID);
+            ImGui::DockBuilderAddNode(
+                dockspaceID,
+                dockspaceFlags | ImGuiDockNodeFlags_DockSpace
+            );
+
+            ImGui::DockBuilderSetNodeSize(dockspaceID, workSize);
+
+            ImGuiID dockMain = dockspaceID;
+
+            ImGuiID dockBottom =
+                ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Down, 0.28f, nullptr, &dockMain);
+
+            ImGuiID dockLeft =
+                ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Left, 0.22f, nullptr, &dockMain);
+
+            ImGuiID dockRight =
+                ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Right, 0.33f, nullptr, &dockMain);
+
+            ImGuiID dockCenter = dockMain;
+
+            ImGui::DockBuilderDockWindow("Scene Hierarchy", dockLeft);
+            ImGui::DockBuilderDockWindow("Inspector", dockRight);
+            ImGui::DockBuilderDockWindow("Scene", dockCenter);
+            ImGui::DockBuilderDockWindow("Game", dockCenter);
+            ImGui::DockBuilderDockWindow("Project", dockBottom);
+            ImGui::DockBuilderDockWindow("Debug info", dockBottom);
+
+            ImGui::DockBuilderFinish(dockspaceID);
+
+            m_layoutInitialized = true;
+            m_dockNeedsRebuild = false;
+        }
+
+        ImGui::End();
     }
 
     void EditorApp::onWindowClose()
@@ -1428,9 +1516,6 @@ namespace Editor
             Utils::log_error(cubeInitResult1.error());
             return;
         }
-
-        // Lua スクリプトをアタッチ
-        cube->addLuaScriptComponent("assets/scripts/move.lua");
 
         Utils::log_info("Initial scene created successfully");
     }

@@ -16,9 +16,8 @@
 #include "engine/Graphics/Material.hpp"
 #include "engine/Graphics/Texture.hpp"
 #include "ContextMenu.hpp"
-#include "engine/Core/PlayModeController.hpp"
+#include "../Core/PlayModeController.hpp"
 #include "engine/Scripting/IScript.hpp"
-#include "engine/Scripting/LuaScriptComponent.hpp"
 #include "engine/Scripting/LuaScriptUtility.hpp"
 
 //ImGui includes
@@ -27,9 +26,15 @@
 
 using Microsoft::WRL::ComPtr;
 
+namespace Engine::Scripting
+{
+	class LuaScriptComponent;
+}
+
 namespace Editor::UI
 {
 	using namespace Engine;
+
 	//======================================================================
 	//ImGuiクラス
 	//======================================================================
@@ -148,7 +153,7 @@ namespace Editor::UI
 		void draw() override;
 
 		//デバッグ情報の設定
-		void setPlayModeController(Core::PlayModeController* controller) { m_playModeController = controller; }
+		void setPlayModeController(EditorCore::PlayModeController* controller) { m_playModeController = controller; }
 		void setFPS(float fps) { m_fps = fps; }
 		void setFrameTime(float frameTime) { m_frameTime = frameTime; }
 		void setObjectCount(size_t count) { m_objectCount = count; }
@@ -157,7 +162,7 @@ namespace Editor::UI
 		float m_fps = 0.0f;
 		float m_frameTime = 0.0f;
 		size_t m_objectCount = 0;
-		Core::PlayModeController* m_playModeController = nullptr;
+		EditorCore::PlayModeController* m_playModeController = nullptr;
 	};
 
 	//======================================================================

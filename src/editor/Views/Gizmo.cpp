@@ -61,7 +61,7 @@ namespace Editor::UI
 
 	GizmoAxis Gizmo::hitTest(const Math::Vector3& rayOrigin,
 		const Math::Vector3& rayDirection,
-		Core::GameObject* targetObject) const
+		Engine::Core::GameObject* targetObject) const
 	{
 		if (!targetObject)
 			return GizmoAxis::None;
@@ -72,21 +72,21 @@ namespace Editor::UI
 
 		Math::Vector3 xAxisCenter = gizmoPos + Math::Vector3::right() * (gizmoLength * 0.5f);
 		float distanceX;
-		if (Utils::RayPicking::rayIntersectsSphere(rayOrigin, rayDirection, xAxisCenter, threshold, distanceX))
+		if (EditorUtils::RayPicking::rayIntersectsSphere(rayOrigin, rayDirection, xAxisCenter, threshold, distanceX))
 		{
 			return GizmoAxis::X;
 		}
 
 		Math::Vector3 yAxisCenter = gizmoPos + Math::Vector3::up() * (gizmoLength * 0.5f);
 		float distanceY;
-		if (Utils::RayPicking::rayIntersectsSphere(rayOrigin, rayDirection, yAxisCenter, threshold, distanceY))
+		if (EditorUtils::RayPicking::rayIntersectsSphere(rayOrigin, rayDirection, yAxisCenter, threshold, distanceY))
 		{
 			return GizmoAxis::Y;
 		}
 
 		Math::Vector3 zAxisCenter = gizmoPos + Math::Vector3::forward() * (gizmoLength * 0.5f);
 		float distanceZ;
-		if (Utils::RayPicking::rayIntersectsSphere(rayOrigin, rayDirection, zAxisCenter, threshold, distanceZ))
+		if (EditorUtils::RayPicking::rayIntersectsSphere(rayOrigin, rayDirection, zAxisCenter, threshold, distanceZ))
 		{
 			return GizmoAxis::Z;
 		}
@@ -124,7 +124,7 @@ namespace Editor::UI
 		}
 
 		float distance;
-		if (Utils::RayPicking::rayIntersectsPlane(rayOrigin, rayDirection, objectPosition, m_dragPlaneNormal, distance))
+		if (EditorUtils::RayPicking::rayIntersectsPlane(rayOrigin, rayDirection, objectPosition, m_dragPlaneNormal, distance))
 		{
 			m_dragStartPosition = rayOrigin + rayDirection * distance;
 		}
@@ -145,7 +145,7 @@ namespace Editor::UI
 		}
 
 		float distance;
-		if (Utils::RayPicking::rayIntersectsPlane(rayOrigin, rayDirection, m_dragStartObjectPosition, m_dragPlaneNormal, distance))
+		if (EditorUtils::RayPicking::rayIntersectsPlane(rayOrigin, rayDirection, m_dragStartObjectPosition, m_dragPlaneNormal, distance))
 		{
 			Math::Vector3 currentPoint = rayOrigin + rayDirection * distance;
 			Math::Vector3 projectedPoint = projectPointOnAxis(currentPoint, m_dragStartObjectPosition, m_dragAxisDirection);

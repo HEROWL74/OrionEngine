@@ -156,7 +156,6 @@ namespace Runtime
 	void GameApp::onWindowClose()
 	{
 		Engine::Utils::log_info("Window close requested.");
-		PostQuitMessage(0);
 	}
 
 	Engine::Utils::VoidResult GameApp::initD3D()
@@ -214,6 +213,13 @@ namespace Runtime
 		auto sceneResult = m_scene.initialize(&m_device);
 		if (!sceneResult) return sceneResult;
 
+		// Lua初期化
+		auto& scriptMgr = Engine::Scripting::ScriptManager::get();
+		scriptMgr.initialize();
+
+		// バインディング登録(C++クラスをLuaに公開)
+		Engine::Scripting::registerBindings(scriptMgr.getLuaState());
+
 		// シーンを読み込み
 		auto loadResult = loadScene();
 		if (!loadResult) return loadResult;
@@ -221,7 +227,7 @@ namespace Runtime
 		// カメラ初期化（GameCameraの設定）
 		const auto [width, height] = m_window.getClientSize();
 		m_camera.setPerspective(45.0f, static_cast<float>(width) / height, 0.1f, 100.0f);
-		m_camera.setPosition({ 0.0f, 0.0f, 8.0f });
+		m_camera.setPosition({ 0.0f, 5.0f, 8.0f });
 		m_camera.lookAt({ 0.0f, 0.0f, 0.0f });
 
 		// シーン開始
@@ -413,6 +419,8 @@ namespace Runtime
 	{
 		updateDeltaTime();
 
+		// Luaの変更チェック
+		Engine::Scripting::ScriptManager::get().checkForUpdates();
 		// シーンの更新
 		m_scene.update(m_deltaTime);
 		m_scene.lateUpdate(m_deltaTime);

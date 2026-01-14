@@ -136,7 +136,7 @@ namespace Engine::Graphics
 
         // Luaスクリプト情報
         // TODO: LuaScriptComponent の情報もシリアライズ
-        auto* lua = gameObject->getComponent<Scripting::LuaScriptComponent>();
+        auto* lua = gameObject->getComponent<Engine::Scripting::LuaScriptComponent>();
         if (lua)
         {
             json["lua"] = serializeLuaComponent(lua);
@@ -189,6 +189,28 @@ namespace Engine::Graphics
                 return result;
             }
             Utils::log_info(std::format("  RenderComponent loaded for {}", name));
+        }
+
+        if (json.contains("lua"))
+        {
+            const auto& luaJson = json["lua"];
+            std::string scriptPath = luaJson.value("scriptPath", "");
+
+            if (!scriptPath.empty())
+            {
+                auto* luaComponent = gameObject->addComponent<Scripting::LuaScriptComponent>(
+                    scriptPath
+                );
+
+                if (luaComponent)
+                {
+                    Utils::log_info(std::format("  LuaScriptComponent loaded: {}", scriptPath));
+                }
+                else
+                {
+                    Utils::log_warning("Failed to add LuaScriptComponent");
+                }
+            }
         }
 
         // Active状態を設定
@@ -375,7 +397,7 @@ namespace Engine::Graphics
 
         // Visible状態を設定
         renderComponent->setVisible(json.value("visible", true));
-
+ 
         return {};
     }
 
@@ -402,14 +424,8 @@ namespace Engine::Graphics
         json json;
         json["name"] = "Lua";
         // プロパティ
-        auto& props = component->getScriptFileName();
-        json["fileName"] = props;
+        json["scriptPath"] = component->getScriptPath();
 
         return json;
-    }
-
-    void SceneSerializer::deserializeLuaComponent(Scripting::LuaScriptComponent* component, json& json)
-    {
-        
     }
 }

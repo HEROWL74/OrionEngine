@@ -13,6 +13,8 @@
 #include "engine/Graphics/SceneSerializer.hpp"
 #include "engine/Graphics/Material.hpp"
 #include "engine/Graphics/Texture.hpp"
+#include "engine/Scripting/ScriptManager.hpp"
+#include "engine/Scripting/LuaBindings.hpp"
 #include <wrl.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>

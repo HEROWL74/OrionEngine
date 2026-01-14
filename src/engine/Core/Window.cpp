@@ -205,6 +205,7 @@ namespace Engine::Core {
 			{
 				m_closeCallback();
 			}
+			DestroyWindow(hWnd);
 			return 0;
 		case WM_DESTROY:
 			PostQuitMessage(0);

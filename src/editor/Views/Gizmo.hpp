@@ -14,7 +14,6 @@ using Microsoft::WRL::ComPtr;
 namespace Editor::UI
 {
 	using namespace Engine;
-
 	enum class GizmoType
 	{
 		None,
@@ -44,7 +43,8 @@ namespace Editor::UI
 		Engine::Utils::VoidResult initialize(Engine::Graphics::Device* device, Engine::Graphics::ShaderManager* shaderManager);
 		void shutdown();
 
-		void render(ID3D12GraphicsCommandList* commandList, const Engine::Graphics::Camera& camera, Core::GameObject* targetObject);
+		void render(ID3D12GraphicsCommandList* commandList, const Engine::Graphics::Camera& camera, Engine::
+			Core::GameObject* targetObject);
 
 		GizmoAxis hitTest(const Math::Vector3& rayOrigin,
 			const Math::Vector3& rayDirection,

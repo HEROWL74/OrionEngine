@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <limits>
 
-namespace Editor::Utils
+namespace Editor::EditorUtils
 {
 	void RayPicking::screenToWorldRay(
 		float screenX,
