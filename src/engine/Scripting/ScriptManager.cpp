@@ -30,7 +30,7 @@ namespace Engine::Scripting
             data.lastWriteTime = lastWrite;
 
             // 関数のキャッシュ（あれば）
-            const std::vector<std::string> knownFunctions = { "onUpdate", "onStart" };
+            const std::vector<std::string> knownFunctions = { "onUpdate", "onStart" ,"onCollisionEnter", "onCollisionExit" };
             for (const auto& name : knownFunctions) {
                 sol::object obj = m_lua[name];
                 if (obj.is<sol::function>()) {

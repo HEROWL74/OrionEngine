@@ -48,7 +48,7 @@ namespace Editor::UI
 
 	void Gizmo::render(ID3D12GraphicsCommandList* commandList, const Engine::Graphics::Camera& camera, Core::GameObject* targetObject)
 	{
-		if (!targetObject || !m_device || !m_rootSig || !m_pso)
+		if (!targetObject || !m_device || !m_rootSig || !m_pso || targetObject->isDestroyed())
 			return;
 
 		Math::Vector3 position = targetObject->getTransform()->getPosition();

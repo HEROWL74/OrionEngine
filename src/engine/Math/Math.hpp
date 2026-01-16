@@ -227,6 +227,17 @@ namespace Engine::Math
             return Vector3(-x, -y, -z);
         }
 
+        Vector3& operator=(const Vector3& other)
+        {
+            if (this != &other)
+            {
+                x = other.x;
+                y = other.y;
+                z = other.z;
+            }
+            return *this;
+        }
+
         // ベクトル操作
         float length() const
         {

@@ -1,4 +1,4 @@
-﻿//src/UI/ContextMenu.cpp
+﻿// src/editor/UI/ContextMenu.cpp
 #include "ContextMenu.hpp"
 #include "imgui.h"
 #include "engine/Utils/Common.hpp"
@@ -23,6 +23,9 @@ namespace Editor::UI
     bool ContextMenu::drawGameObjectContextMenu(Engine::Core::GameObject* selectedObject)
     {
         if (!selectedObject) return false;
+
+        // 破棄済みオブジェクトは無視
+        if (selectedObject->isDestroyed()) return false;
 
         bool actionPerformed = false;
 
@@ -63,13 +66,24 @@ namespace Editor::UI
 
     void ContextMenu::drawModals()
     {
-        // Deleteボタン描画
+        // === 削除確認ダイアログ ===
+        // 重要: m_deleteTargetが破棄されていたら即座にリセット
+        if (m_deleteTarget && m_deleteTarget->isDestroyed())
+        {
+            m_deleteTarget = nullptr;
+            m_showDeleteConfirm = false;
+        }
+
         if (m_showDeleteConfirm && m_deleteTarget)
         {
-            ImGui::OpenPopup("Delete Confirmation");
+            // フラグをfalseにして、ダイアログを1回だけ表示
+            if (!ImGui::IsPopupOpen("Delete Confirmation"))
+            {
+                ImGui::OpenPopup("Delete Confirmation");
+            }
 
-            if (ImGui::BeginPopupModal("Delete Confirmation", &m_showDeleteConfirm,
-                ImGuiWindowFlags_AlwaysAutoResize))
+            if (ImGui::BeginPopupModal("Delete Confirmation", nullptr,
+                ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
             {
                 std::string targetName = m_deleteTarget->getName();
 
@@ -79,13 +93,21 @@ namespace Editor::UI
 
                 if (ImGui::Button("Delete", ImVec2(100, 0)))
                 {
-                    if (m_deleteObjectCallback)
+                    if (m_deleteObjectCallback && m_deleteTarget)
                     {
                         Engine::Core::GameObject* toDelete = m_deleteTarget;
+
+                        // 先にフラグをクリア
                         m_deleteTarget = nullptr;
                         m_showDeleteConfirm = false;
+
                         ImGui::CloseCurrentPopup();
+                        ImGui::EndPopup();
+
+                        // 削除実行（これが最後）
                         m_deleteObjectCallback(toDelete);
+
+                        return; // ここで抜ける
                     }
                 }
 
@@ -102,40 +124,60 @@ namespace Editor::UI
             }
         }
 
-        // Renameボタン描画
+        // === リネームダイアログ ===
+        // m_renameTargetが破棄されていたら即座にリセット
+        if (m_renameTarget && m_renameTarget->isDestroyed())
+        {
+            m_renameTarget = nullptr;
+            m_showRenameDialog = false;
+        }
+
         if (m_showRenameDialog && m_renameTarget)
         {
-            ImGui::OpenPopup("Rename Object");
+            if (!ImGui::IsPopupOpen("Rename Object"))
+            {
+                ImGui::OpenPopup("Rename Object");
+            }
 
-            if (ImGui::BeginPopupModal("Rename Object", &m_showRenameDialog,
-                ImGuiWindowFlags_AlwaysAutoResize))
+            if (ImGui::BeginPopupModal("Rename Object", nullptr,
+                ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
             {
                 ImGui::Text("Enter new name:");
 
                 if (ImGui::InputText("##RenameInput", m_renameBuffer, sizeof(m_renameBuffer),
                     ImGuiInputTextFlags_EnterReturnsTrue))
                 {
-                    if (m_renameObjectCallback && strlen(m_renameBuffer) > 0)
+                    if (m_renameObjectCallback && strlen(m_renameBuffer) > 0 && m_renameTarget)
                     {
                         Engine::Core::GameObject* toRename = m_renameTarget;
                         std::string newName = m_renameBuffer;
+
                         m_renameTarget = nullptr;
                         m_showRenameDialog = false;
+
                         ImGui::CloseCurrentPopup();
+                        ImGui::EndPopup();
+
                         m_renameObjectCallback(toRename, newName);
+                        return;
                     }
                 }
 
                 if (ImGui::Button("OK", ImVec2(100, 0)))
                 {
-                    if (m_renameObjectCallback && strlen(m_renameBuffer) > 0)
+                    if (m_renameObjectCallback && strlen(m_renameBuffer) > 0 && m_renameTarget)
                     {
                         Engine::Core::GameObject* toRename = m_renameTarget;
                         std::string newName = m_renameBuffer;
+
                         m_renameTarget = nullptr;
                         m_showRenameDialog = false;
+
                         ImGui::CloseCurrentPopup();
+                        ImGui::EndPopup();
+
                         m_renameObjectCallback(toRename, newName);
+                        return;
                     }
                 }
 
@@ -158,12 +200,11 @@ namespace Editor::UI
         if (ImGui::BeginMenu("Create"))
         {
             draw3DObjectMenu();
-            
+
             if (ImGui::BeginMenu("Light"))
             {
                 if (ImGui::MenuItem("Directional Light"))
                 {
-                 
                 }
                 if (ImGui::MenuItem("Point Light"))
                 {
@@ -175,7 +216,6 @@ namespace Editor::UI
             {
                 if (ImGui::MenuItem("Camera"))
                 {
- 
                 }
                 ImGui::EndMenu();
             }
@@ -251,7 +291,6 @@ namespace Editor::UI
             return "GameObject";
         }
 
-        //名前生成カウンター
         static int globalCounter = 0;
         globalCounter++;
 

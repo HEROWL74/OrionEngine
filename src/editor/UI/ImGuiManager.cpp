@@ -693,71 +693,64 @@ namespace Editor::UI
 	//======================================================================
 	//Scene HierarchyWindow実装
 	//======================================================================
-	SceneHierarchyWindow::SceneHierarchyWindow() : ImGuiWindow("Scene Hierarchy") 
+	SceneHierarchyWindow::SceneHierarchyWindow() : ImGuiWindow("Scene Hierarchy")
 	{
 		m_contextMenu = std::make_unique<ContextMenu>();
 	}
 
 	void SceneHierarchyWindow::draw()
 	{
-		if (!m_visible || !m_scene) return;
+		if (!m_visible || !m_scene)
+		{
+			return;
+		}
 
-		// 位置とサイズの指定を削除し、ドッキングシステムに任せる
 		if (ImGui::Begin(m_title.c_str(), &m_visible))
 		{
-			if (m_selectedObject)
-			{
-				bool stillExists = false;
-				const auto& gameObjects = m_scene->getGameObjects();
-				for (const auto& obj : gameObjects)
-				{
-					if (obj && obj.get() == m_selectedObject)
-					{
-						stillExists = true;
-						break;
-					}
-				}
+			// Sceneから現在の選択を取得
+			Core::GameObject* currentSelection = m_scene->getSelectedObject();
 
-				if (!stillExists)
-				{
-					m_selectedObject = nullptr;
-					if (m_onSelectionChanged)
-					{
-						m_onSelectionChanged(nullptr);
-					}
-				}
+			// 選択オブジェクトが破棄されていたら選択解除
+			if (currentSelection && currentSelection->isDestroyed())
+			{
+				m_scene->clearSelection();
+				currentSelection = nullptr;
 			}
 
 			const auto& gameObjects = m_scene->getGameObjects();
 			for (const auto& gameObject : gameObjects)
 			{
-				if (gameObject && gameObject->isActive())
+				if (gameObject && gameObject->isActive() && !gameObject->isDestroyed())
 				{
-					drawGameObject(gameObject.get());
+					drawGameObject(gameObject.get(), currentSelection);
 				}
 			}
 
+			// コンテキストメニュー描画
 			if (m_contextMenu)
 			{
 				m_contextMenu->drawHierarchyContextMenu();
 			}
-
-			if (m_contextMenu)
-			{
-				m_contextMenu->drawModals();
-			}
 		}
 		ImGui::End();
+
+		// モーダルダイアログは必ずウィンドウの外で描画
+		if (m_contextMenu)
+		{
+			m_contextMenu->drawModals();
+		}
 	}
-
-	void SceneHierarchyWindow::drawGameObject(Core::GameObject* gameObject)
+	void SceneHierarchyWindow::drawGameObject(Core::GameObject* gameObject, Core::GameObject* currentSelection)
 	{
-		if (!gameObject) return;
+		if (!gameObject || gameObject->isDestroyed())
+		{
+			return;
+		}
 
-	
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
 
-		if (m_selectedObject == gameObject)
+		// Sceneの選択状態を反映
+		if (currentSelection == gameObject)
 		{
 			flags |= ImGuiTreeNodeFlags_Selected;
 		}
@@ -769,33 +762,37 @@ namespace Editor::UI
 
 		std::string nodeName = gameObject->getName();
 
-
 		ImGui::PushID(gameObject);
 		bool nodeOpen = ImGui::TreeNodeEx(nodeName.c_str(), flags);
 
-
-		if (ImGui::IsItemClicked())
+		// クリック時はSceneに選択を通知
+		if (ImGui::IsItemClicked() && !gameObject->isDestroyed())
 		{
-			m_selectedObject = gameObject;
+			m_scene->setSelectedObject(gameObject);
+
+			// コールバック経由でInspectorにも通知
 			if (m_onSelectionChanged)
 			{
 				m_onSelectionChanged(gameObject);
 			}
+
+			Utils::log_info(std::format("Selected GameObject: {}", gameObject->getName()));
 		}
 
-		if (m_contextMenu)
+		// コンテキストメニュー
+		if (m_contextMenu && !gameObject->isDestroyed())
 		{
 			m_contextMenu->drawGameObjectContextMenu(gameObject);
 		}
 
-		
+		// 子オブジェクトの描画
 		if (nodeOpen)
 		{
 			for (const auto& child : gameObject->getChildren())
 			{
-				if (child && child->isActive())
+				if (child && child->isActive() && !child->isDestroyed())
 				{
-					drawGameObject(child.get());
+					drawGameObject(child.get(), currentSelection);
 				}
 			}
 			ImGui::TreePop();
@@ -845,28 +842,47 @@ namespace Editor::UI
 	//=======================================================================
 	void InspectorWindow::draw()
 	{
-		if (!m_visible) return;
+		if (!m_visible)
+		{
+			return;
+		}
 
-		// 位置とサイズの指定を削除
 		if (ImGui::Begin(m_title.c_str(), &m_visible))
 		{
-			if (m_selectedObject)
+			if (!m_scene)
 			{
-				std::string objectName = m_selectedObject->getName();
+				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: Scene not set!");
+				ImGui::Text("Please set Scene reference in Inspector initialization");
+				ImGui::End();
+				return;
+			}
+
+			Core::GameObject* selectedObject = m_scene->getSelectedObject();
+
+			if (selectedObject && !selectedObject->isDestroyed())
+			{
+				std::string objectName = selectedObject->getName();
 				ImGui::Text("Object: %s", objectName.c_str());
 				ImGui::Separator();
 
-				if (auto* transform = m_selectedObject->getTransform())
+				// Transform Component
+				if (auto* transform = selectedObject->getTransform())
+				{
 					drawTransformComponent(transform);
+				}
 
 				ImGui::Spacing();
 
-				if (auto* renderComponent = m_selectedObject->getComponent<Graphics::RenderComponent>())
+				// Render Component
+				if (auto* renderComponent = selectedObject->getComponent<Graphics::RenderComponent>())
+				{
 					drawRenderComponent(renderComponent);
+				}
 
 				ImGui::Spacing();
 
-				auto* luaScriptComponent = m_selectedObject->getComponent<Engine::Scripting::LuaScriptComponent>();
+				// Script Component
+				auto* luaScriptComponent = selectedObject->getComponent<Engine::Scripting::LuaScriptComponent>();
 				if (luaScriptComponent)
 				{
 					drawScriptComponent(luaScriptComponent);
@@ -877,6 +893,7 @@ namespace Editor::UI
 					ImGui::Dummy(ImVec2(220, 40));
 					ImGui::SameLine();
 					ImGui::TextDisabled("<None>");
+
 					if (ImGui::BeginDragDropTarget())
 					{
 						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
@@ -884,17 +901,69 @@ namespace Editor::UI
 							const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
 							if (dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
 							{
-								m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
+								selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
 								Utils::log_info(std::format("Lua script attached: {}", dropped->path));
 							}
 						}
 						ImGui::EndDragDropTarget();
 					}
 				}
+
+				ImGui::Spacing();
+
+				// ★ BoxCollider Component
+				auto* boxCollider = selectedObject->getComponent<Physics::BoxCollider>();
+				if (boxCollider)
+				{
+					drawBoxColliderComponent(boxCollider);
+				}
+
+				ImGui::Spacing();
+				ImGui::Separator();
+
+				// ★ Add Component ボタン
+				if (ImGui::Button("Add Component", ImVec2(200, 30)))
+				{
+					ImGui::OpenPopup("AddComponentPopup");
+				}
+
+				// ★ Add Component ポップアップメニュー
+				if (ImGui::BeginPopup("AddComponentPopup"))
+				{
+					ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Select Component");
+					ImGui::Separator();
+
+					// BoxCollider追加オプション
+					if (!boxCollider)
+					{
+						if (ImGui::MenuItem("Box Collider"))
+						{
+							auto* newCollider = selectedObject->addComponent<Physics::BoxCollider>();
+							if (newCollider)
+							{
+								Utils::log_info(std::format("BoxCollider added to {}", selectedObject->getName()));
+							}
+							ImGui::CloseCurrentPopup();
+						}
+					}
+					else
+					{
+						ImGui::TextDisabled("Box Collider (already added)");
+					}
+
+					// 将来的に他のコンポーネントもここに追加可能
+					// if (ImGui::MenuItem("Rigidbody")) { ... }
+					// if (ImGui::MenuItem("Audio Source")) { ... }
+
+					ImGui::EndPopup();
+				}
 			}
 			else
 			{
-				ImGui::Text("No object selected");
+				ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No object selected");
+				ImGui::Separator();
+				ImGui::Text("Select an object in the Scene Hierarchy");
+				ImGui::Text("to view and edit its properties.");
 			}
 		}
 		ImGui::End();
@@ -904,7 +973,6 @@ namespace Editor::UI
 	{
 		if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			
 			auto& pos = transform->getPosition();
 			float position[3] = { pos.x, pos.y, pos.z };
 			if (ImGui::DragFloat3("Position", position, 0.1f))
@@ -912,7 +980,6 @@ namespace Editor::UI
 				transform->setPosition(Math::Vector3(position[0], position[1], position[2]));
 			}
 
-			
 			auto& rot = transform->getRotation();
 			float rotation[3] = { rot.x, rot.y, rot.z };
 			if (ImGui::DragFloat3("Rotation", rotation, 1.0f))
@@ -920,7 +987,6 @@ namespace Editor::UI
 				transform->setRotation(Math::Vector3(rotation[0], rotation[1], rotation[2]));
 			}
 
-			
 			auto& scale = transform->getScale();
 			float scaleArray[3] = { scale.x, scale.y, scale.z };
 			if (ImGui::DragFloat3("Scale", scaleArray, 0.1f, 0.1f, 10.0f))
@@ -934,14 +1000,12 @@ namespace Editor::UI
 	{
 		if (ImGui::CollapsingHeader("Render Component", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-	
 			bool visible = renderComponent->isVisible();
 			if (ImGui::Checkbox("Visible", &visible))
 			{
 				renderComponent->setVisible(visible);
 			}
 
-	
 			const char* types[] = { "Triangle", "Cube" };
 			int currentType = static_cast<int>(renderComponent->getRenderableType());
 			if (ImGui::Combo("Type", &currentType, types, IM_ARRAYSIZE(types)))
@@ -953,6 +1017,57 @@ namespace Editor::UI
 			{
 				drawMaterialEditor(renderComponent);
 			}
+		}
+	}
+
+	void InspectorWindow::drawBoxColliderComponent(Physics::BoxCollider* collider)
+	{
+		if (ImGui::CollapsingHeader("Box Collider", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			// Is Trigger チェックボックス
+			bool isTrigger = collider->isTrigger();
+			if (ImGui::Checkbox("Is Trigger", &isTrigger))
+			{
+				collider->setTrigger(isTrigger);
+			}
+
+			// Center
+			auto center = collider->getCenter();
+			float centerArray[3] = { center.x, center.y, center.z };
+			if (ImGui::DragFloat3("Center", centerArray, 0.1f))
+			{
+				collider->setCenter(Math::Vector3(centerArray[0], centerArray[1], centerArray[2]));
+			}
+
+			// Size
+			auto size = collider->getSize();
+			float sizeArray[3] = { size.x, size.y, size.z };
+			if (ImGui::DragFloat3("Size", sizeArray, 0.1f, 0.01f, 100.0f))
+			{
+				collider->setSize(Math::Vector3(sizeArray[0], sizeArray[1], sizeArray[2]));
+			}
+
+			ImGui::Spacing();
+
+			// Remove Component ボタン
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.1f, 0.1f, 1.0f));
+
+			if (ImGui::Button("Remove Component", ImVec2(150, 25)))
+			{
+				if (m_scene)
+				{
+					auto* selectedObject = m_scene->getSelectedObject();
+					if (selectedObject)
+					{
+						selectedObject->removeComponent<Physics::BoxCollider>();
+						Utils::log_info(std::format("BoxCollider removed from {}", selectedObject->getName()));
+					}
+				}
+			}
+
+			ImGui::PopStyleColor(3);
 		}
 	}
 
@@ -1000,7 +1115,6 @@ namespace Editor::UI
 				}
 			}
 
-			
 			if (currentMaterial)
 			{
 				ImGui::Separator();
@@ -1010,7 +1124,7 @@ namespace Editor::UI
 
 				if (ImGui::CollapsingHeader("PBR Properties", ImGuiTreeNodeFlags_DefaultOpen))
 				{
-					// === Albedo ===
+					// Albedo
 					if (ImGui::CollapsingHeader("Albedo", ImGuiTreeNodeFlags_DefaultOpen))
 					{
 						auto* renderMat = renderComponent ? renderComponent->getMaterial().get() : nullptr;
@@ -1022,25 +1136,21 @@ namespace Editor::UI
 						auto& props = renderMat->getProperties();
 						bool useTex = (props.useAlbedoTex != 0);
 
-						// テクスチャ使用フラグ
 						if (ImGui::Checkbox("Use Albedo Texture", &useTex)) {
 							props.useAlbedoTex = useTex ? 1 : 0;
 							if (!useTex) {
-								// テクスチャ不使用に切り替えたら外す（任意）
 								renderMat->removeTexture(Engine::Graphics::TextureType::Albedo);
 							}
 							renderMat->setDirty();
-							(void)renderMat->updateConstantBuffer(); // すぐ反映
+							(void)renderMat->updateConstantBuffer();
 						}
 
-						// 左: ドロップゾーン / 右: カラー
 						ImGui::BeginGroup();
 						{
 							ImVec2 slotSize(72, 72);
 							ImGui::TextUnformatted("Albedo Map");
 							ImGui::BeginChild("##AlbedoDropZone", slotSize, true, ImGuiWindowFlags_NoScrollbar);
 
-							// プレビュー
 							if (renderMat->hasTexture(Engine::Graphics::TextureType::Albedo)) {
 								ImGui::TextWrapped("Assigned");
 							}
@@ -1048,18 +1158,17 @@ namespace Editor::UI
 								ImGui::TextWrapped("Drop Texture Here");
 							}
 
-							//Drag&Drop 受け口
 							if (ImGui::BeginDragDropTarget()) {
 								if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET")) {
 									const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
-									if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Texture)) { // typeチェック
+									if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Texture)) {
 										if (m_textureManager) {
-											auto tex = m_textureManager->loadTexture(dropped->path, /*mips*/true, /*sRGB*/true);
+											auto tex = m_textureManager->loadTexture(dropped->path, true, true);
 											if (tex) {
 												renderMat->setTexture(Engine::Graphics::TextureType::Albedo, tex);
-												props.useAlbedoTex = 1;                   // フラグON
+												props.useAlbedoTex = 1;
 												renderMat->setDirty();
-												renderMat->updateConstantBuffer();        // すぐ反映
+												renderMat->updateConstantBuffer();
 											}
 										}
 									}
@@ -1069,7 +1178,6 @@ namespace Editor::UI
 
 							ImGui::EndChild();
 
-							// クリアボタン
 							if (ImGui::SmallButton("Clear##Albedo")) {
 								renderMat->removeTexture(Engine::Graphics::TextureType::Albedo);
 								props.useAlbedoTex = 0;
@@ -1081,7 +1189,6 @@ namespace Editor::UI
 
 						ImGui::SameLine();
 
-						// カラー編集（テクスチャ使用時は無効化）
 						ImGui::BeginGroup();
 						{
 							ImGui::TextUnformatted("Base Color");
@@ -1097,33 +1204,27 @@ namespace Editor::UI
 						ImGui::EndGroup();
 					}
 
-
-					// ==== Metallic ====
 					if (ImGui::SliderFloat("Metallic", &properties.metallic, 0.0f, 1.0f))
 					{
 						changed = true;
 					}
 
-					// ==== Roughness ====
 					if (ImGui::SliderFloat("Roughness", &properties.roughness, 0.0f, 1.0f))
 					{
 						changed = true;
 					}
 
-					// ==== AO ====
 					if (ImGui::SliderFloat("AO", &properties.ao, 0.0f, 1.0f))
 					{
 						changed = true;
 					}
 
-					// ==== Alpha ====
 					if (ImGui::SliderFloat("Alpha", &properties.alpha, 0.0f, 1.0f))
 					{
 						changed = true;
 					}
 				}
 
-				// エミッション
 				if (ImGui::CollapsingHeader("Emission"))
 				{
 					float emissive[3] = { properties.emissive.x, properties.emissive.y, properties.emissive.z };
@@ -1139,7 +1240,6 @@ namespace Editor::UI
 					}
 				}
 
-				//Texture
 				if (ImGui::CollapsingHeader("Textures"))
 				{
 					drawTextureSlot("Albedo", Graphics::TextureType::Albedo, currentMaterial);
@@ -1151,7 +1251,6 @@ namespace Editor::UI
 					drawTextureSlot("Height", Graphics::TextureType::Height, currentMaterial);
 				}
 
-				// UV調整ImGui
 				if (ImGui::CollapsingHeader("UV Settings"))
 				{
 					float uvScale[2] = { properties.uvScale.x, properties.uvScale.y };
@@ -1187,16 +1286,18 @@ namespace Editor::UI
 			ImGui::SameLine();
 			ImGui::Text("%s", fileName.c_str());
 
-			// 再アタッチ用のドロップ領域
+			// Sceneから選択を取得
+			Core::GameObject* selectedObject = m_scene ? m_scene->getSelectedObject() : nullptr;
+
 			ImGui::Dummy(ImVec2(200, 30));
 			if (ImGui::BeginDragDropTarget())
 			{
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
 				{
 					const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
-					if (dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
+					if (dropped->type == static_cast<int>(UI::AssetInfo::Type::Script) && selectedObject)
 					{
-						m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
+						selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
 						Utils::log_info(std::format("Lua script re-attached: {}", dropped->path));
 					}
 				}
@@ -1205,10 +1306,6 @@ namespace Editor::UI
 		}
 	}
 
-
-
-
-
 	void InspectorWindow::drawTextureSlot(const char* name,
 		Graphics::TextureType textureType,
 		std::shared_ptr<Graphics::Material> material)
@@ -1216,7 +1313,7 @@ namespace Editor::UI
 		ImGui::PushID(static_cast<int>(textureType));
 
 		auto currentTexture = material->getTexture(textureType);
-		auto properties = material->getProperties(); // 色を編集するため取得
+		auto properties = material->getProperties();
 		bool changed = false;
 
 		ImGui::Text("%s:", name);
@@ -1224,7 +1321,6 @@ namespace Editor::UI
 
 		if (currentTexture)
 		{
-			// --- 既存処理: テクスチャがある場合 ---
 			ImGui::Button(currentTexture->getDesc().debugName.c_str(), ImVec2(150, 30));
 
 			if (ImGui::IsItemHovered())
@@ -1262,10 +1358,8 @@ namespace Editor::UI
 		}
 		else
 		{
-			// --- テクスチャが無い場合 ---
 			if (textureType == Graphics::TextureType::Albedo)
 			{
-				// Albedo用: カラーピッカーを表示
 				float albedo[3] = { properties.albedo.x, properties.albedo.y, properties.albedo.z };
 				if (ImGui::ColorEdit3("Albedo Color", albedo))
 				{
@@ -1275,7 +1369,6 @@ namespace Editor::UI
 			}
 			else
 			{
-				// 他のスロットはプレースホルダー
 				ImGui::Button("Drag texture here", ImVec2(150, 30));
 			}
 

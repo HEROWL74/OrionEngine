@@ -6,7 +6,7 @@
 #include <nlohmann/json.hpp>
 #include "Scene.hpp"
 #include "../Scripting/LuaScriptComponent.hpp"
-
+#include "../Physics/BoxCollider.hpp"
 namespace Engine::Graphics
 {
 	using json = nlohmann::json;
@@ -38,7 +38,7 @@ namespace Engine::Graphics
 		json serializeGameObject(const Core::GameObject* gameObject);
 
 		// JSONからGameObjectを復元
-		[[nodiscatd]] Utils::VoidResult deserializeGameObject(
+		[[nodiscard]] Utils::VoidResult deserializeGameObject(
 			Scene& scene,
 			Device* device,
 			ShaderManager* shaderManager,
@@ -67,6 +67,13 @@ namespace Engine::Graphics
 
 		// Luaスクリプト情報のシリアライズ
 		json serializeLuaComponent(const Scripting::LuaScriptComponent* component);
-		void deserializeLuaComponent(Scripting::LuaScriptComponent* component, json& json);
+
+		// 
+		json serializeBoxCollider(
+			const Physics::BoxCollider* collider);
+
+	    void deserializeBoxCollider(
+			Physics::BoxCollider* collider,
+			const json& json);
 	};
 }

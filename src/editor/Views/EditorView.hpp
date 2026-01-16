@@ -53,6 +53,15 @@ namespace Editor::UI
 		Gizmo* getGizmo() { return m_gizmo.get(); }
 		void setGizmoType(GizmoType type) { if (m_gizmo) m_gizmo->setType(type); }
 
+		// ‰ð•ú
+		void clearGizmoSelection()
+		{
+			if (m_gizmo)
+			{
+				m_gizmo->finishDrag();
+			}
+		}
+
 	private:
 		Graphics::Device* m_device = nullptr;
 		UI::ImGuiManager* m_imguiManager = nullptr;

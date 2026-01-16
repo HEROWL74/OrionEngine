@@ -63,16 +63,19 @@ namespace Editor::UI
 			return;
 		}
 
+		// レンダーターゲットに遷移
 		m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_renderTarget->getRTV();
 		D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_renderTarget->getDSV();
 		commandList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
+		// クリア
 		float clearColor[4] = { 1.0f, 0.0f, 1.0f, 1.0f };
 		commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 		commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
+		// ビューポートとシザー矩形設定
 		D3D12_VIEWPORT viewport{};
 		viewport.TopLeftX = 0.0f;
 		viewport.TopLeftY = 0.0f;
@@ -90,24 +93,24 @@ namespace Editor::UI
 		commandList->RSSetViewports(1, &viewport);
 		commandList->RSSetScissorRects(1, &scissorRect);
 
+		// Skybox描画
 		if (m_skybox)
 		{
 			m_skybox->render(commandList, camera);
 		}
 
+		// グリッド描画
 		if (m_showGrid)
 		{
 			renderGrid(commandList, camera);
 		}
 
-
+		// シーンのGameObject描画
 		Utils::RenderContext context;
 		context.commandList = commandList;
 		context.camera = &camera;
 		context.viewType = Utils::RenderViewType::Editor;
 		context.frameIndex = frameIndex;
-
-		frameIndex = context.frameIndex;
 
 		for (auto& gameObject : scene.getGameObjects())
 		{
@@ -121,11 +124,12 @@ namespace Editor::UI
 			}
 		}
 
-		renderEditorElements(commandList, camera, context.frameIndex);
+		// Gizmoなどのエディタ要素を描画
+		renderEditorElements(commandList, camera, frameIndex);
 
+		// 全ての描画が終わってから PIXEL_SHADER_RESOURCE に遷移
 		m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
-
 	void EditorView::renderEditorElements(ID3D12GraphicsCommandList* commandList, const Graphics::Camera& camera, UINT frameIndex)
 	{
 		if (!commandList)

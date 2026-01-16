@@ -30,10 +30,16 @@ namespace Engine::Graphics
 		void destroyGameObject(Core::GameObject* gameObject);
 		Core::GameObject* findGameObject(const std::string& name) const;
 
+		// 選択管理
+		void setSelectedObject(Core::GameObject* object);
+		Core::GameObject* getSelectedObject() const;
+		void clearSelection();
+
 		//ライフサイクル
 		void start();
 		void update(float deltaTime);
 		void lateUpdate(float deltaTime);
+		void clear();
 
 		//レンダリング
 		[[deprecated("Use GameView instead")]]
@@ -45,11 +51,12 @@ namespace Engine::Graphics
 		//ゲームオブジェクト一覧取得
 		const std::vector<std::unique_ptr<Core::GameObject>>& getGameObjects() const { return m_gameObjects; }
 		Core::GameObject* findObjectByName(const std::string& name);
-
+		
 	private:
 		Device* m_device = nullptr;
 		std::vector<std::unique_ptr<Core::GameObject>> m_gameObjects;
 		std::vector<Core::GameObject*> m_pendingDestroy;
+		Core::GameObject* m_selectedObject = nullptr;
 		bool m_initialized = false;
 
 	private:

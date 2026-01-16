@@ -300,15 +300,20 @@ namespace Editor
 
         // UIウィンドウ設定
         m_hierarchyWindow->setScene(&m_scene);
-        m_hierarchyWindow->setSelectionChangedCallback([this](Core::GameObject* selectedObject) {
-            m_inspectorWindow->setSelectedObject(selectedObject);
-            m_editorView.setSelectedObject(selectedObject);  // EditorViewにも通知
-            });
-
+        m_inspectorWindow->setScene(&m_scene);
         // PlayModeController初期化
         m_playModeController.initialize(&m_scene);
         Utils::log_info("PlayModeController initialized with scene");
         m_debugWindow->setPlayModeController(&m_playModeController);
+
+
+        m_hierarchyWindow->setSelectionChangedCallback([this](Core::GameObject* object) {
+            Utils::log_info(std::format("Selection changed to: {}",
+                object ? object->getName() : "null"));
+
+            // EditorView に選択オブジェクトを設定
+            m_editorView.setSelectedObject(object);
+            });
 
         // コンテキストメニューのコールバック設定
         m_hierarchyWindow->setCreateObjectCallback([this](UI::PrimitiveType type, const std::string& name) -> Core::GameObject* {
@@ -389,8 +394,6 @@ namespace Editor
         Utils::log_info("Input system initialized successfully!");
         return {};
     }
-
-
 
     Utils::VoidResult EditorApp::createCommandQueue()
     {
@@ -1344,36 +1347,51 @@ namespace Editor
             return;
         }
 
+        if (object->isDestroyed())
+        {
+            Utils::log_warning("Object already destroyed");
+            return;
+        }
+
         std::string objectName = object->getName();
         Utils::log_info(std::format("Starting deletion of object: {}", objectName));
 
-        // まずUIの参照をすべてクリア
-        if (m_inspectorWindow)
+        try
         {
-            if (m_inspectorWindow->getSelectedObject() == object)
-            {
-                m_inspectorWindow->setSelectedObject(nullptr);
-            }
-        }
+            // GPU同期
+            Utils::log_info("Waiting for GPU...");
+            m_device.waitForGpu();
 
-        if (m_hierarchyWindow)
+            // EditorViewのGizmo選択をクリア
+            Utils::log_info("Clearing Gizmo selection...");
+            m_editorView.clearGizmoSelection();
+
+            // Sceneの選択をクリア（これにより全UIが選択解除を認識する）
+            if (m_scene.getSelectedObject() == object)
+            {
+                Utils::log_info("Clearing scene selection...");
+                m_scene.clearSelection();
+            }
+
+            // オブジェクト削除
+            Utils::log_info("Destroying GameObject...");
+            m_scene.destroyGameObject(object);
+
+            // ポインタを明示的にnullに（呼び出し元のローカル変数）
+            object = nullptr;
+
+            Utils::log_info(std::format("Successfully deleted object: {}", objectName));
+        }
+        catch (const std::exception& e)
         {
-            if (m_hierarchyWindow->getSelectedObject() == object)
-            {
-                m_hierarchyWindow->setSelectedObject(nullptr);
-            }
+            Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
+                std::format("Exception during deleteGameObject: {}", e.what())));
         }
-
-        // ImGuiのコンテキストをクリア（重要）
-        //ImGui::SetWindowFocus(nullptr);
-
-        // オブジェクトを削除
-        m_scene.destroyGameObject(object);
-
-        // 削除後にnullptrを設定
-        object = nullptr;
-
-        Utils::log_info(std::format("Successfully deleted object: {}", objectName));
+        catch (...)
+        {
+            Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
+                "Unknown exception during deleteGameObject"));
+        }
     }
 
     Core::GameObject* EditorApp::duplicateGameObject(Core::GameObject* original)
@@ -1543,15 +1561,6 @@ namespace Editor
             deleteGameObject(obj);
         }
 
-        // 選択状態をクリア
-        if (m_inspectorWindow)
-        {
-            m_inspectorWindow->setSelectedObject(nullptr);
-        }
-        if (m_hierarchyWindow)
-        {
-            m_hierarchyWindow->setSelectedObject(nullptr);
-        }
 
         m_currentScenePath = "assets/scenes/untitled.scene";
         Utils::log_info("New scene created");
@@ -1608,16 +1617,6 @@ namespace Editor
             Utils::log_info("Creating new scene instead");
             createNewScene();
             return;
-        }
-
-        // まず選択状態をクリア
-        if (m_inspectorWindow)
-        {
-            m_inspectorWindow->setSelectedObject(nullptr);
-        }
-        if (m_hierarchyWindow)
-        {
-            m_hierarchyWindow->setSelectedObject(nullptr);
         }
 
         // 既存のGameObjectを削除

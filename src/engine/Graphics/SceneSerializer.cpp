@@ -14,10 +14,10 @@ namespace Engine::Graphics
             sceneJson["version"] = "1.0";
             sceneJson["gameObjects"] = nlohmann::json::array();
 
-            // 全GameObjectをシリアライズ
+            // ★ 修正: isDestroyed()をチェックして、破棄済みオブジェクトを除外
             for (const auto& gameObject : scene.getGameObjects())
             {
-                if (gameObject)
+                if (gameObject && !gameObject->isDestroyed())
                 {
                     sceneJson["gameObjects"].push_back(
                         serializeGameObject(gameObject.get())
@@ -35,10 +35,11 @@ namespace Engine::Graphics
                 ));
             }
 
-            file << sceneJson.dump(4); // 4スペースインデント
+            file << sceneJson.dump(4);
             file.close();
 
-            Utils::log_info(std::format("Scene saved to: {}", filepath));
+            Utils::log_info(std::format("Scene saved to: {} ({} objects)",
+                filepath, sceneJson["gameObjects"].size()));
             return {};
         }
         catch (const std::exception& e)
@@ -60,7 +61,6 @@ namespace Engine::Graphics
     {
         try
         {
-            // ファイルを開く
             std::ifstream file(filepath);
             if (!file.is_open())
             {
@@ -70,12 +70,12 @@ namespace Engine::Graphics
                 ));
             }
 
-            // JSONをパース
+            scene.clear();
+
             nlohmann::json sceneJson;
             file >> sceneJson;
             file.close();
 
-            // バージョンチェック
             if (!sceneJson.contains("version"))
             {
                 return std::unexpected(Utils::make_error(
@@ -84,7 +84,6 @@ namespace Engine::Graphics
                 ));
             }
 
-            // GameObjectsを復元
             if (sceneJson.contains("gameObjects"))
             {
                 for (const auto& objJson : sceneJson["gameObjects"])
@@ -104,7 +103,8 @@ namespace Engine::Graphics
                 }
             }
 
-            Utils::log_info(std::format("Scene loaded from: {}", filepath));
+            Utils::log_info(std::format("Scene loaded from: {} ({} objects)",
+                filepath, sceneJson["gameObjects"].size()));
             return {};
         }
         catch (const std::exception& e)
@@ -135,11 +135,16 @@ namespace Engine::Graphics
         }
 
         // Luaスクリプト情報
-        // TODO: LuaScriptComponent の情報もシリアライズ
         auto* lua = gameObject->getComponent<Engine::Scripting::LuaScriptComponent>();
         if (lua)
         {
             json["lua"] = serializeLuaComponent(lua);
+        }
+
+        // BoxCollider情報
+        if (auto* box = gameObject->getComponent<Physics::BoxCollider>())
+        {
+            json["boxCollider"] = serializeBoxCollider(box);
         }
 
         return json;
@@ -153,7 +158,6 @@ namespace Engine::Graphics
         TextureManager* textureManager,
         const nlohmann::json& json)
     {
-        // GameObjectを作成
         std::string name = json.value("name", "GameObject");
         Utils::log_info(std::format("Loading GameObject: {}", name));
 
@@ -213,7 +217,12 @@ namespace Engine::Graphics
             }
         }
 
-        // Active状態を設定
+        if (json.contains("boxCollider"))
+        {
+            auto* box = gameObject->addComponent<Physics::BoxCollider>();
+            deserializeBoxCollider(box, json["boxCollider"]);
+        }
+
         bool isActive = json.value("active", true);
         gameObject->setActive(isActive);
         Utils::log_info(std::format("GameObject {} created successfully (active: {})", name, isActive));
@@ -278,11 +287,9 @@ namespace Engine::Graphics
     {
         nlohmann::json json;
 
-        // RenderableType
         json["renderableType"] = static_cast<int>(component->getRenderableType());
         json["visible"] = component->isVisible();
 
-        // Material情報
         auto material = component->getMaterial();
         if (material)
         {
@@ -300,14 +307,12 @@ namespace Engine::Graphics
         TextureManager* textureManager,
         const nlohmann::json& json)
     {
-        // RenderableTypeを取得
         auto renderType = static_cast<RenderableType>(
             json.value("renderableType", 0)
             );
 
         Utils::log_info(std::format("    RenderableType: {}", static_cast<int>(renderType)));
 
-        // RenderComponentを追加
         auto* renderComponent = gameObject->addComponent<RenderComponent>(renderType);
         if (!renderComponent)
         {
@@ -317,10 +322,8 @@ namespace Engine::Graphics
             ));
         }
 
-        // MaterialManagerを設定
         renderComponent->setMaterialManager(materialManager);
 
-        // 初期化
         Utils::log_info("Initializing RenderComponent...");
         auto initResult = renderComponent->initialize(device, shaderManager);
         if (!initResult)
@@ -329,22 +332,18 @@ namespace Engine::Graphics
         }
         Utils::log_info("RenderComponent initialized");
 
-        // Material情報を復元
         if (json.contains("material"))
         {
             const auto& matJson = json["material"];
 
-            // ユニークなMaterial名を生成（オブジェクト名を含める）
             std::string baseName = matJson.value("name", "Material");
             std::string matName = gameObject->getName() + "_" + baseName;
 
             Utils::log_info(std::format("Creating material: {}", matName));
 
-            // Materialを作成
             auto material = materialManager->createMaterial(matName);
             if (material)
             {
-                // プロパティを復元
                 if (matJson.contains("properties"))
                 {
                     MaterialProperties props;
@@ -368,7 +367,6 @@ namespace Engine::Graphics
                     material->setProperties(props);
                 }
 
-                // テクスチャを復元
                 if (matJson.contains("textures"))
                 {
                     const auto& textures = matJson["textures"];
@@ -395,9 +393,8 @@ namespace Engine::Graphics
             }
         }
 
-        // Visible状態を設定
         renderComponent->setVisible(json.value("visible", true));
- 
+
         return {};
     }
 
@@ -405,15 +402,13 @@ namespace Engine::Graphics
     {
         nlohmann::json json;
 
-        json["name"] = "Material"; 
+        json["name"] = "Material";
 
-        // プロパティ
         auto props = material->getProperties();
         json["properties"]["albedo"] = { props.albedo.x, props.albedo.y, props.albedo.z };
         json["properties"]["metallic"] = props.metallic;
         json["properties"]["roughness"] = props.roughness;
 
-        // テクスチャパス（今後実装）
         json["textures"] = nlohmann::json::object();
 
         return json;
@@ -423,9 +418,50 @@ namespace Engine::Graphics
     {
         json json;
         json["name"] = "Lua";
-        // プロパティ
         json["scriptPath"] = component->getScriptPath();
 
         return json;
+    }
+
+    json SceneSerializer::serializeBoxCollider(
+        const Physics::BoxCollider* collider)
+    {
+        json colliderJson;
+
+        const auto& size = collider->getSize();
+        const auto& center = collider->getCenter();
+
+        colliderJson["size"] = { size.x, size.y, size.z };
+        colliderJson["center"] = { center.x, center.y, center.z };
+        colliderJson["isTrigger"] = collider->isTrigger();
+
+        return colliderJson;
+    }
+
+    void SceneSerializer::deserializeBoxCollider(
+        Physics::BoxCollider* collider,
+        const json& json)
+    {
+        if (json.contains("size"))
+        {
+            auto& s = json["size"];
+            collider->setSize({
+                s[0].get<float>(),
+                s[1].get<float>(),
+                s[2].get<float>()
+                });
+        }
+
+        if (json.contains("center"))
+        {
+            auto& c = json["center"];
+            collider->setCenter({
+                c[0].get<float>(),
+                c[1].get<float>(),
+                c[2].get<float>()
+                });
+        }
+
+        collider->setTrigger(json.value("isTrigger", true));
     }
 }
