@@ -5,6 +5,7 @@
     "sol2",
     "lua",
     "directxtex",
-    "nlohmann-json"
+    "nlohmann-json",
+    "stb"
   ]
 }

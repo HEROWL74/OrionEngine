@@ -162,11 +162,35 @@ namespace Editor::UI
 		void setDuplicateObjectCallback(std::function<Core::GameObject* (Core::GameObject*)> callback);
 		void setRenameObjectCallback(std::function<void(Core::GameObject*, const std::string&)> callback);
 
+		// UIテキストリストの設定
+
+
+		// UI選択コールバック
+		void setUISelectionChangedCallback(std::function<void(Engine::EngineUI::UIText*)> callback)
+		{
+			m_onUISelectionChanged = callback;
+		}
+
+		// UIコンテキストメニューコールバック
+		void setCreateUIElementCallback(std::function<Engine::EngineUI::UIText* (UI::UIElementType, const std::string&)> callback);
+		void setDeleteUITextCallback(std::function<void(Engine::EngineUI::UIText*)> callback);
+		void setRenameUITextCallback(std::function<void(Engine::EngineUI::UIText*, const std::string&)> callback);
+
+		// UI選択状態
+		Engine::EngineUI::UIText* getSelectedUIText() const { return m_selectedUIText; }
+		void clearUISelection() { m_selectedUIText = nullptr; }
+
 	private:
+
 		Graphics::Scene* m_scene = nullptr;
 		std::function<void(Core::GameObject*)> m_onSelectionChanged;
 
 		std::unique_ptr<ContextMenu> m_contextMenu;
+
+		Engine::EngineUI::UIText* m_selectedUIText = nullptr;
+		std::function<void(Engine::EngineUI::UIText*)> m_onUISelectionChanged;
+
+		void drawUIText(Engine::EngineUI::UIText* text, int index);
 
 		// currentSelectionを引数で受け取るように変更
 		void drawGameObject(Core::GameObject* gameObject, Core::GameObject* currentSelection);
@@ -182,10 +206,31 @@ namespace Editor::UI
 
 		void draw() override;
 
-		// Sceneの設定（選択状態もSceneから取得）
-		void setScene(Graphics::Scene* scene) { m_scene = scene; }
+		void setSelectedObject(Core::GameObject* object)
+		{
+			m_selectedObject = object;
+			// GameObjectが選択されたらUITextの選択をクリア
+			if (object)
+			{
+				m_selectedUIText = nullptr;
+			}
+		}
 
-		// マテリアル・テクスチャ管理設定
+		Core::GameObject* getSelectedObject() const { return m_selectedObject; }
+
+		void setSelectedUIText(Engine::EngineUI::UIText* text)
+		{
+			m_selectedUIText = text;
+			
+			if (text)
+			{
+				m_selectedObject = nullptr;
+			}
+		}
+
+		Engine::EngineUI::UIText* getSelectedUIText() const { return m_selectedUIText; }
+
+		void setScene(Graphics::Scene* scene) { m_scene = scene; }
 		void setMaterialManager(Graphics::MaterialManager* manager) { m_materialManager = manager; }
 		void setTextureManager(Graphics::TextureManager* manager) { m_textureManager = manager; }
 
@@ -196,10 +241,18 @@ namespace Editor::UI
 
 		void drawTransformComponent(Core::Transform* transform);
 		void drawRenderComponent(Graphics::RenderComponent* renderComponent);
-		void drawScriptComponent(Scripting::LuaScriptComponent* luaScriptComponent);
+		//void drawScriptComponent(Scripting::LuaScriptComponent* luaScriptComponent);
 		void drawMaterialEditor(Graphics::RenderComponent* renderComponent);
 		void drawTextureSlot(const char* name, Graphics::TextureType textureType,
 			std::shared_ptr<Graphics::Material> material);
 		void drawBoxColliderComponent(Physics::BoxCollider* collider);
+		Core::GameObject* m_selectedObject = nullptr;
+		Engine::EngineUI::UIText* m_selectedUIText = nullptr;
+
+		void drawUITextProperties(Engine::EngineUI::UIText* text);
+
+		void drawUITextInspector();
+		void drawGameObjectInspector();
+		//void drawRenderComponentInspector(Graphics::RenderComponent* component);
 	};
 }

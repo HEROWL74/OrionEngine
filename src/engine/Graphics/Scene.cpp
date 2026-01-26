@@ -9,6 +9,7 @@ namespace Engine::Graphics
 		CHECK_CONDITION(device->isValid(), Utils::ErrorType::Unknown, "Device is not valid");
 
 		m_device = device;
+
 		m_initialized = true;
 		return {};
 	}

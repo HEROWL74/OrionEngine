@@ -161,8 +161,20 @@ namespace Editor
 
         // Scene初期化
         auto sceneResult = m_scene.initialize(&m_device);
-        if (!sceneResult) return sceneResult;
+        if (!sceneResult)
+        {
+           return sceneResult;
+        }
 
+        // UITextRenderer初期化
+        Utils::log_info("Initializing UITextRenderer...");
+        m_uiTextRenderer = std::make_unique<Engine::EngineUI::UITextRenderer>();
+        auto uiTextResult = m_uiTextRenderer->initialize(&m_device, m_shaderManager.get());
+        if(!uiTextResult) 
+        {
+            Utils::log_error(uiTextResult.error());
+            return uiTextResult;
+        }
         // EditorView と GameView の初期化
         const auto [clientWidth, clientHeight] = m_window.getClientSize();
 
@@ -183,7 +195,11 @@ namespace Editor
         }
 
         m_editorView.setSkybox(&m_skybox);
+        m_editorView.setScene(&m_scene);
+        m_editorView.setUITextRenderer(m_uiTextRenderer.get());
         m_gameView.setSkybox(&m_skybox);
+        m_gameView.setScene(&m_scene);
+        m_gameView.setUITextRenderer(m_uiTextRenderer.get());
 
         // GPU同期後に再度登録
         m_device.waitForGpu();
@@ -201,7 +217,6 @@ namespace Editor
         {
             Utils::log_info("Default scene found, loading...");
 
-            // シーンを読み込み
             auto loadResult = m_sceneSerializer.loadScene(
                 m_scene,
                 &m_device,
@@ -269,7 +284,6 @@ namespace Editor
                 "InputManager is null"));
         }
 
-        // InputManagerが初期化されているか確認
         if (!inputManager->isInitialized())
         {
             Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
@@ -281,7 +295,6 @@ namespace Editor
         Utils::log_info(std::format("Initializing EditorViewWindow with InputManager (initialized: {})",
             inputManager->isInitialized()));
 
-        // EditorViewWindowを初期化(正しいInputManagerポインタを渡す)
         m_editorViewWindow->initialize(&m_imguiManager, &m_editorView, inputManager);
         m_editorViewWindow->setCamera(&m_editorCamera);
 
@@ -289,7 +302,7 @@ namespace Editor
         m_gameViewWindow->initialize(&m_imguiManager, &m_gameView);
         m_gameViewWindow->setCamera(&m_gameCamera);
 
-        // ★ BuildSystemとBuildWindowを初期化
+        // BuildSystemとBuildWindowを初期化
         Utils::log_info("Initializing BuildSystem...");
         m_buildSystem = std::make_unique<Build::BuildSystem>();
         m_buildWindow = std::make_unique<UI::BuildWindow>();
@@ -301,18 +314,21 @@ namespace Editor
         // UIウィンドウ設定
         m_hierarchyWindow->setScene(&m_scene);
         m_inspectorWindow->setScene(&m_scene);
+
         // PlayModeController初期化
         m_playModeController.initialize(&m_scene);
         Utils::log_info("PlayModeController initialized with scene");
         m_debugWindow->setPlayModeController(&m_playModeController);
 
-
         m_hierarchyWindow->setSelectionChangedCallback([this](Core::GameObject* object) {
-            Utils::log_info(std::format("Selection changed to: {}",
+            Utils::log_info(std::format("GameObject selection changed to: {}",
                 object ? object->getName() : "null"));
 
-            // EditorView に選択オブジェクトを設定
+            // EditorViewに選択を伝える
             m_editorView.setSelectedObject(object);
+
+            // InspectorWindowに選択を伝える
+            m_inspectorWindow->setSelectedObject(object);
             });
 
         // コンテキストメニューのコールバック設定
@@ -330,6 +346,33 @@ namespace Editor
 
         m_hierarchyWindow->setRenameObjectCallback([this](Core::GameObject* object, const std::string& newName) {
             renameGameObject(object, newName);
+            });
+
+        m_hierarchyWindow->setCreateUIElementCallback([this](UI::UIElementType type, const std::string& name) -> Engine::EngineUI::UIText* {
+            return createUIElement(type, name);
+            });
+
+        m_hierarchyWindow->setDeleteUITextCallback([this](Engine::EngineUI::UIText* text) {
+            deleteUIText(text);
+            });
+
+        m_hierarchyWindow->setRenameUITextCallback([this](Engine::EngineUI::UIText* text, const std::string& newName) {
+            renameUIText(text, newName);
+            });
+
+        // UI選択コールバック
+        m_hierarchyWindow->setUISelectionChangedCallback([this](Engine::EngineUI::UIText* text) {
+            Utils::log_info(std::format("UIText selection changed to: {}",
+                text ? text->getName() : "null"));
+
+            // InspectorWindowにUIText選択を伝える
+            m_inspectorWindow->setSelectedUIText(text);
+
+            // GameObjectの選択はクリア
+            if (text)
+            {
+                m_editorView.setSelectedObject(nullptr);
+            }
             });
 
         m_inspectorWindow->setMaterialManager(&m_materialManager);
@@ -596,25 +639,6 @@ namespace Editor
             triangleObject->getTransform()->setRotation(Math::Vector3(0.0f, triangleRotation, 0.0f));
         }
 
-        auto* cubeObject = m_scene.findGameObject("Cube");
-        if (cubeObject)
-        {
-            static float cubeRotation = 0.0f;
-            cubeRotation += 45.0f * m_deltaTime;
-            cubeObject->getTransform()->setRotation(Math::Vector3(cubeRotation, cubeRotation * 0.7f, 0.0f));
-        }
-
-        for (int i = 0; i < 3; ++i)
-        {
-            auto* extraCube = m_scene.findGameObject("Cube" + std::to_string(i + 2));
-            if (extraCube)
-            {
-                static float extraRotation = 0.0f;
-                extraRotation += (60.0f + i * 20.0f) * m_deltaTime;
-                extraCube->getTransform()->setRotation(Math::Vector3(0.0f, extraRotation, 0.0f));
-            }
-        }
-
         auto* inputManager = m_window.getInputManager();
         if (inputManager)
         {
@@ -647,11 +671,44 @@ namespace Editor
             return;
         }
 
+        if (m_uiTextRenderer)
+        {
+            m_uiTextRenderer->beginFrame();
+        }
+
         m_commandAllocator->Reset();
         m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
         m_editorView.render(m_scene, m_commandList.Get(), m_editorCamera, m_frameIndex);
         m_gameView.render(m_scene, m_commandList.Get(), m_gameCamera, m_frameIndex);
+
+        // コマンドリストをクローズして3D描画を完了
+        HRESULT hrClose = m_commandList->Close();
+        if (FAILED(hrClose))
+        {
+            Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
+                std::format("Failed to close command list for 3D rendering: 0x{:08X}", static_cast<unsigned>(hrClose))));
+            return;
+        }
+
+        // 3D描画コマンドを実行
+        ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
+        m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+        // GPU同期を確実に行う
+        const UINT64 fenceValue = m_fenceValue;
+        m_commandQueue->Signal(m_fence.Get(), fenceValue);
+        m_fenceValue++;
+
+        if (m_fence->GetCompletedValue() < fenceValue)
+        {
+            m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent);
+            WaitForSingleObject(m_fenceEvent, INFINITE);
+        }
+
+        // 再度コマンドリストをリセットしてメインウィンドウの描画を開始
+        m_commandAllocator->Reset();
+        m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
         static bool firstFrame = true;
         if (firstFrame) {
@@ -659,13 +716,10 @@ namespace Editor
                 m_editorCamera.getPosition().x,
                 m_editorCamera.getPosition().y,
                 m_editorCamera.getPosition().z));
-            Utils::log_info(std::format("First render - GameCamera: ({:.2f}, {:.2f}, {:.2f})",
-                m_gameCamera.getPosition().x,
-                m_gameCamera.getPosition().y,
-                m_gameCamera.getPosition().z));
             firstFrame = false;
         }
 
+        // メインウィンドウへの描画
         D3D12_RESOURCE_BARRIER barrier{};
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -709,10 +763,9 @@ namespace Editor
         m_imguiManager.newFrame();
 
         setupFixedLayout();
-
         m_toolbarWindow->draw();
 
-        // メニューバーを追加
+        // メニューバー描画
         if (ImGui::BeginMainMenuBar())
         {
             if (ImGui::BeginMenu("File"))
@@ -760,7 +813,6 @@ namespace Editor
 
                 if (ImGui::MenuItem("Open Build Folder"))
                 {
-                    // ビルドフォルダを開く
                     std::filesystem::path root = std::filesystem::current_path();
                     while (root.has_parent_path())
                     {
@@ -776,7 +828,6 @@ namespace Editor
 
                 ImGui::EndMenu();
             }
-
 
             ImGui::EndMainMenuBar();
         }
@@ -803,7 +854,7 @@ namespace Editor
         barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
         m_commandList->ResourceBarrier(1, &barrier);
 
-        HRESULT hrClose = m_commandList->Close();
+        hrClose = m_commandList->Close();
         if (FAILED(hrClose))
         {
             Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
@@ -811,7 +862,7 @@ namespace Editor
             return;
         }
 
-        ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
+        ppCommandLists[0] = m_commandList.Get();
         m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
         HRESULT hr = m_swapChain->Present(1, 0);
@@ -901,7 +952,6 @@ namespace Editor
             int deltaX = inputManager->getMouseDeltaX();
             int deltaY = inputManager->getMouseDeltaY();
 
-            // ★ デバッグログを常に出力してデルタ値を確認
             Utils::log_info(std::format(">>> Camera delta check: X={}, Y={}, RelativeMode={}",
                 deltaX, deltaY, inputManager->getMouseState().isRelativeMode));
 
@@ -913,7 +963,6 @@ namespace Editor
                 );
             }
 
-            // ★ 毎フレームリセット（次のRAW INPUTイベントまで累積されない）
             inputManager->resetMouseDelta();
         }
         else if (wasCameraControlActive)
@@ -1150,10 +1199,8 @@ namespace Editor
         ImGui::Begin("DockSpaceWindow", nullptr, hostWindowFlags);
         ImGui::PopStyleVar(3);
 
-        // ★ DockSpaceは毎フレーム
         ImGui::DockSpace(dockspaceID, ImVec2(0, 0), dockspaceFlags);
 
-        // ★ レイアウトは「初回 or resize時」
         if (!m_layoutInitialized || m_dockNeedsRebuild)
         {
             ImGui::DockBuilderRemoveNode(dockspaceID);
@@ -1423,7 +1470,87 @@ namespace Editor
 
         return newObject;
     }
+    Engine::EngineUI::UIText* EditorApp::createUIElement(UI::UIElementType type, const std::string& name)
+    {
+        if (type != UI::UIElementType::Text) return nullptr;
 
+        Utils::log_info(std::format("EditorApp::createUIElement called with name: {}", name));
+
+        // GameObjectを作成してUITextコンポーネントを追加
+        auto* gameObject = m_scene.createGameObject(name);
+        if (!gameObject)
+        {
+            Utils::log_error(Engine::Utils::make_error(Engine::Utils::ErrorType::Unknown,
+                "Failed to create GameObject for UIText"));
+            return nullptr;
+        }
+
+        auto* uiText = gameObject->addComponent<Engine::EngineUI::UIText>();
+        if (!uiText)
+        {
+            Utils::log_error(Engine::Utils::make_error(Engine::Utils::ErrorType::Unknown,
+                "Failed to add UIText component"));
+            m_scene.destroyGameObject(gameObject);
+            return nullptr;
+        }
+
+        uiText->setName(name);
+
+        Math::Vector3 cameraPos = m_editorCamera.getPosition();
+        Math::Vector3 cameraForward = m_editorCamera.getForward();
+        Math::Vector3 targetPos = cameraPos + cameraForward * 5.0f;
+
+        // GameObjectのTransformを設定
+        gameObject->getTransform()->setPosition(targetPos);
+        gameObject->getTransform()->setRotation(Math::Vector3(0.0f, 0.0f, 0.0f));
+        gameObject->getTransform()->setScale(Math::Vector3(0.01f, 0.01f, 0.01f));
+
+        // UITextの値を同期
+        uiText->syncFromGameObjectTransform();
+
+        // または、UITextに直接設定(内部でsyncToが呼ばれる)
+        uiText->setPosition(targetPos);
+        uiText->setRotation(Math::Vector3(0.0f, 0.0f, 0.0f));
+        uiText->setScale(Math::Vector3(0.01f, 0.01f, 0.01f));
+
+        // テキストプロパティのデフォルト値
+        uiText->setText("New Text");
+        uiText->setFontSize(32.0f);
+        uiText->setColor(Math::Vector3(1.0f, 1.0f, 1.0f));
+        uiText->setAlpha(1.0f);
+
+        return uiText;
+    }
+    void EditorApp::deleteUIText(Engine::EngineUI::UIText* text)
+    {
+        if (!text) return;
+
+
+        m_scene.removeUIText(text);
+
+        // Inspector選択クリア
+        if (m_inspectorWindow && m_inspectorWindow->getSelectedUIText() == text)
+        {
+            m_inspectorWindow->setSelectedUIText(nullptr);
+        }
+
+        // Hierarchy選択クリア
+        if (m_hierarchyWindow && m_hierarchyWindow->getSelectedUIText() == text)
+        {
+            m_hierarchyWindow->clearUISelection();
+        }
+
+        Utils::log_info("Deleted UIText from Scene");
+    }
+    void EditorApp::renameUIText(Engine::EngineUI::UIText* text, const std::string& newName)
+    {
+        if (!text) return;
+
+        std::string oldName = text->getName();
+        text->setName(newName);
+
+        Utils::log_info(std::format("Renamed UIText: {} -> {}", oldName, newName));
+    }
 
     std::string EditorApp::generateUniqueName(const std::string& baseName)
     {
@@ -1561,7 +1688,7 @@ namespace Editor
             deleteGameObject(obj);
         }
 
-
+        m_scene.clearUITexts();
         m_currentScenePath = "assets/scenes/untitled.scene";
         Utils::log_info("New scene created");
     }
@@ -1636,6 +1763,8 @@ namespace Editor
         {
             m_scene.destroyGameObject(obj);
         }
+
+        m_scene.clearUITexts();
 
         // GPU同期を確実に行う
         m_device.waitForGpu();

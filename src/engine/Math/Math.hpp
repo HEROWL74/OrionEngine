@@ -35,7 +35,7 @@ namespace Engine::Math
     {
         return degrees * DEG_TO_RAD;
     }
-    
+
     //2次元ベクトルクラス
     class Vector2
     {
@@ -104,6 +104,17 @@ namespace Engine::Math
             return Vector2(-x, -y);
         }
 
+        // 比較演算子
+        constexpr bool operator==(const Vector2& other) const
+        {
+            return x == other.x && y == other.y;
+        }
+
+        constexpr bool operator!=(const Vector2& other) const
+        {
+            return !(*this == other);
+        }
+
         // ベクトル操作
         float length() const
         {
@@ -144,19 +155,19 @@ namespace Engine::Math
             return (b - a).length();
         }
 
-        //2Dの外積（スカラー値）
+        //2Dの外積(スカラー値)
         static float cross(const Vector2& a, const Vector2& b)
         {
             return a.x * b.y - a.y * b.x;
         }
-    }; 
+    };
 
     //スカラー×Vector2の演算子
     constexpr Vector2 operator*(float scalar, const Vector2& vector)
     {
         return vector * scalar;
     }
-   
+
     // 3次元ベクトルクラス
     class Vector3
     {
@@ -180,7 +191,7 @@ namespace Engine::Math
 
         // 演算子オーバーロード
         constexpr Vector3 operator+(const Vector3& other) const
-        {                                                                                                                               
+        {
             return Vector3(x + other.x, y + other.y, z + other.z);
         }
 
@@ -238,6 +249,17 @@ namespace Engine::Math
             return *this;
         }
 
+        // 比較演算子 - UITextのdirtyフラグ用
+        constexpr bool operator==(const Vector3& other) const
+        {
+            return x == other.x && y == other.y && z == other.z;
+        }
+
+        constexpr bool operator!=(const Vector3& other) const
+        {
+            return !(*this == other);
+        }
+
         // ベクトル操作
         float length() const
         {
@@ -260,6 +282,15 @@ namespace Engine::Math
         void normalize()
         {
             *this = normalized();
+        }
+
+        Vector3 cross(const Vector3& other) const
+        {
+            return Vector3(
+                y * other.z - z * other.y,
+                z * other.x - x * other.z,
+                x * other.y - y * other.x
+            );
         }
 
         // 静的関数
@@ -295,7 +326,6 @@ namespace Engine::Math
             case 1: return y;
             case 2: return z;
             default:
-                // インデックスが範囲外の場合はxを返す（エラー処理）
                 return x;
             }
         }
@@ -308,7 +338,6 @@ namespace Engine::Math
             case 1: return y;
             case 2: return z;
             default:
-                // インデックスが範囲外の場合はxを返す（エラー処理）
                 return x;
             }
         }
@@ -320,7 +349,7 @@ namespace Engine::Math
         return vector * scalar;
     }
 
-    //4次元ベクトルクラス（マテリアル定数のバッファ用）
+    //4次元ベクトルクラス
     class Vector4
     {
     public:
@@ -328,34 +357,91 @@ namespace Engine::Math
 
         //コンストラクタ
         constexpr Vector4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
-        constexpr Vector4(float x_, float y_, float z_, float w_): x(x_), y(y_), z(z_), w(w_) {}
+        constexpr Vector4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_) {}
         constexpr Vector4(const Vector3& xyz, float w_) : x(xyz.x), y(xyz.y), z(xyz.z), w(w_) {}
         constexpr Vector4(float value) : x(value), y(value), z(value), w(value) {}
 
         //静的関数
         static constexpr Vector4 zero() { return Vector4(0.0f, 0.0f, 0.0f, 0.0f); }
-        static constexpr Vector4 one() { return Vector4( 1.0f, 1.0f, 1.0f, 1.0f); }
+        static constexpr Vector4 one() { return Vector4(1.0f, 1.0f, 1.0f, 1.0f); }
 
         //Vector3への変換
         Vector3 xyz() const { return Vector3(x, y, z); }
+
+        // 演算子オーバーロード
+        constexpr Vector4 operator/(float scalar) const
+        {
+            return Vector4(x / scalar, y / scalar, z / scalar, w / scalar);
+        }
+
+        Vector4& operator/=(float scalar)
+        {
+            x /= scalar;
+            y /= scalar;
+            z /= scalar;
+            w /= scalar;
+            return *this;
+        }
+
+        constexpr Vector4 operator+(const Vector4& other) const
+        {
+            return Vector4(x + other.x, y + other.y, z + other.z, w + other.w);
+        }
+
+        constexpr Vector4 operator-(const Vector4& other) const
+        {
+            return Vector4(x - other.x, y - other.y, z - other.z, w - other.w);
+        }
+
+        constexpr Vector4 operator*(float scalar) const
+        {
+            return Vector4(x * scalar, y * scalar, z * scalar, w * scalar);
+        }
+
+        // 比較演算子
+        constexpr bool operator==(const Vector4& other) const
+        {
+            return x == other.x && y == other.y && z == other.z && w == other.w;
+        }
+
+        constexpr bool operator!=(const Vector4& other) const
+        {
+            return !(*this == other);
+        }
     };
 
     // 4x4行列クラス
     class Matrix4
     {
     public:
-        // 行列データ（行優先）
+        // 行列データ(行優先)
         std::array<std::array<float, 4>, 4> m;
 
         // コンストラクタ
         Matrix4()
         {
-            identity();
+            // デフォルトは単位行列
+            for (int i = 0; i < 4; ++i)
+            {
+                for (int j = 0; j < 4; ++j)
+                {
+                    m[i][j] = (i == j) ? 1.0f : 0.0f;
+                }
+            }
         }
 
         Matrix4(std::initializer_list<std::initializer_list<float>> values)
         {
-            identity();
+            // まず単位行列で初期化
+            for (int i = 0; i < 4; ++i)
+            {
+                for (int j = 0; j < 4; ++j)
+                {
+                    m[i][j] = (i == j) ? 1.0f : 0.0f;
+                }
+            }
+
+            // 指定された値で上書き
             int row = 0;
             for (const auto& rowData : values)
             {
@@ -375,16 +461,26 @@ namespace Engine::Math
         float& operator()(int row, int col) { return m[row][col]; }
         const float& operator()(int row, int col) const { return m[row][col]; }
 
-        // 単位行列に設定
-        void identity()
+        // 単位行列を作成(静的メソッド)
+        static Matrix4 identity()
         {
-            for (int i = 0; i < 4; ++i)
-            {
-                for (int j = 0; j < 4; ++j)
-                {
-                    m[i][j] = (i == j) ? 1.0f : 0.0f;
-                }
-            }
+            Matrix4 result;
+            // コンストラクタで既に単位行列になっている
+            return result;
+        }
+
+        static Matrix4 scale(float x, float y, float z)
+        {
+            Matrix4 result;
+            result.m[0][0] = x;
+            result.m[1][1] = y;
+            result.m[2][2] = z;
+            return result;
+        }
+
+        static Matrix4 scale(const Vector3& scale)
+        {
+            return Matrix4::scale(scale.x, scale.y, scale.z);
         }
 
         // 行列演算
@@ -482,7 +578,7 @@ namespace Engine::Math
             result.m[2][2] = scale.z;
             return result;
         }
-        
+
         // ビュー行列
         static Matrix4 lookAt(const Vector3& eye, const Vector3& target, const Vector3& up)
         {
@@ -678,7 +774,7 @@ namespace Engine::Math
             if (std::abs(det) < 1e-6f)
             {
                 // 逆行列が存在しない場合は単位行列を返す
-                return Matrix4();
+                return Matrix4::identity();
             }
 
             det = 1.0f / det;
@@ -695,7 +791,7 @@ namespace Engine::Math
             return inv;
         }
 
-        // データポインターを取得（DirectX用）
+        // データポインターを取得(DirectX用)
         const float* data() const { return &m[0][0]; }
     };
 }

@@ -7,9 +7,12 @@
 #include "Scene.hpp"
 #include "../Scripting/LuaScriptComponent.hpp"
 #include "../Physics/BoxCollider.hpp"
+#include "../UI/UIComponent.hpp"
+
 namespace Engine::Graphics
 {
 	using json = nlohmann::json;
+
 	// ===============================================
 	// Sceneのシリアライズ、デシリアライズを行うクラス
 	// ===============================================
@@ -47,6 +50,10 @@ namespace Engine::Graphics
 			const json& json
 		);
 
+		// UITextコンポーネントのシリアライズ
+		json serializeUITextComponent(const EngineUI::UIText* text);
+		void deserializeUITextComponent(EngineUI::UIText* text, const json& json);
+
 		// Transform情報のシリアライズ
 		json serializeTransform(const Core::Transform* transform);
 		void deserializeTransform(Core::Transform* transform, const json& json);
@@ -68,12 +75,8 @@ namespace Engine::Graphics
 		// Luaスクリプト情報のシリアライズ
 		json serializeLuaComponent(const Scripting::LuaScriptComponent* component);
 
-		// 
-		json serializeBoxCollider(
-			const Physics::BoxCollider* collider);
-
-	    void deserializeBoxCollider(
-			Physics::BoxCollider* collider,
-			const json& json);
+		// BoxCollider情報のシリアライズ
+		json serializeBoxCollider(const Physics::BoxCollider* collider);
+		void deserializeBoxCollider(Physics::BoxCollider* collider, const json& json);
 	};
 }

@@ -1,6 +1,5 @@
-//src/engine/Input/InputManager
+//src/engine/Input/InputSystem.hpp
 #pragma once
-
 #include "InputManager.hpp"
 #include <memory>
 
@@ -21,19 +20,21 @@ namespace Engine::Input
 			m_inputManager = manager;
 		}
 
-		// WASD, SPACE‚Ì‚Ý•Ô‚·
 		bool isKeyW() const
 		{
 			return m_inputManager && m_inputManager->isKeyDown(KeyCode::W);
 		}
+
 		bool isKeyS() const
 		{
 			return m_inputManager && m_inputManager->isKeyDown(KeyCode::S);
 		}
+
 		bool isKeyA() const
 		{
 			return m_inputManager && m_inputManager->isKeyDown(KeyCode::A);
 		}
+
 		bool isKeyD() const
 		{
 			return m_inputManager && m_inputManager->isKeyDown(KeyCode::D);
@@ -43,8 +44,59 @@ namespace Engine::Input
 		{
 			return m_inputManager && m_inputManager->isKeyDown(KeyCode::Space);
 		}
-	private: 
+
+		bool isKeyWPressed() const
+		{
+			return m_inputManager && m_inputManager->isKeyPressed(KeyCode::W);
+		}
+
+		bool isKeySPressed() const
+		{
+			return m_inputManager && m_inputManager->isKeyPressed(KeyCode::S);
+		}
+
+		bool isKeyAPressed() const
+		{
+			return m_inputManager && m_inputManager->isKeyPressed(KeyCode::A);
+		}
+
+		bool isKeyDPressed() const
+		{
+			return m_inputManager && m_inputManager->isKeyPressed(KeyCode::D);
+		}
+
+		bool isKeySpacePressed() const
+		{
+			return m_inputManager && m_inputManager->isKeyPressed(KeyCode::Space);
+		}
+
+		bool isKeyWReleased() const
+		{
+			return m_inputManager && m_inputManager->isKeyReleased(KeyCode::W);
+		}
+
+		bool isKeySReleased() const
+		{
+			return m_inputManager && m_inputManager->isKeyReleased(KeyCode::S);
+		}
+
+		bool isKeyAReleased() const
+		{
+			return m_inputManager && m_inputManager->isKeyReleased(KeyCode::A);
+		}
+
+		bool isKeyDReleased() const
+		{
+			return m_inputManager && m_inputManager->isKeyReleased(KeyCode::D);
+		}
+
+		bool isKeySpaceReleased() const
+		{
+			return m_inputManager && m_inputManager->isKeyReleased(KeyCode::Space);
+		}
+
+	private:
 		InputSystem() = default;
 		InputManager* m_inputManager = nullptr;
 	};
-} 
+}

@@ -7,6 +7,7 @@
 #include "Material.hpp"
 #include "RenderComponent.hpp"
 #include "ShaderManager.hpp"
+#include "../UI/UIComponent.hpp"
 
 namespace Engine::Graphics
 {
@@ -51,16 +52,69 @@ namespace Engine::Graphics
 		//ゲームオブジェクト一覧取得
 		const std::vector<std::unique_ptr<Core::GameObject>>& getGameObjects() const { return m_gameObjects; }
 		Core::GameObject* findObjectByName(const std::string& name);
-		
+
+		EngineUI::UIText* createUIText(const std::string& name = "UIText")
+		{
+			auto gameObject = createGameObject(name);
+			auto* uitext = gameObject->addComponent<EngineUI::UIText>();
+			uitext->setName(name);
+			return uitext;
+		}
+
+		std::vector<EngineUI::UIText*> getAllUITexts()
+		{
+			std::vector<EngineUI::UIText*> texts;
+			for (const auto& obj : m_gameObjects)
+			{
+				if (auto* text = obj->getComponent<EngineUI::UIText>())
+				{
+					texts.push_back(text);
+				}
+			}
+			return texts;
+		}
+
+		void removeUIText(EngineUI::UIText* text)
+		{
+			if (!text) return;
+
+			// GameObjectからコンポーネントを削除
+			auto* gameObject = text->getGameObject();
+			if (gameObject)
+			{
+				gameObject->removeComponent<EngineUI::UIText>();
+			}
+		}
+
+		std::vector<EngineUI::UIText*> getUITexts() const
+		{
+			std::vector<EngineUI::UIText*> texts;
+			for (const auto& obj : m_gameObjects)
+			{
+				if (obj && obj->isActive() && !obj->isDestroyed())
+				{
+					if (auto* text = obj->getComponent<EngineUI::UIText>())
+					{
+						texts.push_back(text);
+					}
+				}
+			}
+			return texts;
+		}
+
+		void clearUITexts()
+		{
+			m_uiTexts.clear();
+		}
+
 	private:
 		Device* m_device = nullptr;
 		std::vector<std::unique_ptr<Core::GameObject>> m_gameObjects;
 		std::vector<Core::GameObject*> m_pendingDestroy;
 		Core::GameObject* m_selectedObject = nullptr;
 		bool m_initialized = false;
-
+		std::vector<std::unique_ptr<Engine::EngineUI::UIText>> m_uiTexts;
 	private:
 		void processPendingDestroy();
 	};
 }
-

@@ -14,7 +14,7 @@ namespace Engine::Graphics
             sceneJson["version"] = "1.0";
             sceneJson["gameObjects"] = nlohmann::json::array();
 
-            // ★ 修正: isDestroyed()をチェックして、破棄済みオブジェクトを除外
+            // 全てのGameObjectをシリアライズ（UITextも含む）
             for (const auto& gameObject : scene.getGameObjects())
             {
                 if (gameObject && !gameObject->isDestroyed())
@@ -70,6 +70,7 @@ namespace Engine::Graphics
                 ));
             }
 
+            // 既存データを完全にクリア
             scene.clear();
 
             nlohmann::json sceneJson;
@@ -84,6 +85,7 @@ namespace Engine::Graphics
                 ));
             }
 
+            // GameObjectsをデシリアライズ
             if (sceneJson.contains("gameObjects"))
             {
                 for (const auto& objJson : sceneJson["gameObjects"])
@@ -104,7 +106,8 @@ namespace Engine::Graphics
             }
 
             Utils::log_info(std::format("Scene loaded from: {} ({} objects)",
-                filepath, sceneJson["gameObjects"].size()));
+                filepath,
+                sceneJson.value("gameObjects", nlohmann::json::array()).size()));
             return {};
         }
         catch (const std::exception& e)
@@ -134,6 +137,13 @@ namespace Engine::Graphics
             json["renderComponent"] = serializeRenderComponent(renderComponent);
         }
 
+        // UITextコンポーネント
+        auto* uiText = gameObject->getComponent<EngineUI::UIText>();
+        if (uiText)
+        {
+            json["uiText"] = serializeUITextComponent(uiText);
+        }
+
         // Luaスクリプト情報
         auto* lua = gameObject->getComponent<Engine::Scripting::LuaScriptComponent>();
         if (lua)
@@ -161,14 +171,39 @@ namespace Engine::Graphics
         std::string name = json.value("name", "GameObject");
         Utils::log_info(std::format("Loading GameObject: {}", name));
 
-        auto* gameObject = scene.createGameObject(name);
+        // UITextコンポーネントがあるかチェック
+        bool hasUIText = json.contains("uiText");
 
-        if (!gameObject)
+        Core::GameObject* gameObject = nullptr;
+
+        if (hasUIText)
         {
-            return std::unexpected(Utils::make_error(
-                Utils::ErrorType::Unknown,
-                "Failed to create GameObject"
-            ));
+            // UIText用のGameObjectを作成
+            auto* uiText = scene.createUIText(name);
+            if (!uiText)
+            {
+                return std::unexpected(Utils::make_error(
+                    Utils::ErrorType::Unknown,
+                    "Failed to create UIText"
+                ));
+            }
+            gameObject = uiText->getGameObject();
+
+            // UITextプロパティを復元
+            deserializeUITextComponent(uiText, json["uiText"]);
+            Utils::log_info(std::format("  UIText component loaded for {}", name));
+        }
+        else
+        {
+            // 通常のGameObjectを作成
+            gameObject = scene.createGameObject(name);
+            if (!gameObject)
+            {
+                return std::unexpected(Utils::make_error(
+                    Utils::ErrorType::Unknown,
+                    "Failed to create GameObject"
+                ));
+            }
         }
 
         // Transformを復元
@@ -228,6 +263,50 @@ namespace Engine::Graphics
         Utils::log_info(std::format("GameObject {} created successfully (active: {})", name, isActive));
 
         return {};
+    }
+
+    // UITextコンポーネントのシリアライズ（GameObjectとは別）
+    nlohmann::json SceneSerializer::serializeUITextComponent(const EngineUI::UIText* text)
+    {
+        nlohmann::json json;
+
+        json["text"] = text->getText();
+        json["visible"] = text->isVisible();
+
+        // Style
+        json["fontSize"] = text->getFontSize();
+
+        auto color = text->getColor();
+        json["color"] = { color.x, color.y, color.z };
+
+        json["alpha"] = text->getAlpha();
+
+        return json;
+    }
+
+    // UITextコンポーネントのデシリアライズ
+    void SceneSerializer::deserializeUITextComponent(
+        EngineUI::UIText* text,
+        const nlohmann::json& json)
+    {
+        // 基本プロパティ
+        text->setText(json.value("text", "Text"));
+        text->setVisible(json.value("visible", true));
+
+        // Style
+        text->setFontSize(json.value("fontSize", 32.0f));
+
+        if (json.contains("color"))
+        {
+            auto color = json["color"];
+            text->setColor(Math::Vector3(
+                color[0].get<float>(),
+                color[1].get<float>(),
+                color[2].get<float>()
+            ));
+        }
+
+        text->setAlpha(json.value("alpha", 1.0f));
     }
 
     nlohmann::json SceneSerializer::serializeTransform(
@@ -414,19 +493,19 @@ namespace Engine::Graphics
         return json;
     }
 
-    json SceneSerializer::serializeLuaComponent(const Scripting::LuaScriptComponent* component)
+    nlohmann::json SceneSerializer::serializeLuaComponent(const Scripting::LuaScriptComponent* component)
     {
-        json json;
+        nlohmann::json json;
         json["name"] = "Lua";
         json["scriptPath"] = component->getScriptPath();
 
         return json;
     }
 
-    json SceneSerializer::serializeBoxCollider(
+    nlohmann::json SceneSerializer::serializeBoxCollider(
         const Physics::BoxCollider* collider)
     {
-        json colliderJson;
+        nlohmann::json colliderJson;
 
         const auto& size = collider->getSize();
         const auto& center = collider->getCenter();
@@ -440,7 +519,7 @@ namespace Engine::Graphics
 
     void SceneSerializer::deserializeBoxCollider(
         Physics::BoxCollider* collider,
-        const json& json)
+        const nlohmann::json& json)
     {
         if (json.contains("size"))
         {

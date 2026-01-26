@@ -32,7 +32,6 @@ namespace Engine::Physics
 			auto* colliderA = objA->getComponent<BoxCollider>();
 			if (!colliderA || !colliderA->isEnabled()) continue;
 
-			// ★ コライダー情報をログ出力
 			if (frameCount < 5) {
 				Math::Vector3 minA, maxA;
 				colliderA->getWorldAABB(minA, maxA);

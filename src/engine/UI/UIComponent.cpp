@@ -16,27 +16,4 @@ namespace Engine::EngineUI
 
 		return{};
 	}
-
-	// ====================================
-	// UIText
-	// ====================================
-	UIText::UIText(const std::string& text)
-		:m_text(text)
-	{
-	}
-
-	Utils::VoidResult UIText::initialize(Graphics::Device* device, Graphics::ShaderManager* shaderManager)
-	{
-		// 親クラスの初期化を呼ぶ
-		auto result = UIComponent::initialize(device, shaderManager);
-		if (!result)
-		{
-			return result;
-		}
-
-		// TODO: ここでフォントテクスチャなどの読み込みを行う
-		Utils::log_info(std::format("UI Text iniitlaized: '{}'", m_text));
-
-		return {};
-	}
 }

@@ -5,17 +5,17 @@
 
 namespace Engine::Utils
 {
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒRƒ“ƒeƒLƒXƒg’è‹`
+	// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆå®šç¾©
 	enum class RenderViewType : uint8_t
 	{
-		Editor = 0,   // ƒGƒfƒBƒ^ƒrƒ…[—p
-		Game = 1,     // ƒQ[ƒ€ƒrƒ…[—p
-		Shadow = 2,   // «—ˆ’Ç‰Á‚·‚é—\’è
-		Reflection = 3,   //@‚¢‚Â‚©’Ç‰Á‚·‚é—\’è
+		Editor = 0,   // ã‚¨ãƒ‡ã‚£ã‚¿ãƒ“ãƒ¥ãƒ¼ç”¨
+		Game = 1,     // ã‚²ãƒ¼ãƒ ãƒ“ãƒ¥ãƒ¼ç”¨
+		Shadow = 2,   // å°†æ¥è¿½åŠ ã™ã‚‹äºˆå®š
+		Reflection = 3,   //ã€€ã„ã¤ã‹è¿½åŠ ã™ã‚‹äºˆå®š
 		Count
 	};
 
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒRƒ“ƒeƒLƒXƒg
+	// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
 	struct RenderContext
 	{
 		ID3D12GraphicsCommandList* commandList = nullptr;
@@ -23,13 +23,13 @@ namespace Engine::Utils
 		RenderViewType viewType = RenderViewType::Editor;
 		uint32_t frameIndex = 0;
 
-        // ’è”ƒoƒbƒtƒ@ƒCƒ“ƒfƒbƒNƒX‚ğŒvZiƒrƒ…[‚²‚Æ‚É“Æ—§j
+        // å®šæ•°ãƒãƒƒãƒ•ã‚¡ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’è¨ˆç®—ï¼ˆãƒ“ãƒ¥ãƒ¼ã”ã¨ã«ç‹¬ç«‹ï¼‰
         uint32_t getConstantBufferIndex() const
         {
             return (static_cast<uint32_t>(viewType) * 2) + (frameIndex % 2);
         }
 
-        // ƒfƒoƒbƒO—p
+        // ãƒ‡ãƒãƒƒã‚°ç”¨
         const char* getViewTypeName() const
         {
             switch (viewType)
@@ -43,10 +43,10 @@ namespace Engine::Utils
         }
 	};
 
-    // ’è”ƒoƒbƒtƒ@‚Ì•K—v”‚ğŒvZ
+    // å®šæ•°ãƒãƒƒãƒ•ã‚¡ã®å¿…è¦æ•°ã‚’è¨ˆç®—
     constexpr uint32_t GetRequiredConstantBufferCount()
     {
-        // Šeƒrƒ…[ƒ^ƒCƒv‚²‚Æ‚É2‚Âiƒ_ƒuƒ‹ƒoƒbƒtƒ@ƒŠƒ“ƒOj
+        // å„ãƒ“ãƒ¥ãƒ¼ã‚¿ã‚¤ãƒ—ã”ã¨ã«2ã¤ï¼ˆãƒ€ãƒ–ãƒ«ãƒãƒƒãƒ•ã‚¡ãƒªãƒ³ã‚°ï¼‰
         return static_cast<uint32_t>(RenderViewType::Count) * 2;
     }
 }

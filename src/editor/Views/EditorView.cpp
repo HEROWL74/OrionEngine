@@ -55,7 +55,8 @@ namespace Editor::UI
 		return {};
 	}
 
-	void EditorView::render(Graphics::Scene& scene, ID3D12GraphicsCommandList* commandList, const Graphics::Camera& camera, UINT frameIndex)
+	void EditorView::render(Graphics::Scene& scene, ID3D12GraphicsCommandList* commandList,
+		const Graphics::Camera& camera, UINT frameIndex)
 	{
 		if (!m_initialized || !m_renderTarget || !commandList)
 		{
@@ -71,7 +72,7 @@ namespace Editor::UI
 		commandList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
 		// クリア
-		float clearColor[4] = { 1.0f, 0.0f, 1.0f, 1.0f };
+		float clearColor[4] = { 0.2f, 0.3f, 0.4f, 1.0f };
 		commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 		commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
@@ -124,12 +125,62 @@ namespace Editor::UI
 			}
 		}
 
+		if (m_uiTextRenderer && m_uiTextRenderer->isInitialized() && m_scene)
+		{
+			Utils::log_info("========================================");
+			Utils::log_info("EditorView: Starting UIText rendering");
+
+			const auto& allTexts = m_scene->getUITexts();
+			Utils::log_info(std::format("Total UIText count: {}", allTexts.size()));
+
+			Utils::RenderContext uiContext;
+			uiContext.commandList = commandList;
+			uiContext.camera = &camera;
+			uiContext.viewType = Utils::RenderViewType::Editor;
+			uiContext.frameIndex = frameIndex;
+
+			int renderedCount = 0;
+			for (auto* text : allTexts)
+			{
+				if (!text)
+				{
+					Utils::log_warning("Null UIText pointer encountered");
+					continue;
+				}
+
+				bool shouldRender = text->isVisible();
+
+				// デバッグ情報
+				Utils::log_info(std::format("UIText '{}' - Visible: {}, Enabled: {}, GameObject: {}",
+					text->getName(),
+					text->isVisible(),
+					text->isEnabled(),
+					text->getGameObject() ? text->getGameObject()->getName() : "null"));
+
+				if (shouldRender)
+				{
+					m_uiTextRenderer->draw(
+						uiContext,
+						*text,
+						m_width,
+						m_height,
+						&camera
+					);
+					renderedCount++;
+				}
+			}
+
+			Utils::log_info(std::format("Rendered {} out of {} UITexts", renderedCount, allTexts.size()));
+			Utils::log_info("========================================\n");
+		}
+
 		// Gizmoなどのエディタ要素を描画
 		renderEditorElements(commandList, camera, frameIndex);
 
-		// 全ての描画が終わってから PIXEL_SHADER_RESOURCE に遷移
+		// 全ての描画が終わってからPIXEL_SHADER_RESOURCEに遷移
 		m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
+
 	void EditorView::renderEditorElements(ID3D12GraphicsCommandList* commandList, const Graphics::Camera& camera, UINT frameIndex)
 	{
 		if (!commandList)
@@ -137,12 +188,13 @@ namespace Editor::UI
 			return;
 		}
 
-
+		// Gizmo描画
 		if (m_showGizmos && m_selectedObject && m_gizmo)
 		{
 			m_gizmo->render(commandList, camera, m_selectedObject);
 		}
 
+		// 選択アウトライン
 		if (m_showGizmos && m_selectedObject)
 		{
 			renderSelectionOutline(commandList, camera, m_selectedObject);
@@ -156,7 +208,7 @@ namespace Editor::UI
 			return;
 		}
 
-		// CB更新 通常のビュー行列を使用（平行移動を含む）
+		// 通常のビュー行列を使用(平行移動を含む)
 		if (m_gridCameraMapped)
 		{
 			GridCameraConstants constants;
@@ -219,14 +271,9 @@ namespace Editor::UI
 			return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown, "Device or ShaderManager is null"));
 		}
 
-		if (!shaderManager)
-		{
-			Utils::log_warning("ShaderManager is null - creating grid with basic shaders");
-		}
-
 		// ジオメトリ作成
 		auto geomResult = createGridGeometry();
-		if (!geomResult)return geomResult;
+		if (!geomResult) return geomResult;
 
 		// ルートシグネチャ作成
 		auto rootSigResult = createGridRootSignature();
@@ -256,13 +303,12 @@ namespace Editor::UI
 		for (int i = -gridLines; i <= gridLines; ++i)
 		{
 			float pos = i * gridStep;
-			Math::Vector4 color = (i == 0) ? 
-				Math::Vector4(0.0f, 0.0f, 1.0f, 1.0f) // Z軸は蒼
+			Math::Vector4 color = (i == 0) ?
+				Math::Vector4(0.0f, 0.0f, 1.0f, 1.0f) // Z軸は青
 				: Math::Vector4(0.3f, 0.3f, 0.3f, 1.0f);
-			vertices.push_back({ Math::Vector3(-gridSize,0.0f,pos),color });
-			vertices.push_back({ Math::Vector3(gridSize, 0.0f,pos),color });
+			vertices.push_back({ Math::Vector3(-gridSize, 0.0f, pos), color });
+			vertices.push_back({ Math::Vector3(gridSize, 0.0f, pos), color });
 		}
-
 
 		// Z軸方向の線
 		for (int i = -gridLines; i <= gridLines; ++i)
@@ -271,11 +317,9 @@ namespace Editor::UI
 			Math::Vector4 color = (i == 0) ?
 				Math::Vector4(1.0f, 0.0f, 0.0f, 1.0f) // X軸は赤
 				: Math::Vector4(0.3f, 0.3f, 0.3f, 1.0f);
-			vertices.push_back({ Math::Vector3(pos,0.0f,-gridSize),color });
-			vertices.push_back({ Math::Vector3(pos, 0.0f,gridSize),color });
+			vertices.push_back({ Math::Vector3(pos, 0.0f, -gridSize), color });
+			vertices.push_back({ Math::Vector3(pos, 0.0f, gridSize), color });
 		}
-
-
 
 		m_gridVertexCount = static_cast<UINT>(vertices.size());
 		const UINT vertexBufferSize = static_cast<UINT>(sizeof(GridVertex) * vertices.size());
@@ -295,7 +339,7 @@ namespace Editor::UI
 
 		// データをコピー
 		void* pData = nullptr;
-		D3D12_RANGE readRange{ 0,0 };
+		D3D12_RANGE readRange{ 0, 0 };
 		m_gridVertexBuffer->Map(0, &readRange, &pData);
 		memcpy(pData, vertices.data(), vertexBufferSize);
 		m_gridVertexBuffer->Unmap(0, nullptr);
@@ -408,10 +452,10 @@ namespace Editor::UI
 		// 入力レイアウト
 		D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 		{
-			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,0,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
-			{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,12,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
+			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		};
 
 		// パイプラインステート設定
@@ -447,5 +491,4 @@ namespace Editor::UI
 
 		return {};
 	}
-
 }
