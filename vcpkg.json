@@ -6,6 +6,7 @@
     "lua",
     "directxtex",
     "nlohmann-json",
-    "stb"
+    "stb",
+    "miniaudio"
   ]
 }
