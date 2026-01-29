@@ -1,25 +1,28 @@
 # engine/CMakeLists.txt
 file(GLOB_RECURSE ENGINE_SOURCES
-    ${CMAKE_SOURCE_DIR}/src/engine/*.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/*.hpp
-    ${CMAKE_SOURCE_DIR}/src/shared/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/engine/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/engine/*.hpp
 )
 
 add_library(OrionEngine STATIC ${ENGINE_SOURCES})
 
+find_path(MINIAUDIO_INCLUDE_DIRS "miniaudio.h")
+
 target_include_directories(OrionEngine PUBLIC
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/ThirdParty
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${MINIAUDIO_INCLUDE_DIRS}
 )
 
 find_package(lua CONFIG REQUIRED)
-find_package(sol2 CONFIG REQUIRED)
+find_package(sol2 CONFIG)
 find_package(DirectXTex CONFIG REQUIRED)
+find_package(directx-headers CONFIG REQUIRED)
 
 target_link_libraries(OrionEngine PUBLIC
     lua
     sol2
     Microsoft::DirectXTex
+    Microsoft::DirectX-Headers
     d3d12 dxgi dxguid d3dcompiler
 )
 
@@ -27,3 +30,4 @@ if(MSVC)
     target_compile_options(OrionEngine PRIVATE /W4 /EHsc)
     target_compile_definitions(OrionEngine PRIVATE UNICODE _UNICODE)
 endif()
+

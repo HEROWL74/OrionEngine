@@ -7,6 +7,13 @@
     "directxtex",
     "nlohmann-json",
     "stb",
-    "miniaudio"
+    "miniaudio",
+    "directx-headers"
+  ],
+  "overrides": [
+    {
+      "name": "directx-headers",
+      "version-string": "1.615.0"
+    }
   ]
 }

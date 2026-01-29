@@ -1,4 +1,5 @@
 // src/engine/Audio/AudioComponent.hpp
+#pragma once
 #include <miniaudio.h>
 #include <string>
 #include "../Core/GameObject.hpp"
@@ -6,7 +7,7 @@
 
 namespace Engine::Audio
 {
-	class AudioComponent : Core::Component
+	class AudioComponent : public Core::Component
 	{
 	public:
 		AudioComponent() = default;
@@ -37,8 +38,9 @@ namespace Engine::Audio
 		bool isPlaying()const;
 		bool isPaused()const { return m_paused; }
 
-		// ファイルパス取得
+		// ファイルパス取得・設定
 		const std::string& getFilePath()const { return m_filepath; }
+		void setFilePath(const std::string& filepath) { m_filepath = filepath; }
 
 		// Component Overrides
 		void start() override;
@@ -52,6 +54,7 @@ namespace Engine::Audio
 		bool m_initialized = false;
 		bool m_audioLoaded = false;
 		bool m_loop = false;
+		bool m_shouldStop = false;
 		bool m_paused = false;
 		float m_volume = 1.0f;
 

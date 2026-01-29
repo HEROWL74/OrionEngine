@@ -7,7 +7,7 @@
 #include <d3d12.h>
 #include <memory>
 #include <functional>
-#include "engine/ThirdParty/d3dx12.h"
+#include <directx/d3dx12.h>
 #include "engine/Graphics/Device.hpp"
 #include "engine/Utils/Common.hpp"
 #include "engine/Core/GameObject.hpp"
@@ -20,6 +20,7 @@
 #include "engine/Scripting/IScript.hpp"
 #include "engine/Scripting/LuaScriptUtility.hpp"
 #include "engine/Physics/BoxCollider.hpp"
+#include "engine/Audio/AudioComponent.hpp"
 
 #include "../UI/backends/imgui_impl_dx12.h"
 #include "../UI/backends/imgui_impl_win32.h"
@@ -241,11 +242,13 @@ namespace Editor::UI
 
 		void drawTransformComponent(Core::Transform* transform);
 		void drawRenderComponent(Graphics::RenderComponent* renderComponent);
-		//void drawScriptComponent(Scripting::LuaScriptComponent* luaScriptComponent);
+		// void drawScriptComponent(Scripting::LuaScriptComponent* luaScriptComponent);
 		void drawMaterialEditor(Graphics::RenderComponent* renderComponent);
 		void drawTextureSlot(const char* name, Graphics::TextureType textureType,
 			std::shared_ptr<Graphics::Material> material);
 		void drawBoxColliderComponent(Physics::BoxCollider* collider);
+		void drawAudioComponent(Audio::AudioComponent* audioComponent);
+
 		Core::GameObject* m_selectedObject = nullptr;
 		Engine::EngineUI::UIText* m_selectedUIText = nullptr;
 
@@ -253,6 +256,6 @@ namespace Editor::UI
 
 		void drawUITextInspector();
 		void drawGameObjectInspector();
-		//void drawRenderComponentInspector(Graphics::RenderComponent* component);
+		// void drawRenderComponentInspector(Graphics::RenderComponent* component);
 	};
 }

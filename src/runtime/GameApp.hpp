@@ -42,6 +42,9 @@ namespace Runtime
 		Engine::Graphics::Camera m_camera;
 		Engine::Graphics::Skybox m_skybox;
 
+		// Luabind
+		Engine::Scripting::LuaBindings* m_luaBindings;
+
 		// マネージャー類
 		std::unique_ptr<Engine::Graphics::ShaderManager> m_shaderManager;
 		Engine::Graphics::MaterialManager m_materialManager;

@@ -1,6 +1,6 @@
 // EditorView.cpp
 #include "EditorView.hpp"
-#include "engine/ThirdParty/d3dx12.h"
+#include <directx/d3dx12.h>
 
 namespace Editor::UI
 {

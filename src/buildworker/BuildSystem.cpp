@@ -1,14 +1,24 @@
 #include "BuildSystem.hpp"
+#include <direct.h>
 #include <format>
 #include <cstdlib>
 #include <iostream>
 #include <Windows.h>
+#include <thread>
 
 namespace Editor::Build
 {
     void BuildSystem::setProgressCallback(ProgressCallback callback)
     {
         m_progressCallback = std::move(callback);
+    }
+
+    static void DebugPrintCWD(const char* label)
+    {
+        auto cwd = std::filesystem::current_path().string();
+        std::string msg = std::string("[CWD] ") + label + ": " + cwd + "\n";
+        OutputDebugStringA(msg.c_str());
+        std::cout << msg;
     }
 
     bool BuildSystem::build()
@@ -34,9 +44,14 @@ namespace Editor::Build
         return true;
     }
 
-    void BuildSystem::cancel()
+    bool BuildSystem::cancel()
     {
+        if (m_cancelled)
+            return false;
+
         m_cancelled = true;
+        updateProgress(BuildStatus::Failed, "Build cancelled", 0.0f);
+        return true;
     }
 
     bool BuildSystem::prepareOutputDirectory()
@@ -47,95 +62,84 @@ namespace Editor::Build
             std::filesystem::path out = root / "dist" / "OrionGame";
 
             if (std::filesystem::exists(out))
-                std::filesystem::remove_all(out);
+                updateProgress(
+                    BuildStatus::Preparing,
+                    "Using existing build directory (preset)",
+                    0.15f
+                );
 
             std::filesystem::create_directories(out);
             return true;
         }
-        catch (...)
+        catch (const std::exception& e)
         {
-            updateProgress(BuildStatus::Failed, "Failed to prepare output directory", 0.0f);
+            updateProgress(BuildStatus::Failed,
+                std::format("Failed to prepare output directory: {}", e.what()), 0.0f);
             return false;
         }
     }
 
     bool BuildSystem::buildRuntimeExecutable()
     {
-        std::filesystem::path root = findProjectRoot();
-        std::filesystem::path buildDir = root / "build" / "runtime-release";
-        std::filesystem::path runtimeDir = root / "runtime";
+        auto root = findProjectRoot();
+        auto buildDir = root / "build" / "x64-release";
 
-        // コンソールウィンドウを開く
-        AllocConsole();
-        FILE* consoleOut;
-        freopen_s(&consoleOut, "CONOUT$", "w", stdout);
-        freopen_s(&consoleOut, "CONOUT$", "w", stderr);
-
-        SetConsoleTitle(L"Orion Build Console");
-
-        // 既存のビルドディレクトリを削除
-        if (std::filesystem::exists(buildDir))
+        if (!std::filesystem::exists(buildDir / "CMakeCache.txt"))
         {
-            updateProgress(BuildStatus::Preparing, "Cleaning build directory...", 0.15f);
-            std::filesystem::remove_all(buildDir);
-        }
-
-        std::filesystem::create_directories(buildDir);
-
-        // Configure
-        std::string configureCmd = std::format(
-            "cd /d \"{}\" && cmake -S \"{}\" -B \"{}\" "
-            "-G \"Visual Studio 18 2026\" -A x64",
-            root.string(),
-            runtimeDir.string(),
-            buildDir.string()
-        );
-
-        if (std::system(configureCmd.c_str()) != 0)
-        {
-            updateProgress(BuildStatus::Failed, "CMake configure failed", 0.3f);
+            updateProgress(
+                BuildStatus::Failed,
+                "Release build not configured. Please build once in Visual Studio.",
+                0.2f
+            );
             return false;
         }
 
-        // Build
-        std::string buildCmd = std::format(
-            "cd /d \"{}\" && cmake --build \"{}\" --config Release --target OrionGame",
-            root.string(),
-            buildDir.string()
-        );
+        updateProgress(BuildStatus::Building, "Building Runtime...", 0.3f);
 
-        if (std::system(buildCmd.c_str()) != 0)
-        {
-            updateProgress(BuildStatus::Failed, "Runtime build failed", 0.5f);
-            return false;
-        }
+        std::string cmd =
+            "cmake --build \"" + buildDir.string() + "\" --target OrionGame";
 
-        // ビルド完了後、コンソールに完了メッセージ
-        std::cout << "\n=================================\n";
-        std::cout << "Build completed successfully!\n";
-        std::cout << "Press any key to close...\n";
-        std::cout << "=================================\n";
-
-        return true;
+        int ret = std::system(cmd.c_str());
+        return ret == 0;
     }
 
     bool BuildSystem::copyExecutable()
     {
         std::filesystem::path root = findProjectRoot();
-        std::filesystem::path exe = root / "build" / "runtime-release" / "Release" / "OrionGame.exe";
+
+        // まず今の正解パス
+        std::filesystem::path exe =
+            root / "build" / "x64-release" / "runtime" / "OrionGame.exe";
+
+        // Visual Studio (multi-config) 用フォールバック
+        if (!std::filesystem::exists(exe))
+        {
+            exe = root / "build" / "x64-release" / "runtime" / "Release" / "OrionGame.exe";
+        }
 
         if (!std::filesystem::exists(exe))
         {
-            updateProgress(BuildStatus::Failed, "OrionGame.exe not found", 0.6f);
+            updateProgress(
+                BuildStatus::Failed,
+                std::format("OrionGame.exe not found at: {}", exe.string()),
+                0.6f
+            );
             return false;
         }
 
-        std::filesystem::path dst = root / "dist" / "OrionGame" / "OrionGame.exe";
+        std::filesystem::path dst =
+            root / "dist" / "OrionGame" / "OrionGame.exe";
 
-        std::filesystem::copy_file(exe, dst, std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy_file(
+            exe, dst,
+            std::filesystem::copy_options::overwrite_existing
+        );
+
         copyDependencyDLLs(dst.parent_path(), exe.parent_path());
         return true;
     }
+
+
 
     bool BuildSystem::copyAssets()
     {
@@ -172,22 +176,35 @@ namespace Editor::Build
     {
         if (!std::filesystem::exists(sourceDir)) return;
 
-        for (auto& f : std::filesystem::directory_iterator(sourceDir))
+        try
         {
-            if (f.path().extension() == ".dll")
+            for (auto& f : std::filesystem::directory_iterator(sourceDir))
             {
-                std::filesystem::copy_file(
-                    f.path(),
-                    outputDir / f.path().filename(),
-                    std::filesystem::copy_options::overwrite_existing
-                );
+                if (f.path().extension() == ".dll")
+                {
+                    std::filesystem::copy_file(
+                        f.path(),
+                        outputDir / f.path().filename(),
+                        std::filesystem::copy_options::overwrite_existing
+                    );
+                }
             }
+        }
+        catch (const std::exception& e)
+        {
+            updateProgress(BuildStatus::Warning,
+                std::format("Warning: Failed to copy some DLLs: {}", e.what()), 0.0f);
         }
     }
 
     bool BuildSystem::copyDirectory(const std::filesystem::path& source, const std::filesystem::path& dest)
     {
-        if (!std::filesystem::exists(source)) return true;
+        if (!std::filesystem::exists(source))
+        {
+            updateProgress(BuildStatus::Warning,
+                std::format("Source directory not found: {}", source.string()), 0.0f);
+            return true;
+        }
 
         try
         {
@@ -205,9 +222,10 @@ namespace Editor::Build
             }
             return true;
         }
-        catch (...)
+        catch (const std::exception& e)
         {
-            updateProgress(BuildStatus::Failed, "Failed to copy directory: " + source.string(), 0.0f);
+            updateProgress(BuildStatus::Failed,
+                std::format("Failed to copy directory {}: {}", source.string(), e.what()), 0.0f);
             return false;
         }
     }
@@ -217,7 +235,7 @@ namespace Editor::Build
         auto cur = std::filesystem::current_path();
         while (cur.has_parent_path())
         {
-            if (std::filesystem::exists(cur / "CMakeLists.txt"))
+            if (std::filesystem::exists(cur / "CMakePresets.json"))
                 return cur;
             cur = cur.parent_path();
         }

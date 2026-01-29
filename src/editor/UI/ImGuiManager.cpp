@@ -1027,11 +1027,11 @@ namespace Editor::UI
 		// LuaScriptComponentがあれば表示
 		auto* scriptComponent = m_selectedObject->getComponent<Scripting::LuaScriptComponent>();
 
-		// UITextコンポーネントがあれば表示
-		auto* uiTextComponent = m_selectedObject->getComponent<Engine::EngineUI::UIText>();
-		if (uiTextComponent)
+		// AudioComponentがあれば表示
+		auto* audioComponent = m_selectedObject->getComponent<Audio::AudioComponent>();
+		if (audioComponent)
 		{
-			drawUITextProperties(uiTextComponent);
+			drawAudioComponent(audioComponent);
 		}
 
 		ImGui::Spacing();
@@ -1054,17 +1054,22 @@ namespace Editor::UI
 				}
 			}
 
-			// UIText追加ボタン
-			if (!uiTextComponent)
+			if (!audioComponent)
 			{
-				if (ImGui::Button("UIText", ImVec2(-1, 30)))
+				if (ImGui::Button("Audio", ImVec2(-1, 30)))
 				{
-					auto* newUIText = m_selectedObject->addComponent<Engine::EngineUI::UIText>();
-					if (newUIText)
+					auto* newAudio = m_selectedObject->addComponent<Audio::AudioComponent>();
+					if (newAudio)
 					{
-						newUIText->setText("New Text");
-						newUIText->setFontSize(32.0f);
-						Utils::log_info(std::format("UIText added to {}", m_selectedObject->getName()));
+						auto initResult = newAudio->initialize();
+						if (initResult)
+						{
+							Utils::log_info(std::format("AudioComponent added to {}", m_selectedObject->getName()));
+						}
+						else
+						{
+							Utils::log_error(initResult.error());
+						}
 					}
 				}
 			}
@@ -1591,6 +1596,174 @@ namespace Editor::UI
 					{
 						selectedObject->removeComponent<Physics::BoxCollider>();
 						Utils::log_info(std::format("BoxCollider removed from {}", selectedObject->getName()));
+					}
+				}
+			}
+
+			ImGui::PopStyleColor(3);
+		}
+	}
+
+	void InspectorWindow::drawAudioComponent(Audio::AudioComponent* audioComponent)
+	{
+		if (ImGui::CollapsingHeader("Audio Component", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			// ファイルパス表示
+			std::string filepath = audioComponent->getFilePath();
+			if (!filepath.empty())
+			{
+				ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Audio File:");
+				ImGui::SameLine();
+
+				// ファイル名だけを表示
+				std::filesystem::path path(filepath);
+				std::string fileName = path.filename().string();
+				ImGui::Text("%s", fileName.c_str());
+
+				ImGui::TextDisabled("Full Path:");
+				ImGui::TextWrapped("%s", filepath.c_str());
+				ImGui::Spacing();
+			}
+			else
+			{
+				ImGui::TextDisabled("No audio file loaded");
+				ImGui::Spacing();
+			}
+
+			// ファイルドロップゾーン
+			ImGui::BeginChild("##AudioDropZone", ImVec2(-1, 80), true);
+			ImGui::TextWrapped("Drop WAV Audio File Here");
+			ImGui::TextDisabled("(Supported: .wav)");
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
+				{
+					const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
+					if (dropped)
+					{
+						std::string ext = std::filesystem::path(dropped->path).extension().string();
+						std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+						if (ext == ".wav")
+						{
+							auto loadResult = audioComponent->loadAudio(dropped->path);
+							if (loadResult)
+							{
+								Utils::log_info(std::format("Audio loaded: {}", dropped->path));
+							}
+							else
+							{
+								Utils::log_error(loadResult.error());
+							}
+						}
+						else
+						{
+							Utils::log_warning("Only .wav files are supported");
+						}
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+			ImGui::EndChild();
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// オーディオが読み込まれている場合のみコントロールを表示
+			if (!filepath.empty())
+			{
+				// 再生コントロール
+				ImGui::Text("Playback Controls");
+				ImGui::Separator();
+
+				bool isPlaying = audioComponent->isPlaying();
+				bool isPaused = audioComponent->isPaused();
+
+				ImGui::BeginDisabled(isPlaying && !isPaused);
+				if (ImGui::Button("Play", ImVec2(100, 30)))
+				{
+					audioComponent->play();
+				}
+				ImGui::EndDisabled();
+
+				ImGui::SameLine();
+
+				ImGui::BeginDisabled(!isPlaying || isPaused);
+				if (ImGui::Button("Pause", ImVec2(100, 30)))
+				{
+					audioComponent->pause();
+				}
+				ImGui::EndDisabled();
+
+				ImGui::SameLine();
+
+				ImGui::BeginDisabled(!isPaused);
+				if (ImGui::Button("Resume", ImVec2(100, 30)))
+				{
+					audioComponent->resume();
+				}
+				ImGui::EndDisabled();
+
+				if (ImGui::Button("Stop", ImVec2(-1, 30)))
+				{
+					audioComponent->stop();
+				}
+
+				ImGui::Spacing();
+
+				// ループ設定
+				bool loop = audioComponent->isLoop();
+				if (ImGui::Checkbox("Loop", &loop))
+				{
+					audioComponent->setLoop(loop);
+				}
+
+				// 音量設定
+				float volume = audioComponent->getVolume();
+				if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
+				{
+					audioComponent->setVolume(volume);
+				}
+
+				ImGui::Spacing();
+
+				// ステータス表示
+				ImGui::Text("Status:");
+				ImGui::SameLine();
+				if (isPlaying && !isPaused)
+				{
+					ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Playing");
+				}
+				else if (isPaused)
+				{
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.2f, 1.0f), "Paused");
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Stopped");
+				}
+			}
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// Remove Component ボタン
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.1f, 0.1f, 1.0f));
+
+			if (ImGui::Button("Remove Component", ImVec2(150, 25)))
+			{
+				if (m_scene)
+				{
+					auto* selectedObject = m_scene->getSelectedObject();
+					if (selectedObject)
+					{
+						selectedObject->removeComponent<Audio::AudioComponent>();
+						Utils::log_info(std::format("AudioComponent removed from {}", selectedObject->getName()));
 					}
 				}
 			}

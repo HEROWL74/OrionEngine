@@ -3,7 +3,6 @@
   "configurePresets": [
     {
       "name": "x64-debug",
-      "displayName": "x64 Debug (Ninja)",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/x64-debug",
       "cacheVariables": {
@@ -14,7 +13,6 @@
     },
     {
       "name": "x64-release",
-      "displayName": "x64 Release (Ninja)",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/x64-release",
       "cacheVariables": {
@@ -22,6 +20,36 @@
         "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows"
       }
+    }
+  ],
+
+  "buildPresets": [
+    {
+      "name": "editor-debug",
+      "displayName": "Editor Debug",
+      "configurePreset": "x64-debug",
+      "targets": [
+        "OrionEditor",
+        "OrionBuildWorker"
+      ]
+    },
+    {
+      "name": "editor-release",
+      "displayName": "Editor Release",
+      "configurePreset": "x64-release",
+      "targets": [ "OrionEditor" ]
+    },
+    {
+      "name": "runtime-debug",
+      "displayName": "Runtime Debug",
+      "configurePreset": "x64-debug",
+      "targets": [ "OrionGame" ]
+    },
+    {
+      "name": "runtime-release",
+      "displayName": "Runtime Release",
+      "configurePreset": "x64-release",
+      "targets": [ "OrionGame" ]
     }
   ]
 }

@@ -46,15 +46,17 @@ namespace Engine::Core {
 			this
 		);
 
+		DragAcceptFiles(m_handle, TRUE);
+
+		CHECK_CONDITION(m_handle != nullptr, Utils::ErrorType::WindowCreation,
+			"Failed to create window");
+
 		HICON hIcon = LoadIcon(m_hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
 		CHECK_CONDITION(hIcon != nullptr, Utils::ErrorType::WindowCreation,
 			"Failed to load window icon");
 
 		SendMessageW(m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 		SendMessageW(m_handle, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-
-		CHECK_CONDITION(m_handle != nullptr, Utils::ErrorType::WindowCreation,
-			"Failed to create window");
 
 		m_inputManager = std::make_unique<Input::InputManager>();
 		m_inputManager->initialize(m_handle);
@@ -207,6 +209,29 @@ namespace Engine::Core {
 			}
 			DestroyWindow(hWnd);
 			return 0;
+
+		case WM_DROPFILES:
+		{
+			std::vector<std::filesystem::path> paths;
+
+			HDROP hDrop = (HDROP)wParam;
+			UINT count = DragQueryFileW(hDrop, 0xFFFFFFFF, nullptr, 0);
+
+			for (UINT i = 0; i < count; ++i)
+			{
+				wchar_t path[MAX_PATH];
+				DragQueryFileW(hDrop, i, path, MAX_PATH);
+				paths.emplace_back(path);
+			}
+
+			DragFinish(hDrop);
+
+			if (m_externalDropCallback)
+				m_externalDropCallback(paths);
+
+			return 0;
+		}
+
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;

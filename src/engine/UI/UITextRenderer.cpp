@@ -1,6 +1,6 @@
 // src/engine/UI/UITextRenderer.cpp - 3D空間修正版
 #include "UITextRenderer.hpp"
-#include "../ThirdParty/d3dx12.h"
+#include <directx/d3dx12.h>
 #include <fstream>
 #include <format>
 #include <algorithm>

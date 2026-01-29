@@ -5,6 +5,7 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include <filesystem>
 #include "../Utils/Common.hpp"
 #include "../Input/InputManager.hpp"
 namespace Engine::UI {
@@ -97,7 +98,8 @@ namespace Engine::Core {
         {
             m_messageCallback = std::move(cb);
         }
-
+        // Drag & Drop Callback
+        std::function<void(const std::vector<std::filesystem::path>&)> m_externalDropCallback;
     private:
         HWND m_handle = nullptr;
         std::wstring m_className;

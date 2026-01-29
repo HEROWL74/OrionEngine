@@ -209,7 +209,7 @@ namespace Editor
         scriptMgr.initialize();
 
         // バインディング登録(C++クラスをLuaに公開)
-        Scripting::registerBindings(scriptMgr.getLuaState());
+        m_luaBindings->registerBindings(scriptMgr.getLuaState());
 
         // 起動時にdefault.sceneがあれば読み込む、無ければ初期シーンを作成
         Utils::log_info("Checking for default scene...");

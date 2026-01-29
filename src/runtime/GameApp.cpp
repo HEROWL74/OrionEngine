@@ -218,7 +218,7 @@ namespace Runtime
 		scriptMgr.initialize();
 
 		// バインディング登録(C++クラスをLuaに公開)
-		Engine::Scripting::registerBindings(scriptMgr.getLuaState());
+		m_luaBindings->registerBindings(scriptMgr.getLuaState());
 
 		// シーンを読み込み
 		auto loadResult = loadScene();

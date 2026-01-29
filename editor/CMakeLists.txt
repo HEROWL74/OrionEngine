@@ -2,10 +2,6 @@
 # Orion Editor
 # ==============================================
 
-cmake_minimum_required(VERSION 3.21)
-
-project(OrionEditor LANGUAGES CXX RC)
-
 # ----------------------------------------------
 # ソース収集
 # ----------------------------------------------
@@ -22,11 +18,13 @@ add_executable(OrionEditor WIN32
     ${CMAKE_SOURCE_DIR}/resources/app.rc
 )
 
+
 # ----------------------------------------------
 # Engine に依存
 # ----------------------------------------------
 target_link_libraries(OrionEditor
     PRIVATE OrionEngine
+    PRIVATE OrionBuildSystem
 )
 
 # ----------------------------------------------

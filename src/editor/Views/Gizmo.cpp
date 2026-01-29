@@ -1,5 +1,5 @@
 ﻿#include "Gizmo.hpp"
-#include "engine/ThirdParty/d3dx12.h"
+#include <directx/d3dx12.h>
 #include "../Utils/RayPicking.hpp"
 
 namespace Editor::UI

@@ -1,5 +1,8 @@
+#define MINIAUDIO_IMPLEMENTATION
 #include "AudioComponent.hpp"
 #include <format>
+#include <thread>
+#include <chrono>
 
 namespace Engine::Audio
 {
@@ -25,7 +28,7 @@ namespace Engine::Audio
 		// 既存のオーディオをクリーンアップ
 		cleanup();
 
-        // デコーダーを初期化
+		// デコーダーを初期化
 		ma_result result = ma_decoder_init_file(filePath.c_str(), nullptr, &m_decoder);
 		if (result != MA_SUCCESS)
 		{
@@ -86,7 +89,11 @@ namespace Engine::Audio
 			return;
 		}
 
-		ma_device_stop(&m_device);
+		// デバイスが開始されているかチェックしてから停止
+		if (ma_device_is_started(&m_device) == MA_TRUE)
+		{
+			ma_device_stop(&m_device);
+		}
 		ma_decoder_seek_to_pcm_frame(&m_decoder, 0);
 		m_paused = false;
 		Utils::log_info("Audio stopped");
@@ -94,7 +101,7 @@ namespace Engine::Audio
 
 	void AudioComponent::pause()
 	{
-		if (!m_audioLoaded || isPlaying())
+		if (!m_audioLoaded || !isPlaying())
 		{
 			return;
 		}
@@ -142,16 +149,33 @@ namespace Engine::Audio
 		{
 			initialize();
 		}
+
+		// ファイルパスが設定されている場合は自動的にロード
+		if (!m_filepath.empty() && !m_audioLoaded)
+		{
+			auto result = loadAudio(m_filepath);
+			if (!result.has_value())
+			{
+				Utils::log_warning(std::format("Failed to auto-load audio: {}", m_filepath));
+			}
+		}
 	}
 
 	void AudioComponent::update(float deltaTime)
 	{
+		// コールバックからの停止要求を処理
+		if (m_shouldStop)
+		{
+			m_shouldStop = false;
+			stop();
+			return;
+		}
+
 		if (m_loop && m_audioLoaded && !isPlaying() && !m_paused)
 		{
 			play();
 		}
 	}
-
 	void AudioComponent::dataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
 	{
 		AudioComponent* audioComponent = static_cast<AudioComponent*>(pDevice->pUserData);
@@ -185,7 +209,7 @@ namespace Engine::Audio
 			}
 			else
 			{
-				ma_device_stop(pDevice);
+				audioComponent->m_shouldStop = true;
 			}
 		}
 		(void)pInput;
@@ -195,16 +219,19 @@ namespace Engine::Audio
 	{
 		if (m_audioLoaded)
 		{
-			if (isPlaying())
+			if (ma_device_is_started(&m_device) == MA_TRUE)
 			{
 				ma_device_stop(&m_device);
 
-				ma_device_uninit(&m_device);
-				ma_decoder_uninit(&m_decoder);
-
-				m_audioLoaded = false;
-				m_paused = false;
+				// デバイスが完全に停止するまで少し待つ
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
 			}
+
+			ma_device_uninit(&m_device);
+			ma_decoder_uninit(&m_decoder);
+
+			m_audioLoaded = false;
+			m_paused = false;
 		}
 	}
 }
