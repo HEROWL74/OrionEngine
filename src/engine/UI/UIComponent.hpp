@@ -7,73 +7,76 @@
 
 namespace Engine::EngineUI
 {
-	// UIアンカー(将来の2Dモード用に保持)
-	enum class UIAnchor
-	{
-		TopLeft,
-		TopCenter,
-		TopRight,
-		MiddleLeft,
-		MiddleCenter,
-		MiddleRight,
-		BottomLeft,
-		BottomCenter,
-		BottomRight
-	};
+    // UIアンカー(将来の2Dモード用に保持)
+    enum class UIAnchor
+    {
+        TopLeft,
+        TopCenter,
+        TopRight,
+        MiddleLeft,
+        MiddleCenter,
+        MiddleRight,
+        BottomLeft,
+        BottomCenter,
+        BottomRight
+    };
 
-	// UIのレンダリングモード
-	enum class UIRenderMode
-	{
-		ScreenSpace,    // 2D画面空間(未実装)
-		WorldSpace      // 3D空間(現在の実装)
-	};
+    // UIのレンダリングモード
+    enum class UIRenderMode
+    {
+        ScreenSpace,    // 2D画面空間(未実装)
+        WorldSpace      // 3D空間(現在の実装)
+    };
 
-	// ======================================
-	// UIComponentベースクラス - Componentを継承
-	// ======================================
-	class UIComponent : public Core::Component
-	{
-	public:
-		explicit UIComponent() = default;
-		virtual ~UIComponent() = default;
+    // ======================================
+    // UIComponentベースクラス - Componentを継承
+    // ======================================
+    class UIComponent : public Core::Component
+    {
+    public:
+        explicit UIComponent() = default;
+        virtual ~UIComponent() = default;
 
-		UIComponent(const UIComponent&) = delete;
-		UIComponent& operator=(const UIComponent&) = delete;
-		UIComponent(UIComponent&&) = delete;
-		UIComponent& operator=(UIComponent&&) = delete;
+        UIComponent(const UIComponent&) = delete;
+        UIComponent& operator=(const UIComponent&) = delete;
+        UIComponent(UIComponent&&) = delete;
+        UIComponent& operator=(UIComponent&&) = delete;
 
-		[[nodiscard]] virtual Utils::VoidResult initialize(Graphics::Device* device, Graphics::ShaderManager* shaderManager);
+        [[nodiscard]] virtual Utils::VoidResult initialize(Graphics::Device* device, Graphics::ShaderManager* shaderManager);
 
-		bool isVisible() const noexcept { return m_isVisible; }
-		void setVisible(bool visible) { m_isVisible = visible; }
+        bool isVisible() const noexcept { return m_isVisible; }
+        void setVisible(bool visible) { m_isVisible = visible; }
 
-		UIAnchor getAnchor() const noexcept { return m_anchor; }
-		void setAnchor(UIAnchor anchor) { m_anchor = anchor; }
+        UIAnchor getAnchor() const noexcept { return m_anchor; }
+        void setAnchor(UIAnchor anchor) { m_anchor = anchor; }
 
-		Math::Vector2 getScreenPosition() const noexcept { return m_screenPosition; }
-		void setScreenPosition(const Math::Vector2& pos) { m_screenPosition = pos; }
+        Math::Vector2 getScreenPosition() const noexcept { return m_screenPosition; }
+        void setScreenPosition(const Math::Vector2& pos) { m_screenPosition = pos; }
 
-		UIRenderMode getRenderMode() const noexcept { return m_renderMode; }
-		void setRenderMode(UIRenderMode mode) { m_renderMode = mode; }
+        UIRenderMode getRenderMode() const noexcept { return m_renderMode; }
+        void setRenderMode(UIRenderMode mode) { m_renderMode = mode; }
 
-	protected:
-		Graphics::Device* m_device = nullptr;
-		Graphics::ShaderManager* m_shaderManager = nullptr;
-		bool m_isVisible = true;
-		UIAnchor m_anchor = UIAnchor::TopLeft;
-		Math::Vector2 m_screenPosition = Math::Vector2::zero();
-		UIRenderMode m_renderMode = UIRenderMode::WorldSpace; // デフォルトは3D
-	};
+        // ★Component::isEnabled()をオーバーライドして常にtrueを返す
+        bool isEnabled() const noexcept  { return true; }
 
-	// ======================================
-	// UITextクラス - UIComponentを継承
-	// ======================================
+    protected:
+        Graphics::Device* m_device = nullptr;
+        Graphics::ShaderManager* m_shaderManager = nullptr;
+        bool m_isVisible = true;
+        UIAnchor m_anchor = UIAnchor::TopLeft;
+        Math::Vector2 m_screenPosition = Math::Vector2::zero();
+        UIRenderMode m_renderMode = UIRenderMode::WorldSpace; // デフォルトは3D
+    };
+
+    // ======================================
+    // UITextクラス - UIComponentを継承
+    // ======================================
     class UIText : public UIComponent
     {
     public:
         UIText() : UIComponent()
         {
-            setEnabled(true);
+            // UIの表示状態を明示的に設定
             m_isVisible = true;
         }
 

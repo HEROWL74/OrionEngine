@@ -1,5 +1,6 @@
 // src/runtime/GameApp.cpp
 #include "GameApp.hpp"
+#include "engine/Utils/RenderContext.hpp"  
 #include "engine/Core/Window.hpp"
 #include <format>
 
@@ -213,6 +214,32 @@ namespace Runtime
 		auto sceneResult = m_scene.initialize(&m_device);
 		if (!sceneResult) return sceneResult;
 
+		// UITextRenderer初期化
+		Engine::Utils::log_info("Initializing UITextRenderer...");
+		m_uiTextRenderer = std::make_unique<Engine::EngineUI::UITextRenderer>();
+		auto uiTextResult = m_uiTextRenderer->initialize(&m_device, m_shaderManager.get());
+		if (!uiTextResult)
+		{
+			Engine::Utils::log_error(uiTextResult.error());
+			return uiTextResult;
+		}
+		Engine::Utils::log_info("UITextRenderer initialized successfully");
+
+		// InputSystem初期化
+		Engine::Utils::log_info("Initializing InputSystem...");
+		auto* inputManager = m_window.getInputManager();
+		if (!inputManager || !inputManager->isInitialized())
+		{
+			return std::unexpected(Engine::Utils::make_error(
+				Engine::Utils::ErrorType::Unknown,
+				"InputManager not initialized"));
+		}
+		Engine::Input::InputSystem::get().setInputManager(inputManager);
+
+		inputManager->resetMouseDelta();
+
+		Engine::Utils::log_info("InputSystem initialized successfully");
+
 		// Lua初期化
 		auto& scriptMgr = Engine::Scripting::ScriptManager::get();
 		scriptMgr.initialize();
@@ -419,8 +446,10 @@ namespace Runtime
 	{
 		updateDeltaTime();
 
+
 		// Luaの変更チェック
 		Engine::Scripting::ScriptManager::get().checkForUpdates();
+
 		// シーンの更新
 		m_scene.update(m_deltaTime);
 		m_scene.lateUpdate(m_deltaTime);
@@ -428,6 +457,11 @@ namespace Runtime
 
 	void GameApp::render()
 	{
+		if (m_uiTextRenderer)
+		{
+			m_uiTextRenderer->beginFrame();
+		}
+
 		m_commandAllocator->Reset();
 		m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
@@ -474,6 +508,54 @@ namespace Runtime
 
 		// シーン描画
 		m_scene.render(m_commandList.Get(), m_camera, m_frameIndex);
+
+		if (m_uiTextRenderer)
+		{
+			const auto [width, height] = m_window.getClientSize();
+
+			Engine::Utils::RenderContext context;
+			context.commandList = m_commandList.Get();
+			context.frameIndex = m_frameIndex;
+
+			auto uiTexts = m_scene.getUITexts();
+
+			// ★デバッグログ追加
+			static int frameCount = 0;
+			frameCount++;
+
+			if (frameCount <= 5)  // 最初の5フレームのみログ出力
+			{
+				Engine::Utils::log_info(std::format("Frame {}: UITexts count = {}",
+					frameCount, uiTexts.size()));
+			}
+
+			for (auto* text : uiTexts)
+			{
+				if (text)
+				{
+					// ★各UITextの状態をログ出力
+					if (frameCount <= 5)
+					{
+						Engine::Utils::log_info(std::format(
+							"  UIText '{}': isVisible={}",
+							text->getName(),
+							text->isVisible()
+						));
+					}
+
+					if (text->isVisible())
+					{
+						m_uiTextRenderer->draw(
+							context,
+							*text,
+							width,
+							height,
+							&m_camera
+						);
+					}
+				}
+			}
+		}
 
 		// リソースバリア: RENDER_TARGET -> PRESENT
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;

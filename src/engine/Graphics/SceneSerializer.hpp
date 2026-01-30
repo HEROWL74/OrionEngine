@@ -7,6 +7,7 @@
 #include "Scene.hpp"
 #include "../Scripting/LuaScriptComponent.hpp"
 #include "../Physics/BoxCollider.hpp"
+#include "../Audio/AudioComponent.hpp"
 #include "../UI/UIComponent.hpp"
 
 namespace Engine::Graphics
@@ -75,8 +76,12 @@ namespace Engine::Graphics
 		// Luaスクリプト情報のシリアライズ
 		json serializeLuaComponent(const Scripting::LuaScriptComponent* component);
 
-		// BoxCollider情報のシリアライズ
+		// BoxCollider情報のシリアライズ & デシリアライズ
 		json serializeBoxCollider(const Physics::BoxCollider* collider);
 		void deserializeBoxCollider(Physics::BoxCollider* collider, const json& json);
+
+		// AudioComponent情報のシリアライズ & デシリアライズ
+		json serializeAudioComponent(const Audio::AudioComponent* audioComponent);
+		void deserializeAudioComponent(Audio::AudioComponent* audioComponent, const json& json);
 	};
 }

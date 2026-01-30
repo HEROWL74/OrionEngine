@@ -3,8 +3,9 @@
   "configurePresets": [
     {
       "name": "x64-debug",
-      "generator": "Ninja",
+      "generator": "Visual Studio 18 2026",
       "binaryDir": "${sourceDir}/build/x64-debug",
+      "architecture": "x64",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
@@ -13,8 +14,9 @@
     },
     {
       "name": "x64-release",
-      "generator": "Ninja",
+      "generator": "Visual Studio 18 2026",
       "binaryDir": "${sourceDir}/build/x64-release",
+      "architecture": "x64",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",

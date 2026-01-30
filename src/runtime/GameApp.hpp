@@ -15,6 +15,8 @@
 #include "engine/Graphics/Texture.hpp"
 #include "engine/Scripting/ScriptManager.hpp"
 #include "engine/Scripting/LuaBindings.hpp"
+#include "engine/Input/InputSystem.hpp"
+#include "engine/UI/UITextRenderer.hpp" 
 #include <wrl.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -41,6 +43,9 @@ namespace Runtime
 		Engine::Graphics::Scene m_scene;
 		Engine::Graphics::Camera m_camera;
 		Engine::Graphics::Skybox m_skybox;
+
+		// UIText
+		std::unique_ptr<Engine::EngineUI::UITextRenderer> m_uiTextRenderer;
 
 		// Luabind
 		Engine::Scripting::LuaBindings* m_luaBindings;

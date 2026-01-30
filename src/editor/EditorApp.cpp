@@ -378,8 +378,6 @@ namespace Editor
         m_inspectorWindow->setMaterialManager(&m_materialManager);
         m_inspectorWindow->setTextureManager(&m_textureManager);
 
-        m_scene.start();
-
         Utils::log_info("DirectX 12 initialization completed successfully!");
         return {};
     }
@@ -1788,7 +1786,7 @@ namespace Editor
                 m_scene.getGameObjects().size()));
 
             // 読み込んだシーンを開始
-            m_scene.start();
+            //m_scene.start();
         }
         else
         {

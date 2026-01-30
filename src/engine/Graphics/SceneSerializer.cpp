@@ -157,6 +157,12 @@ namespace Engine::Graphics
             json["boxCollider"] = serializeBoxCollider(box);
         }
 
+        // Audio 情報
+        if (auto* audio = gameObject->getComponent<Audio::AudioComponent>())
+        {
+            json["audioComponent"] = serializeAudioComponent(audio);
+        }
+
         return json;
     }
 
@@ -256,6 +262,24 @@ namespace Engine::Graphics
         {
             auto* box = gameObject->addComponent<Physics::BoxCollider>();
             deserializeBoxCollider(box, json["boxCollider"]);
+        }
+
+        if (json.contains("audioComponent"))
+        {
+            auto* audio = gameObject->addComponent<Audio::AudioComponent>();
+            if (audio)
+            {
+                auto initResult = audio->initialize();
+                if (initResult)
+                {
+                    deserializeAudioComponent(audio, json["audioComponent"]);
+                    Utils::log_info("  AudioComponent loaded");
+                }
+                else
+                {
+                    Utils::log_warning("Failed to initialize AudioComponent");
+                }
+            }
         }
 
         bool isActive = json.value("active", true);
@@ -542,5 +566,38 @@ namespace Engine::Graphics
         }
 
         collider->setTrigger(json.value("isTrigger", true));
+    }
+
+    json SceneSerializer::serializeAudioComponent(const Audio::AudioComponent* audioComponent)
+    {
+        json audioJson;
+
+        audioJson["filePath"] = audioComponent->getFilePath();
+        audioJson["loop"] = audioComponent->isLoop();
+        audioJson["volume"] = audioComponent->getVolume();
+
+        return audioJson;
+    }
+
+    void SceneSerializer::deserializeAudioComponent(
+        Audio::AudioComponent* audioComponent,
+        const nlohmann::json& json)
+    {
+        std::string filePath = json.value("filePath", "");
+        if (!filePath.empty())
+        {
+            auto loadResult = audioComponent->loadAudio(filePath);
+            if (loadResult)
+            {
+                Utils::log_info(std::format("  Audio file loaded: {}", filePath));
+            }
+            else
+            {
+                Utils::log_warning(std::format("Failed to load audio: {}", filePath));
+            }
+        }
+
+        audioComponent->setLoop(json.value("loop", false));
+        audioComponent->setVolume(json.value("volume", 1.0f));
     }
 }

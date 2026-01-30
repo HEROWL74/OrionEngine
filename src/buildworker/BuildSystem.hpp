@@ -37,7 +37,6 @@ namespace Editor::Build
         bool build();
         bool cancel();
         const BuildResult& getResult() const { return m_currentResult; }
-        std::filesystem::path findProjectRoot();
     private:
         bool prepareOutputDirectory();
         bool buildRuntimeExecutable();

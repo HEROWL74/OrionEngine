@@ -1,26 +1,71 @@
 #include "BuildSystem.hpp"
-#include <direct.h>
+
+#include <Windows.h>
+#include <filesystem>
 #include <format>
 #include <cstdlib>
 #include <iostream>
-#include <Windows.h>
-#include <thread>
 
 namespace Editor::Build
 {
+    namespace fs = std::filesystem;
+
+    // =========================================================
+    // 設定
+    // =========================================================
+    static constexpr const char* DIST_CONFIG = "Release";
+    static constexpr const char* RUNTIME_TARGET = "OrionGame";
+
+    // =========================================================
+    // Editor 実行ファイルのディレクトリ
+    // =========================================================
+    static fs::path GetEditorExeDir()
+    {
+        wchar_t path[MAX_PATH]{};
+        GetModuleFileNameW(nullptr, path, MAX_PATH);
+        return fs::path(path).parent_path();
+    }
+
+    // =========================================================
+    // build ディレクトリ取得
+    // build/x64-release/editor/Release/OrionEditor.exe
+    // → build
+    // =========================================================
+    static fs::path GetBuildRootFromEditor()
+    {
+        auto exeDir = GetEditorExeDir();
+        return exeDir.parent_path()   // editor
+            .parent_path()   // x64-release
+            .parent_path();  // build
+    }
+
+    // =========================================================
+    // Progress
+    // =========================================================
     void BuildSystem::setProgressCallback(ProgressCallback callback)
     {
         m_progressCallback = std::move(callback);
     }
 
-    static void DebugPrintCWD(const char* label)
+    void BuildSystem::updateProgress(BuildStatus status,
+        const std::string& message,
+        float progress)
     {
-        auto cwd = std::filesystem::current_path().string();
-        std::string msg = std::string("[CWD] ") + label + ": " + cwd + "\n";
-        OutputDebugStringA(msg.c_str());
-        std::cout << msg;
+        auto editorDir = GetEditorExeDir();
+
+        m_currentResult.status = status;
+        m_currentResult.message = message;
+        m_currentResult.progress = progress;
+        m_currentResult.outputPath =
+            (editorDir / "dist" / DIST_CONFIG).string();
+
+        if (m_progressCallback)
+            m_progressCallback(m_currentResult);
     }
 
+    // =========================================================
+    // Build entry
+    // =========================================================
     bool BuildSystem::build()
     {
         m_cancelled = false;
@@ -54,204 +99,179 @@ namespace Editor::Build
         return true;
     }
 
+    // =========================================================
+    // dist/Release 準備
+    // =========================================================
     bool BuildSystem::prepareOutputDirectory()
     {
         try
         {
-            std::filesystem::path root = findProjectRoot();
-            std::filesystem::path out = root / "dist" / "OrionGame";
-
-            if (std::filesystem::exists(out))
-                updateProgress(
-                    BuildStatus::Preparing,
-                    "Using existing build directory (preset)",
-                    0.15f
-                );
-
-            std::filesystem::create_directories(out);
+            auto editorDir = GetEditorExeDir();
+            auto outDir = editorDir / "dist" / DIST_CONFIG;
+            fs::create_directories(outDir);
             return true;
         }
-        catch (const std::exception& e)
+        catch (...)
         {
             updateProgress(BuildStatus::Failed,
-                std::format("Failed to prepare output directory: {}", e.what()), 0.0f);
+                "Failed to prepare output directory", 0.0f);
             return false;
         }
     }
 
+    // =========================================================
+    // Runtime build
+    // =========================================================
     bool BuildSystem::buildRuntimeExecutable()
     {
-        auto root = findProjectRoot();
-        auto buildDir = root / "build" / "x64-release";
+        auto buildRoot = GetBuildRootFromEditor();
+        auto releaseDir = buildRoot / "x64-release";
 
-        if (!std::filesystem::exists(buildDir / "CMakeCache.txt"))
+        if (!fs::exists(releaseDir / "CMakeCache.txt"))
         {
             updateProgress(
                 BuildStatus::Failed,
-                "Release build not configured. Please build once in Visual Studio.",
+                "Release build not configured.",
                 0.2f
             );
             return false;
         }
 
-        updateProgress(BuildStatus::Building, "Building Runtime...", 0.3f);
-
         std::string cmd =
-            "cmake --build \"" + buildDir.string() + "\" --target OrionGame";
+            std::format(
+                "cmake --build \"{}\" --target {} --config {}",
+                releaseDir.string(),
+                RUNTIME_TARGET,
+                DIST_CONFIG
+            );
 
-        int ret = std::system(cmd.c_str());
-        return ret == 0;
+        return std::system(cmd.c_str()) == 0;
     }
 
+    // =========================================================
+    // Runtime exe コピー
+    // =========================================================
     bool BuildSystem::copyExecutable()
     {
-        std::filesystem::path root = findProjectRoot();
+        auto editorDir = GetEditorExeDir();
+        auto buildRoot = GetBuildRootFromEditor();
 
-        // まず今の正解パス
-        std::filesystem::path exe =
-            root / "build" / "x64-release" / "runtime" / "OrionGame.exe";
+        fs::path exe =
+            buildRoot / "x64-release" / "runtime" / DIST_CONFIG /
+            (std::string(RUNTIME_TARGET) + ".exe");
 
-        // Visual Studio (multi-config) 用フォールバック
-        if (!std::filesystem::exists(exe))
-        {
-            exe = root / "build" / "x64-release" / "runtime" / "Release" / "OrionGame.exe";
-        }
-
-        if (!std::filesystem::exists(exe))
+        if (!fs::exists(exe))
         {
             updateProgress(
                 BuildStatus::Failed,
-                std::format("OrionGame.exe not found at: {}", exe.string()),
+                std::format("Runtime executable not found: {}", exe.string()),
                 0.6f
             );
             return false;
         }
 
-        std::filesystem::path dst =
-            root / "dist" / "OrionGame" / "OrionGame.exe";
+        fs::path dst =
+            editorDir / "dist" / DIST_CONFIG / exe.filename();
 
-        std::filesystem::copy_file(
+        fs::copy_file(
             exe, dst,
-            std::filesystem::copy_options::overwrite_existing
+            fs::copy_options::overwrite_existing
         );
 
         copyDependencyDLLs(dst.parent_path(), exe.parent_path());
         return true;
     }
 
-
-
+    // =========================================================
+    // Assets（Editorで編集したもの）
+    // =========================================================
     bool BuildSystem::copyAssets()
     {
-        std::filesystem::path root = findProjectRoot();
-
-        // エディタの実行ファイルがある場所のassetsをコピー
-        std::filesystem::path editorAssetsPath = root / "build" / "x64-debug" / "editor" / "assets";
-
-        if (!std::filesystem::exists(editorAssetsPath))
-        {
-            updateProgress(BuildStatus::Failed,
-                std::format("Editor assets not found: {}", editorAssetsPath.string()), 0.75f);
-            return false;
-        }
-
-        bool result = copyDirectory(editorAssetsPath, root / "dist" / "OrionGame" / "assets");
-
-        if (result)
-        {
-            updateProgress(BuildStatus::CopyingAssets,
-                std::format("Assets copied from {}", editorAssetsPath.string()), 0.8f);
-        }
-
-        return result;
+        auto editorDir = GetEditorExeDir();
+        auto src = editorDir / "assets";
+        auto dst = editorDir / "dist" / DIST_CONFIG / "assets";
+        return copyDirectory(src, dst);
     }
 
     bool BuildSystem::copyEngineAssets()
     {
-        std::filesystem::path root = findProjectRoot();
-        return copyDirectory(root / "engine-assets", root / "dist" / "OrionGame" / "engine-assets");
+        auto editorDir = GetEditorExeDir();
+        return copyDirectory(
+            editorDir / "engine-assets",
+            editorDir / "dist" / DIST_CONFIG / "engine-assets"
+        );
     }
 
-    void BuildSystem::copyDependencyDLLs(const std::filesystem::path& outputDir, const std::filesystem::path& sourceDir)
+    // =========================================================
+    // DLL コピー
+    // =========================================================
+    void BuildSystem::copyDependencyDLLs(
+        const fs::path& outputDir,
+        const fs::path& sourceDir)
     {
-        if (!std::filesystem::exists(sourceDir)) return;
+        if (!fs::exists(sourceDir)) return;
 
         try
         {
-            for (auto& f : std::filesystem::directory_iterator(sourceDir))
+            for (auto& f : fs::directory_iterator(sourceDir))
             {
                 if (f.path().extension() == ".dll")
                 {
-                    std::filesystem::copy_file(
+                    fs::copy_file(
                         f.path(),
                         outputDir / f.path().filename(),
-                        std::filesystem::copy_options::overwrite_existing
+                        fs::copy_options::overwrite_existing
                     );
                 }
             }
         }
-        catch (const std::exception& e)
+        catch (...)
         {
-            updateProgress(BuildStatus::Warning,
-                std::format("Warning: Failed to copy some DLLs: {}", e.what()), 0.0f);
+            updateProgress(
+                BuildStatus::Warning,
+                "Warning: Failed to copy some DLLs",
+                0.0f
+            );
         }
     }
 
-    bool BuildSystem::copyDirectory(const std::filesystem::path& source, const std::filesystem::path& dest)
+    // =========================================================
+    // ディレクトリ再帰コピー
+    // =========================================================
+    bool BuildSystem::copyDirectory(
+        const fs::path& source,
+        const fs::path& dest)
     {
-        if (!std::filesystem::exists(source))
-        {
-            updateProgress(BuildStatus::Warning,
-                std::format("Source directory not found: {}", source.string()), 0.0f);
+        if (!fs::exists(source))
             return true;
-        }
 
         try
         {
-            std::filesystem::create_directories(dest);
+            fs::create_directories(dest);
 
-            for (auto& e : std::filesystem::recursive_directory_iterator(source))
+            for (auto& e : fs::recursive_directory_iterator(source))
             {
-                auto rel = std::filesystem::relative(e.path(), source);
+                auto rel = fs::relative(e.path(), source);
                 auto dst = dest / rel;
 
                 if (e.is_directory())
-                    std::filesystem::create_directories(dst);
+                    fs::create_directories(dst);
                 else
-                    std::filesystem::copy_file(e.path(), dst, std::filesystem::copy_options::overwrite_existing);
+                    fs::copy_file(
+                        e.path(), dst,
+                        fs::copy_options::overwrite_existing
+                    );
             }
             return true;
         }
-        catch (const std::exception& e)
+        catch (...)
         {
-            updateProgress(BuildStatus::Failed,
-                std::format("Failed to copy directory {}: {}", source.string(), e.what()), 0.0f);
+            updateProgress(
+                BuildStatus::Failed,
+                std::format("Failed to copy directory: {}", source.string()),
+                0.0f
+            );
             return false;
         }
-    }
-
-    std::filesystem::path BuildSystem::findProjectRoot()
-    {
-        auto cur = std::filesystem::current_path();
-        while (cur.has_parent_path())
-        {
-            if (std::filesystem::exists(cur / "CMakePresets.json"))
-                return cur;
-            cur = cur.parent_path();
-        }
-        return std::filesystem::current_path();
-    }
-
-    void BuildSystem::updateProgress(BuildStatus status, const std::string& message, float progress)
-    {
-        std::filesystem::path root = findProjectRoot();
-
-        m_currentResult.status = status;
-        m_currentResult.message = message;
-        m_currentResult.progress = progress;
-        m_currentResult.outputPath = (root / "dist" / "OrionGame").string();
-
-        if (m_progressCallback)
-            m_progressCallback(m_currentResult);
     }
 }
