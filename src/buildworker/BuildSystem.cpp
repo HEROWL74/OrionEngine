@@ -5,6 +5,7 @@
 #include <format>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 
 namespace Editor::Build
 {
@@ -13,7 +14,6 @@ namespace Editor::Build
     // =========================================================
     // 設定
     // =========================================================
-    static constexpr const char* DIST_CONFIG = "Release";
     static constexpr const char* RUNTIME_TARGET = "OrionGame";
 
     // =========================================================
@@ -26,17 +26,96 @@ namespace Editor::Build
         return fs::path(path).parent_path();
     }
 
+
+    static BuildConfig DetectCurrentBuildConfig()
+    {
+        auto exeDir = GetEditorExeDir();
+
+        // 実行ファイルのパスから構成を推測
+        // build/x64-debug/editor/Debug/OrionEditor.exe
+        // または
+        // build/x64-release/editor/Release/OrionEditor.exe
+
+        std::string exePath = exeDir.string();
+        std::cout << "[DEBUG] Editor exe dir: " << exePath << std::endl;
+
+        BuildConfig config;
+
+        // パスに "x64-release" が含まれているか確認
+        if (exePath.find("x64-release") != std::string::npos)
+        {
+            config.buildDir = "x64-release";
+            config.config = "Release";
+        }
+        // パスに "x64-debug" が含まれているか確認
+        else if (exePath.find("x64-debug") != std::string::npos)
+        {
+            config.buildDir = "x64-debug";
+            config.config = "Debug";
+        }
+        // フォールバック: ディレクトリ名から判定
+        else
+        {
+            auto configDir = exeDir.filename().string();
+            if (configDir == "Release")
+            {
+                config.buildDir = "x64-release";
+                config.config = "Release";
+            }
+            else // "Debug" or その他
+            {
+                config.buildDir = "x64-debug";
+                config.config = "Debug";
+            }
+        }
+
+        std::cout << "[INFO] Detected build config: " << config.buildDir
+            << " (" << config.config << ")" << std::endl;
+
+        return config;
+    }
+
     // =========================================================
     // build ディレクトリ取得
-    // build/x64-release/editor/Release/OrionEditor.exe
-    // → build
     // =========================================================
     static fs::path GetBuildRootFromEditor()
     {
         auto exeDir = GetEditorExeDir();
-        return exeDir.parent_path()   // editor
-            .parent_path()   // x64-release
-            .parent_path();  // build
+        std::cout << "[DEBUG] Editor exe dir: " << exeDir.string() << std::endl;
+
+        // build/x64-{debug|release}/editor/{Debug|Release}/OrionEditor.exe の場合
+        auto current = exeDir;
+
+        // プロジェクトルートまで遡る
+        while (current.has_parent_path())
+        {
+            // build ディレクトリを探す
+            if (fs::exists(current / "build"))
+            {
+                auto buildRoot = current / "build";
+                std::cout << "[DEBUG] Found build root: " << buildRoot.string() << std::endl;
+                return buildRoot;
+            }
+
+            // CMakeLists.txt があればプロジェクトルート
+            if (fs::exists(current / "CMakeLists.txt"))
+            {
+                auto buildRoot = current / "build";
+                std::cout << "[DEBUG] Build root (from project root): " << buildRoot.string() << std::endl;
+                return buildRoot;
+            }
+
+            current = current.parent_path();
+        }
+
+        // フォールバック: 元のロジック
+        auto buildRoot = exeDir.parent_path()
+            .parent_path()
+            .parent_path()
+            .parent_path();
+
+        std::cout << "[DEBUG] Build root (fallback): " << buildRoot.string() << std::endl;
+        return buildRoot;
     }
 
     // =========================================================
@@ -57,7 +136,11 @@ namespace Editor::Build
         m_currentResult.message = message;
         m_currentResult.progress = progress;
         m_currentResult.outputPath =
-            (editorDir / "dist" / DIST_CONFIG).string();
+            (editorDir / "dist" / m_currentConfig.config).string();
+
+        // デバッグ出力
+        std::cout << "[BuildSystem] " << message
+            << " (Progress: " << (progress * 100.0f) << "%)" << std::endl;
 
         if (m_progressCallback)
             m_progressCallback(m_currentResult);
@@ -69,6 +152,9 @@ namespace Editor::Build
     bool BuildSystem::build()
     {
         m_cancelled = false;
+
+        // 現在の構成を検出
+        m_currentConfig = DetectCurrentBuildConfig();
 
         updateProgress(BuildStatus::Preparing, "Preparing build...", 0.0f);
         if (!prepareOutputDirectory()) return false;
@@ -100,21 +186,24 @@ namespace Editor::Build
     }
 
     // =========================================================
-    // dist/Release 準備
+    // dist/{Config} 準備
     // =========================================================
     bool BuildSystem::prepareOutputDirectory()
     {
         try
         {
             auto editorDir = GetEditorExeDir();
-            auto outDir = editorDir / "dist" / DIST_CONFIG;
+            auto outDir = editorDir / "dist" / m_currentConfig.config;
+
+            std::cout << "[DEBUG] Preparing output directory: " << outDir.string() << std::endl;
+
             fs::create_directories(outDir);
             return true;
         }
-        catch (...)
+        catch (const std::exception& e)
         {
             updateProgress(BuildStatus::Failed,
-                "Failed to prepare output directory", 0.0f);
+                std::format("Failed to prepare output directory: {}", e.what()), 0.0f);
             return false;
         }
     }
@@ -125,13 +214,29 @@ namespace Editor::Build
     bool BuildSystem::buildRuntimeExecutable()
     {
         auto buildRoot = GetBuildRootFromEditor();
-        auto releaseDir = buildRoot / "x64-release";
+        auto buildDir = buildRoot / m_currentConfig.buildDir;
 
-        if (!fs::exists(releaseDir / "CMakeCache.txt"))
+        std::cout << "[DEBUG] Build dir: " << buildDir.string() << std::endl;
+
+        if (!fs::exists(buildDir / "CMakeCache.txt"))
         {
             updateProgress(
                 BuildStatus::Failed,
-                "Release build not configured.",
+                std::format("{} build not configured. Expected CMakeCache.txt at: {}",
+                    m_currentConfig.config,
+                    (buildDir / "CMakeCache.txt").string()),
+                0.2f
+            );
+            return false;
+        }
+
+        // runtimeディレクトリの存在確認
+        auto runtimeDir = buildDir / "runtime";
+        if (!fs::exists(runtimeDir))
+        {
+            updateProgress(
+                BuildStatus::Failed,
+                std::format("Runtime directory not found: {}", runtimeDir.string()),
                 0.2f
             );
             return false;
@@ -139,13 +244,49 @@ namespace Editor::Build
 
         std::string cmd =
             std::format(
-                "cmake --build \"{}\" --target {} --config {}",
-                releaseDir.string(),
+                "cmake --build \"{}\" --target {} --config {} 2>&1",
+                buildDir.string(),
                 RUNTIME_TARGET,
-                DIST_CONFIG
+                m_currentConfig.config
             );
 
-        return std::system(cmd.c_str()) == 0;
+        std::cout << "[DEBUG] Executing: " << cmd << std::endl;
+
+        // パイプを使ってエラー出力をキャプチャ
+        FILE* pipe = _popen(cmd.c_str(), "r");
+        if (!pipe)
+        {
+            updateProgress(
+                BuildStatus::Failed,
+                "Failed to execute build command",
+                0.2f
+            );
+            return false;
+        }
+
+        std::stringstream output;
+        char buffer[256];
+        while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+        {
+            output << buffer;
+            std::cout << buffer; // リアルタイム出力
+        }
+
+        int exitCode = _pclose(pipe);
+
+        if (exitCode != 0)
+        {
+            updateProgress(
+                BuildStatus::Failed,
+                std::format("Build failed with exit code {}. Output:\n{}",
+                    exitCode, output.str()),
+                0.2f
+            );
+            return false;
+        }
+
+        std::cout << "[DEBUG] Build succeeded" << std::endl;
+        return true;
     }
 
     // =========================================================
@@ -157,49 +298,72 @@ namespace Editor::Build
         auto buildRoot = GetBuildRootFromEditor();
 
         fs::path exe =
-            buildRoot / "x64-release" / "runtime" / DIST_CONFIG /
+            buildRoot / m_currentConfig.buildDir / "runtime" / m_currentConfig.config /
             (std::string(RUNTIME_TARGET) + ".exe");
+
+        std::cout << "[DEBUG] Looking for exe at: " << exe.string() << std::endl;
 
         if (!fs::exists(exe))
         {
             updateProgress(
                 BuildStatus::Failed,
-                std::format("Runtime executable not found: {}", exe.string()),
+                std::format("Runtime executable not found at: {}", exe.string()),
                 0.6f
             );
             return false;
         }
 
         fs::path dst =
-            editorDir / "dist" / DIST_CONFIG / exe.filename();
+            editorDir / "dist" / m_currentConfig.config / exe.filename();
 
-        fs::copy_file(
-            exe, dst,
-            fs::copy_options::overwrite_existing
-        );
+        std::cout << "[DEBUG] Copying exe to: " << dst.string() << std::endl;
 
-        copyDependencyDLLs(dst.parent_path(), exe.parent_path());
-        return true;
+        try
+        {
+            fs::copy_file(
+                exe, dst,
+                fs::copy_options::overwrite_existing
+            );
+
+            copyDependencyDLLs(dst.parent_path(), exe.parent_path());
+            return true;
+        }
+        catch (const std::exception& e)
+        {
+            updateProgress(
+                BuildStatus::Failed,
+                std::format("Failed to copy executable: {}", e.what()),
+                0.6f
+            );
+            return false;
+        }
     }
 
     // =========================================================
-    // Assets（Editorで編集したもの）
+    // Assets(Editorで編集したもの)
     // =========================================================
     bool BuildSystem::copyAssets()
     {
         auto editorDir = GetEditorExeDir();
         auto src = editorDir / "assets";
-        auto dst = editorDir / "dist" / DIST_CONFIG / "assets";
+        auto dst = editorDir / "dist" / m_currentConfig.config / "assets";
+
+        std::cout << "[DEBUG] Copying assets from: " << src.string()
+            << " to: " << dst.string() << std::endl;
+
         return copyDirectory(src, dst);
     }
 
     bool BuildSystem::copyEngineAssets()
     {
         auto editorDir = GetEditorExeDir();
-        return copyDirectory(
-            editorDir / "engine-assets",
-            editorDir / "dist" / DIST_CONFIG / "engine-assets"
-        );
+        auto src = editorDir / "engine-assets";
+        auto dst = editorDir / "dist" / m_currentConfig.config / "engine-assets";
+
+        std::cout << "[DEBUG] Copying engine assets from: " << src.string()
+            << " to: " << dst.string() << std::endl;
+
+        return copyDirectory(src, dst);
     }
 
     // =========================================================
@@ -209,7 +373,12 @@ namespace Editor::Build
         const fs::path& outputDir,
         const fs::path& sourceDir)
     {
-        if (!fs::exists(sourceDir)) return;
+        if (!fs::exists(sourceDir))
+        {
+            std::cout << "[DEBUG] Source dir for DLLs does not exist: "
+                << sourceDir.string() << std::endl;
+            return;
+        }
 
         try
         {
@@ -217,6 +386,8 @@ namespace Editor::Build
             {
                 if (f.path().extension() == ".dll")
                 {
+                    std::cout << "[DEBUG] Copying DLL: " << f.path().filename().string() << std::endl;
+
                     fs::copy_file(
                         f.path(),
                         outputDir / f.path().filename(),
@@ -225,11 +396,11 @@ namespace Editor::Build
                 }
             }
         }
-        catch (...)
+        catch (const std::exception& e)
         {
             updateProgress(
                 BuildStatus::Warning,
-                "Warning: Failed to copy some DLLs",
+                std::format("Warning: Failed to copy some DLLs: {}", e.what()),
                 0.0f
             );
         }
@@ -243,7 +414,11 @@ namespace Editor::Build
         const fs::path& dest)
     {
         if (!fs::exists(source))
+        {
+            std::cout << "[DEBUG] Source directory does not exist (skipping): "
+                << source.string() << std::endl;
             return true;
+        }
 
         try
         {
@@ -255,20 +430,24 @@ namespace Editor::Build
                 auto dst = dest / rel;
 
                 if (e.is_directory())
+                {
                     fs::create_directories(dst);
+                }
                 else
+                {
                     fs::copy_file(
                         e.path(), dst,
                         fs::copy_options::overwrite_existing
                     );
+                }
             }
             return true;
         }
-        catch (...)
+        catch (const std::exception& e)
         {
             updateProgress(
                 BuildStatus::Failed,
-                std::format("Failed to copy directory: {}", source.string()),
+                std::format("Failed to copy directory: {} - {}", source.string(), e.what()),
                 0.0f
             );
             return false;

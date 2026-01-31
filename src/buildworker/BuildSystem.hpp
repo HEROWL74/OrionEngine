@@ -26,6 +26,13 @@ namespace Editor::Build
         std::string outputPath;
     };
 
+    // ビルド設定情報
+    struct BuildConfig
+    {
+        std::string buildDir;    // "x64-debug" or "x64-release"
+        std::string config;      // "Debug" or "Release"
+    };
+
     class BuildSystem
     {
     public:
@@ -52,5 +59,6 @@ namespace Editor::Build
         BuildResult m_currentResult{};
         ProgressCallback m_progressCallback = nullptr;
         bool m_cancelled = false;
+        BuildConfig m_currentConfig{};  // 現在実行中の構成
     };
 }
