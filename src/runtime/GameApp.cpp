@@ -206,6 +206,19 @@ namespace Runtime
 		auto textureResult = m_textureManager.initialize(&m_device);
 		if (!textureResult) return textureResult;
 
+		// Splash Screen初期化
+		Engine::Utils::log_info("Initializing Splash Screen...");
+		auto splashResult = m_splashScreen.initialize(&m_device, m_shaderManager.get(), &m_textureManager);
+		if (!splashResult)
+		{
+			Engine::Utils::log_warning("Failed to initialize splash screen, continuing anyway");
+			m_showingSplash = false;
+		}
+		else
+		{
+			Engine::Utils::log_info("Splash Screen initialized successfully");
+		}
+
 		// MaterialManager初期化
 		auto materialResult = m_materialManager.initialize(&m_device);
 		if (!materialResult) return materialResult;
@@ -446,6 +459,12 @@ namespace Runtime
 	{
 		updateDeltaTime();
 
+		// Update splash screen
+		if (m_showingSplash)
+		{
+			m_showingSplash = m_splashScreen.update(m_deltaTime);
+			return; // Don't update game logic during splash
+		}
 
 		// Luaの変更チェック
 		Engine::Scripting::ScriptManager::get().checkForUpdates();
@@ -503,47 +522,30 @@ namespace Runtime
 		m_commandList->RSSetViewports(1, &viewport);
 		m_commandList->RSSetScissorRects(1, &scissorRect);
 
-		// Skybox描画
-		m_skybox.render(m_commandList.Get(), m_camera);
-
-		// シーン描画
-		m_scene.render(m_commandList.Get(), m_camera, m_frameIndex);
-
-		if (m_uiTextRenderer)
+		if (m_showingSplash)
 		{
-			const auto [width, height] = m_window.getClientSize();
+			m_splashScreen.render(m_commandList.Get());
+		}
+		else
+		{
+			// Skybox
+			m_skybox.render(m_commandList.Get(), m_camera);
 
-			Engine::Utils::RenderContext context;
-			context.commandList = m_commandList.Get();
-			context.frameIndex = m_frameIndex;
+			// Scene
+			m_scene.render(m_commandList.Get(), m_camera, m_frameIndex);
 
-			auto uiTexts = m_scene.getUITexts();
-
-			// ★デバッグログ追加
-			static int frameCount = 0;
-			frameCount++;
-
-			if (frameCount <= 5)  // 最初の5フレームのみログ出力
+			// UI
+			if (m_uiTextRenderer)
 			{
-				Engine::Utils::log_info(std::format("Frame {}: UITexts count = {}",
-					frameCount, uiTexts.size()));
-			}
+				Engine::Utils::RenderContext context;
+				context.commandList = m_commandList.Get();
+				context.frameIndex = m_frameIndex;
 
-			for (auto* text : uiTexts)
-			{
-				if (text)
+				auto uiTexts = m_scene.getUITexts();
+
+				for (auto* text : uiTexts)
 				{
-					// ★各UITextの状態をログ出力
-					if (frameCount <= 5)
-					{
-						Engine::Utils::log_info(std::format(
-							"  UIText '{}': isVisible={}",
-							text->getName(),
-							text->isVisible()
-						));
-					}
-
-					if (text->isVisible())
+					if (text && text->isVisible())
 					{
 						m_uiTextRenderer->draw(
 							context,

@@ -8,14 +8,6 @@ int WINAPI WinMain(
 	_In_ LPSTR,
 	_In_ int nCmdShow)
 {
-	// デバッグ用: コンソールウィンドウを表示
-#ifdef _DEBUG
-	AllocConsole();
-	FILE* fp;
-	freopen_s(&fp, "CONOUT$", "w", stdout);
-	freopen_s(&fp, "CONOUT$", "w", stderr);
-#endif
-
 	Runtime::GameApp app;
 
 	auto init = app.initialize(hInstance, nCmdShow);
@@ -30,10 +22,6 @@ int WINAPI WinMain(
 	}
 
 	int result = app.run();
-
-#ifdef _DEBUG
-	FreeConsole();
-#endif
 
 	return result;
 }

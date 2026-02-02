@@ -242,13 +242,12 @@ namespace Editor::Build
             return false;
         }
 
-        std::string cmd =
-            std::format(
-                "cmake --build \"{}\" --target {} --config {} 2>&1",
-                buildDir.string(),
-                RUNTIME_TARGET,
-                m_currentConfig.config
-            );
+        std::string cmd = std::format(
+            "cmake --build \"{}\" --target {} --config {} 2>&1",
+            (buildDir / "runtime").string(),
+            RUNTIME_TARGET,
+            m_currentConfig.config
+        );
 
         std::cout << "[DEBUG] Executing: " << cmd << std::endl;
 

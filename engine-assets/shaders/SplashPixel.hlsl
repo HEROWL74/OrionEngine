@@ -8,6 +8,7 @@ cbuffer SplashConstants : register(b0)
 {
     float fadeAlpha;      // 0.0 to 1.0 for fade in/out
     float logoScale;      // Scale factor for logo
+    float screenAspect; // logo Screen aspect
     float2 padding;
 };
 
@@ -24,6 +25,7 @@ float4 main(PSInput input) : SV_TARGET
     
     // Calculate centered UV coordinates for logo
     float2 centeredUV = input.texcoord - 0.5f;
+    centeredUV.x *= screenAspect;
     
     // Apply logo scaling
     centeredUV /= logoScale;
