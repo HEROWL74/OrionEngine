@@ -26,8 +26,11 @@ target_link_libraries(OrionEngine PUBLIC
     d3d12 dxgi dxguid d3dcompiler
 )
 
-if(MSVC)
-    target_compile_options(OrionEngine PRIVATE /W4 /EHsc)
-    target_compile_definitions(OrionEngine PRIVATE UNICODE _UNICODE)
+if (MSVC)
+    target_compile_definitions(OrionEngine PRIVATE
+        $<$<CONFIG:Debug>:_DEBUG>
+        $<$<CONFIG:Release>:NDEBUG>
+        $<$<CONFIG:RelWithDebInfo>:NDEBUG>
+    )
 endif()
 

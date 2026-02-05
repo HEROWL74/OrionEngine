@@ -1,4 +1,5 @@
 #include "LuaBindings.hpp"
+#include "LuaAPI.hpp"
 
 namespace Engine::Scripting
 {
@@ -149,6 +150,15 @@ namespace Engine::Scripting
 		);
 	}
 
+	void LuaBindings::bindGameObjectHandle(sol::state& lua)
+	{
+		lua.new_usertype<GameObjectHandle>(
+			"GameObject",
+			sol::constructors<GameObjectHandle()>(),
+			"id", &GameObjectHandle::id
+		);
+	}
+
 	void LuaBindings::registerBindings(sol::state& lua)
 	{
 		bindMath(lua);
@@ -158,9 +168,12 @@ namespace Engine::Scripting
 		bindUIText(lua);
 		bindAudio(lua);
 
+		lua.set_function("ResolveGameObject", &Engine::Scripting::resolveGameObject);
+
 		// GameObject バインディング
 		lua.new_usertype<Core::GameObject>("GameObject",
 			"getName", &Core::GameObject::getName,
+			"getId", &Core::GameObject::getId,
 			"getTransform", &Core::GameObject::getTransform,
 			"isActive", &Core::GameObject::isActive,
 			"setActive", &Core::GameObject::setActive,

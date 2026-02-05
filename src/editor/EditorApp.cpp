@@ -163,18 +163,22 @@ namespace Editor
         auto sceneResult = m_scene.initialize(&m_device);
         if (!sceneResult)
         {
-           return sceneResult;
+            return sceneResult;
         }
+
+        Engine::Graphics::setActiveScene(&m_scene);
+        Utils::log_info("Active scene set in EditorApp");
 
         // UITextRenderer初期化
         Utils::log_info("Initializing UITextRenderer...");
         m_uiTextRenderer = std::make_unique<Engine::EngineUI::UITextRenderer>();
         auto uiTextResult = m_uiTextRenderer->initialize(&m_device, m_shaderManager.get());
-        if(!uiTextResult) 
+        if (!uiTextResult)
         {
             Utils::log_error(uiTextResult.error());
             return uiTextResult;
         }
+
         // EditorView と GameView の初期化
         const auto [clientWidth, clientHeight] = m_window.getClientSize();
 
@@ -204,19 +208,13 @@ namespace Editor
         // GPU同期後に再度登録
         m_device.waitForGpu();
 
-        // Lua 初期化
-        auto& scriptMgr = Scripting::ScriptManager::get();
-        scriptMgr.initialize();
-
-        // バインディング登録(C++クラスをLuaに公開)
-        m_luaBindings->registerBindings(scriptMgr.getLuaState());
-
-        // 起動時にdefault.sceneがあれば読み込む、無ければ初期シーンを作成
+        // ============================================================
+        // Scene Load
+        // ============================================================
         Utils::log_info("Checking for default scene...");
+
         if (std::filesystem::exists("assets/scenes/default.scene"))
         {
-            Utils::log_info("Default scene found, loading...");
-
             auto loadResult = m_sceneSerializer.loadScene(
                 m_scene,
                 &m_device,
@@ -229,8 +227,7 @@ namespace Editor
             if (loadResult)
             {
                 m_currentScenePath = "assets/scenes/default.scene";
-                Utils::log_info(std::format("Default scene loaded successfully. Object count: {}",
-                    m_scene.getGameObjects().size()));
+                Utils::log_info("Default scene loaded");
             }
             else
             {
@@ -240,9 +237,64 @@ namespace Editor
         }
         else
         {
-            Utils::log_info("No default scene found, creating initial scene");
             createInitialScene();
         }
+
+        // ============================================================
+        // PlayModeController
+        // ============================================================
+        m_playModeController.initialize(&m_scene);
+
+        m_playModeController.setSceneLoadContext(
+            &m_device,
+            m_shaderManager.get(),
+            &m_materialManager,
+            &m_textureManager,
+            m_currentScenePath
+        );
+
+        // ============================================================
+        // Lua
+        // ============================================================
+        m_luaBindings = std::make_unique<Engine::Scripting::LuaBindings>();
+
+        auto& scriptMgr = Scripting::ScriptManager::get();
+
+        auto registerAllBindings = [this](sol::state& lua)
+            {
+                Utils::log_info("Registering all Lua bindings...");
+
+                // LuaBindingsでエンジンの型を登録（Vector3, GameObject, Transform等）
+                m_luaBindings->registerBindings(lua);
+
+                // エディタ機能をLuaに公開
+                lua["Editor"] = lua.create_table();
+                lua["Editor"]["play"] = [this]()
+                    {
+                        if (!m_playModeController.isReady())
+                        {
+                            Utils::log_warning("Play called before PlayModeController ready");
+                            return;
+                        }
+                        m_playModeController.play();
+                    };
+                lua["Editor"]["stop"] = [this]()
+                    {
+                        m_playModeController.stop();
+                    };
+                lua["Editor"]["restartGame"] = [this]()
+                    {
+                        m_playModeController.restart();
+                    };
+
+                Utils::log_info("All Lua bindings registered successfully");
+            };
+
+        // これにより、initialize()とreloadAll()の両方で同じバインディングが実行される
+        scriptMgr.setBindingCallback(registerAllBindings);
+        scriptMgr.initialize();  // この中でregisterAllBindings()が呼ばれる
+
+        Utils::log_info("Lua scripting system initialized");
 
         // ProjectWindow作成
         m_projectWindow = std::make_unique<UI::ProjectWindow>();
@@ -284,6 +336,9 @@ namespace Editor
                 "InputManager is null"));
         }
 
+        Engine::Input::InputSystem::get().setInputManager(inputManager);
+        Utils::log_info("InputSystem bound to InputManager");
+
         if (!inputManager->isInitialized())
         {
             Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
@@ -315,9 +370,6 @@ namespace Editor
         m_hierarchyWindow->setScene(&m_scene);
         m_inspectorWindow->setScene(&m_scene);
 
-        // PlayModeController初期化
-        m_playModeController.initialize(&m_scene);
-        Utils::log_info("PlayModeController initialized with scene");
         m_debugWindow->setPlayModeController(&m_playModeController);
 
         m_hierarchyWindow->setSelectionChangedCallback([this](Core::GameObject* object) {
@@ -610,6 +662,8 @@ namespace Editor
         m_editorViewWindow->processResize();
         m_gameViewWindow->processResize();
 
+        m_playModeController.update();
+
         //processInput();
 
         if (m_playModeController.isPlaying())
@@ -640,8 +694,6 @@ namespace Editor
         auto* inputManager = m_window.getInputManager();
         if (inputManager)
         {
-            // 相対モードでない場合のみリセット
-            // 相対モードの場合は processInput() でリセット済み
             if (!inputManager->getMouseState().isRelativeMode)
             {
                 inputManager->resetMouseDelta();

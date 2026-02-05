@@ -7,6 +7,12 @@ namespace Editor
 {
     int RunEditor(HINSTANCE hInstance, int nCmdShow)
     {
+#ifdef _DEBUG
+        AllocConsole();
+        freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
+        freopen_s((FILE**)stderr, "CONOUT$", "w", stderr);
+        std::cout << "=== Orion Editor Debug Console ===\n";
+#endif
 
         Editor::EditorApp app;
 
@@ -19,7 +25,10 @@ namespace Editor
 
         const int exitCode = app.run();
 
-
+#ifdef _DEBUG
+        std::cout << "Editor exited with code: " << exitCode << std::endl;
+        FreeConsole();
+#endif
         return exitCode;
     }
 }

@@ -4,73 +4,84 @@
 #include <sol/sol.hpp>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
-#include <memory>
 #include <filesystem>
+#include <functional>
 
 namespace Engine::Scripting
 {
-	// スクリプトの種類
-	enum class ScriptType
-	{
-		Component,      // GameObjectにアタッチするスクリプト（onStart, onUpdateなど）
-		ScriptableObject // グローバルに読み込まれるスクリプト（データ定義など）
-	};
+    class LuaScriptComponent;
 
-	class ScriptManager
-	{
-	public:
-		ScriptManager() = default;
-		~ScriptManager() = default;
+    enum class ScriptType
+    {
+        Component,
+        ScriptableObject
+    };
 
-		static ScriptManager& get();
+    struct ScriptData
+    {
+        std::filesystem::file_time_type lastWriteTime;
+        ScriptType type;
+        sol::table moduleTable;
+        std::unordered_map<std::string, sol::function> functions;
+    };
 
-		// Luaライブラリの初期化
-		void initialize();
+    class ScriptManager
+    {
+    public:
+        static ScriptManager& get();
 
-		// スクリプトを読み込み&キャッシュ
-		bool loadScript(const std::string& path, ScriptType type = ScriptType::Component);
+        void initialize();
 
-		// 指定ディレクトリ配下の全スクリプトをスキャンして、
-		// ScriptableObjectマーカー（--@ScriptableObject）があるものを自動読み込み
-		void scanAndLoadScriptableObjects(const std::string& rootDirectory = "scripts");
+        void setBindingCallback(std::function<void(sol::state&)> callback);
 
-		// ファイル更新を監視して、変更があれば再読み込みする
-		void checkForUpdates();
+        void rebindAll();
 
-		// script_path -> 関数を取得
-		sol::function getFunction(const std::string& path, const std::string& functionName) const;
+        void verifyBindings();
 
-		// グローバル変数へのアクセス
-		sol::object getGlobal(const std::string& name) const;
-		void setGlobal(const std::string& name, sol::object value);
+        bool loadScript(const std::string& path, ScriptType type);
+        void scanAndLoadScriptableObjects(const std::string& rootDirectory);
 
-		sol::state& getLuaState() { return m_lua; }
+        sol::function getFunction(const std::string& path, const std::string& functionName) const;
 
-		// 全スクリプトを再読み込み（グローバル変数を保持）
-		void reloadAll();
+        sol::table getScriptTable(const std::string& path) const
+        {
+            auto it = m_scripts.find(path);
+            if (it != m_scripts.end())
+            {
+                return it->second.moduleTable;
+            }
+            return sol::nil;
+        }
 
-		// デバッグ用: グローバル変数を表示
-		void dumpGlobals() const;
+        sol::object getGlobal(const std::string& name) const;
+        void setGlobal(const std::string& name, sol::object value);
 
-		// ScriptableObjectスクリプトのリストを取得
-		const std::vector<std::string>& getScriptableObjects() const { return m_scriptableObjects; }
+        sol::state& getLuaState() { return m_lua; }
 
-	private:
-		sol::state m_lua;
+        void registerComponent(LuaScriptComponent* comp);
+        void unregisterComponent(LuaScriptComponent* comp);
 
-		// スクリプトごとの関数キャッシュ
-		struct ScriptData
-		{
-			std::filesystem::file_time_type lastWriteTime;
-			std::unordered_map<std::string, sol::function> functions;
-			ScriptType type;
-		};
+        void invalidateAllComponents();
+        void reloadAll();
+        void checkForUpdates();
 
-		std::unordered_map<std::string, ScriptData> m_scripts;
-		std::vector<std::string> m_scriptableObjects;  // ScriptableObjectのパスリスト
+        void dumpGlobals() const;
 
-		// ファイルがScriptableObjectかどうかをチェック
-		bool isScriptableObject(const std::string& filepath) const;
-	};
+    private:
+        ScriptManager() = default;
+        ~ScriptManager() = default;
+        ScriptManager(const ScriptManager&) = delete;
+        ScriptManager& operator=(const ScriptManager&) = delete;
+
+        bool isScriptableObject(const std::string& filepath) const;
+
+        sol::state m_lua;
+        std::unordered_map<std::string, ScriptData> m_scripts;
+        std::vector<std::string> m_scriptableObjects;
+        std::unordered_set<LuaScriptComponent*> m_registeredComponents;
+
+        std::function<void(sol::state&)> m_bindingCallback;
+    };
 }

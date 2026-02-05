@@ -22,6 +22,17 @@
         "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows"
       }
+    },
+    {
+      "name": "x64-relwithdebinfo",
+      "generator": "Visual Studio 18 2026",
+      "binaryDir": "${sourceDir}/build/x64-relwithdebinfo",
+      "architecture": "x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
     }
   ],
 
@@ -30,28 +41,37 @@
       "name": "editor-debug",
       "displayName": "Editor Debug",
       "configurePreset": "x64-debug",
-      "targets": [
-        "OrionEditor",
-        "OrionBuildWorker"
-      ]
+      "configuration": "Debug",
+      "targets": [ "OrionEditor", "OrionBuildWorker" ]
     },
     {
       "name": "editor-release",
       "displayName": "Editor Release",
       "configurePreset": "x64-release",
+      "configuration": "Release",
       "targets": [ "OrionEditor" ]
     },
     {
       "name": "runtime-debug",
       "displayName": "Runtime Debug",
       "configurePreset": "x64-debug",
+      "configuration": "Debug",
       "targets": [ "OrionGame" ]
     },
     {
       "name": "runtime-release",
       "displayName": "Runtime Release",
       "configurePreset": "x64-release",
+      "configuration": "Release",
       "targets": [ "OrionGame" ]
+    },
+    {
+      "name": "editor-relwithdebinfo",
+      "displayName": "Editor RelWithDebInfo",
+      "configurePreset": "x64-relwithdebinfo",
+      "configuration": "RelWithDebInfo",
+      "targets": [ "OrionEditor" ]
     }
   ]
+
 }

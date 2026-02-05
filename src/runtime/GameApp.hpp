@@ -36,6 +36,7 @@ namespace Runtime
 	private:
 		bool m_running = true;
 		bool m_showingSplash = true;
+		bool m_pendingReloadScene = false;
 
 		// ウィンドウとデバイス
 		Engine::Core::Window m_window;
@@ -51,7 +52,7 @@ namespace Runtime
 		std::unique_ptr<Engine::EngineUI::UITextRenderer> m_uiTextRenderer;
 
 		// Luabind
-		Engine::Scripting::LuaBindings* m_luaBindings;
+		std::unique_ptr<Engine::Scripting::LuaBindings> m_luaBindings;
 
 		// マネージャー類
 		std::unique_ptr<Engine::Graphics::ShaderManager> m_shaderManager;

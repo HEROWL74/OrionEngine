@@ -56,7 +56,6 @@ namespace Engine::EngineUI
         UIRenderMode getRenderMode() const noexcept { return m_renderMode; }
         void setRenderMode(UIRenderMode mode) { m_renderMode = mode; }
 
-        // ★Component::isEnabled()をオーバーライドして常にtrueを返す
         bool isEnabled() const noexcept  { return true; }
 
     protected:

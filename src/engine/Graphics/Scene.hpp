@@ -101,6 +101,7 @@ namespace Engine::Graphics
 			}
 			return texts;
 		}
+		Core::GameObject* findGameObjectById(Core::GameObject::ObjectID id) const;
 
 		void clearUITexts()
 		{

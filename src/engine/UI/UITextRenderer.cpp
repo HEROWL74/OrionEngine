@@ -74,7 +74,11 @@ namespace Engine::EngineUI
             // GameObjectのTransformがGizmoで変更されている可能性があるので同期
             mutableText->syncFromGameObjectTransform();
         }
-
+        // GameObjectが破棄されていないかチェック
+        if (mutableText->getGameObject()->isDestroyed())
+        {
+            return;  // 破棄済みなら描画しない
+        }
         FontAtlas* atlas = getOrCreateAtlas(text.getFontSize());
         if (!atlas) {
             Utils::log_warning("Failed to get font atlas");

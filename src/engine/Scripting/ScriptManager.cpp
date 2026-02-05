@@ -1,6 +1,8 @@
 //src/Scripting/ScriptManager.cpp
 
 #include "ScriptManager.hpp"
+#include "LuaScriptComponent.hpp"
+#include "LuaBindings.hpp"
 #include "../Utils/Common.hpp"
 #include <filesystem>
 #include <fstream>
@@ -21,7 +23,31 @@ namespace Engine::Scripting
         m_lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::os, sol::lib::string, sol::lib::table);
         Utils::log_info("Lua VM initialized.");
 
-        // 複数のディレクトリをスキャン
+        if (m_bindingCallback)
+        {
+            Utils::log_info("Executing initial Lua bindings...");
+            try
+            {
+                m_bindingCallback(m_lua);
+                Utils::log_info("Initial Lua bindings completed");
+
+                // バインディング確認
+                verifyBindings();
+            }
+            catch (const std::exception& e)
+            {
+                Utils::log_error(Utils::make_error(
+                    Utils::ErrorType::Unknown,
+                    std::format("Failed to execute initial bindings: {}", e.what())
+                ));
+            }
+        }
+        else
+        {
+            Utils::log_warning("⚠️ Binding callback not set. Call setBindingCallback() before initialize()");
+        }
+
+        // スクリプトディレクトリをスキャン
         std::vector<std::string> scanDirs = { "scripts", "assets/scripts", "assets" };
 
         for (const auto& dir : scanDirs)
@@ -33,6 +59,60 @@ namespace Engine::Scripting
         }
     }
 
+    void ScriptManager::setBindingCallback(std::function<void(sol::state&)> callback)
+    {
+        m_bindingCallback = callback;
+        Utils::log_info("Lua binding callback registered");
+    }
+
+    void ScriptManager::rebindAll()
+    {
+        if (m_bindingCallback)
+        {
+            Utils::log_info("Re-registering all Lua bindings...");
+            try
+            {
+                m_bindingCallback(m_lua);
+                Utils::log_info("Lua bindings re-registered successfully");
+            }
+            catch (const std::exception& e)
+            {
+                Utils::log_error(Utils::make_error(
+                    Utils::ErrorType::Unknown,
+                    std::format("Failed to re-register bindings: {}", e.what())
+                ));
+            }
+        }
+        else
+        {
+            Utils::log_warning("⚠️ Binding callback not set! Call setBindingCallback() first.");
+        }
+    }
+
+    void ScriptManager::verifyBindings()
+    {
+        Utils::log_info("=== Verifying Lua Bindings ===");
+
+        const std::vector<std::string> requiredTypes = {
+            "Vector3", "GameObject", "Transform", "UIText", "AudioComponent"
+        };
+
+        for (const auto& typeName : requiredTypes)
+        {
+            sol::optional<sol::table> type = m_lua[typeName];
+            if (type)
+            {
+                Utils::log_info(std::format("✓ {} is bound", typeName));
+            }
+            else
+            {
+                Utils::log_warning(std::format("✗ {} is NOT bound!", typeName));
+            }
+        }
+
+        Utils::log_info("============================");
+    }
+
     bool ScriptManager::isScriptableObject(const std::string& filepath) const
     {
         std::ifstream file(filepath);
@@ -41,18 +121,14 @@ namespace Engine::Scripting
             return false;
         }
 
-        // ファイルの最初の数行をチェック（通常は最初の10行以内にマーカーがあるはず）
         std::string line;
         int lineCount = 0;
         const int maxLinesToCheck = 20;
 
         while (std::getline(file, line) && lineCount < maxLinesToCheck)
         {
-            // 空白をトリム
             line.erase(0, line.find_first_not_of(" \t\r\n"));
 
-            // マーカーをチェック
-            // --@ScriptableObject または -- @ScriptableObject
             if (line.find("--@ScriptableObject") == 0 ||
                 line.find("-- @ScriptableObject") == 0)
             {
@@ -68,44 +144,81 @@ namespace Engine::Scripting
     bool ScriptManager::loadScript(const std::string& path, ScriptType type)
     {
         try {
-            // ファイルの存在確認
             if (!fs::exists(path))
             {
                 Utils::log_warning(std::format("Script file not found: {}", path));
                 return false;
             }
 
-            // ファイルの更新時刻を記録
             auto lastWrite = fs::last_write_time(path);
 
-            // スクリプトを実行（グローバルスコープに展開）
-            m_lua.script_file(path);
+            {
+                auto it = m_scripts.find(path);
+                if (it != m_scripts.end() && it->second.lastWriteTime == lastWrite)
+                {
+                    return true;
+                }
+            }
+
+            if (type == ScriptType::ScriptableObject)
+            {
+                m_lua.script_file(path);
+            }
 
             ScriptData data;
             data.lastWriteTime = lastWrite;
             data.type = type;
 
-            // Componentスクリプトの場合のみ関数をキャッシュ
             if (type == ScriptType::Component)
             {
+                sol::load_result loaded = m_lua.load_file(path);
+                if (!loaded.valid())
+                {
+                    sol::error err = loaded;
+                    Utils::log_warning(std::format("Failed to load script '{}': {}", path, err.what()));
+                    return false;
+                }
+
+                sol::function scriptFunc = loaded.get<sol::function>();
+                sol::protected_function_result pfr = scriptFunc();
+
+                if (!pfr.valid())
+                {
+                    sol::error err = pfr;
+                    Utils::log_warning(std::format("Script execution error '{}': {}", path, err.what()));
+                    return false;
+                }
+
+                sol::object result = pfr;
+
+                if (!result.valid() || !result.is<sol::table>())
+                {
+                    Utils::log_warning(std::format(
+                        "Script '{}' did not return a table. "
+                        "Use: local Script = {} ... return Script",
+                        path));
+                    return false;
+                }
+
+                data.moduleTable = result.as<sol::table>();
+
                 const std::vector<std::string> knownFunctions = {
-                    "onUpdate", "onStart", "onCollisionEnter", "onCollisionExit"
+                    "onStart", "onUpdate", "onCollisionEnter", "onCollisionExit"
                 };
 
                 for (const auto& name : knownFunctions)
                 {
-                    sol::object obj = m_lua[name];
-                    if (obj.is<sol::function>())
+                    sol::object fn = data.moduleTable[name];
+                    if (fn.valid() && fn.is<sol::function>())
                     {
-                        data.functions[name] = obj.as<sol::function>();
-                        Utils::log_info(std::format("  Loaded Lua function: {}", name));
+                        data.functions[name] = fn.as<sol::function>();
+                        Utils::log_info(std::format("  Loaded module function: {}.{}", path, name));
                     }
                 }
             }
 
             m_scripts[path] = std::move(data);
 
-            // ScriptableObjectの場合はリストに追加
             if (type == ScriptType::ScriptableObject)
             {
                 if (std::find(m_scriptableObjects.begin(), m_scriptableObjects.end(), path) == m_scriptableObjects.end())
@@ -118,9 +231,14 @@ namespace Engine::Scripting
             Utils::log_info(std::format("Script loaded {}: {}", typeStr, path));
             return true;
         }
-        catch (const std::exception& e)
+        catch (const sol::error& e)
         {
             Utils::log_warning(std::format("Lua error in '{}': {}", path, e.what()));
+            return false;
+        }
+        catch (const std::exception& e)
+        {
+            Utils::log_warning(std::format("C++ exception in '{}': {}", path, e.what()));
             return false;
         }
     }
@@ -138,7 +256,6 @@ namespace Engine::Scripting
         int scannedCount = 0;
         int loadedCount = 0;
 
-        // ルートディレクトリ配下の全ての.luaファイルを再帰的にスキャン
         try
         {
             for (const auto& entry : fs::recursive_directory_iterator(rootDirectory))
@@ -148,10 +265,8 @@ namespace Engine::Scripting
                     scannedCount++;
                     std::string path = entry.path().string();
 
-                    // パス区切り文字を統一（Windowsの \ を / に変換）
                     std::replace(path.begin(), path.end(), '\\', '/');
 
-                    // ファイル内容をチェックしてScriptableObjectマーカーがあれば読み込み
                     if (isScriptableObject(path))
                     {
                         if (loadScript(path, ScriptType::ScriptableObject))
@@ -182,13 +297,6 @@ namespace Engine::Scripting
             }
         }
 
-        // スクリプト固有のキャッシュになくても、グローバルに存在する可能性がある
-        sol::object obj = m_lua[functionName];
-        if (obj.is<sol::function>())
-        {
-            return obj.as<sol::function>();
-        }
-
         return sol::nil;
     }
 
@@ -202,61 +310,126 @@ namespace Engine::Scripting
         m_lua[name] = value;
     }
 
-    void ScriptManager::reloadAll()
+    void ScriptManager::registerComponent(LuaScriptComponent* comp)
     {
-        Utils::log_info("Reloading all scripts...");
-
-        // グローバル変数を保存
-        std::unordered_map<std::string, sol::object> savedGlobals;
-
-        // 保存したいグローバル変数のリスト
-        // ScriptableObjectで定義される可能性のある変数名
-        std::vector<std::string> globalVarsToSave = {
-            "GameState", "Config", "Constants", "Data", "Settings"
-        };
-
-        for (const auto& varName : globalVarsToSave)
+        if (comp)
         {
-            sol::object obj = m_lua[varName];
-            if (obj.valid() && !obj.is<sol::nil_t>())
+            m_registeredComponents.insert(comp);
+        }
+    }
+
+    void ScriptManager::unregisterComponent(LuaScriptComponent* comp)
+    {
+        m_registeredComponents.erase(comp);
+    }
+
+    void ScriptManager::invalidateAllComponents()
+    {
+        Utils::log_info(std::format("Invalidating {} registered LuaScriptComponents...", m_registeredComponents.size()));
+
+        // コピーを作成してイテレーション
+        std::vector<LuaScriptComponent*> componentsCopy;
+        componentsCopy.reserve(m_registeredComponents.size());
+
+        for (auto* comp : m_registeredComponents)
+        {
+            if (comp)
             {
-                savedGlobals[varName] = obj;
-                Utils::log_info(std::format("  Saved global: {}", varName));
+                componentsCopy.push_back(comp);
             }
         }
 
-        // ScriptableObjectスクリプトを先に再読み込み
-        for (const auto& path : m_scriptableObjects)
+        for (auto* comp : componentsCopy)
         {
-            loadScript(path, ScriptType::ScriptableObject);
+            comp->invalidateCachedFunctions();
         }
 
-        // 残りのスクリプトを再読み込み
-        for (auto& [path, script] : m_scripts)
+        Utils::log_info("All components invalidated successfully");
+    }
+
+    void ScriptManager::reloadAll()
+    {
+        Utils::log_info("=== COMPLETE LUA VM RELOAD ===");
+
+        std::vector<std::string> scriptableObjPaths = m_scriptableObjects;
+        std::unordered_map<std::string, ScriptType> allScriptPaths;
+
+        for (const auto& [path, script] : m_scripts)
         {
-            if (script.type == ScriptType::Component)
+            allScriptPaths[path] = script.type;
+        }
+
+        Utils::log_info(std::format(
+            "Invalidating {} registered LuaScriptComponents before VM reset...",
+            m_registeredComponents.size()
+        ));
+        invalidateAllComponents();
+
+        Utils::log_info("Clearing script data...");
+        m_scripts.clear();
+        m_scriptableObjects.clear();
+
+        Utils::log_info("Destroying old Lua VM and creating new one...");
+        m_lua = sol::state();
+        m_lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::os,
+            sol::lib::string, sol::lib::table);
+
+        if (m_bindingCallback)
+        {
+            Utils::log_info("Re-registering Lua bindings...");
+            try
             {
+                m_bindingCallback(m_lua);
+                Utils::log_info("Lua bindings re-registered successfully");
+
+                // バインディング確認
+                verifyBindings();
+            }
+            catch (const std::exception& e)
+            {
+                Utils::log_error(Utils::make_error(
+                    Utils::ErrorType::Unknown,
+                    std::format("Failed to re-register bindings: {}", e.what())
+                ));
+            }
+        }
+        else
+        {
+            Utils::log_warning("Binding callback not set! Lua types may not work correctly.");
+        }
+
+        Utils::log_info("Reloading ScriptableObjects...");
+        for (const auto& path : scriptableObjPaths)
+        {
+            if (fs::exists(path))
+            {
+                Utils::log_info(std::format("  Loading: {}", path));
+                loadScript(path, ScriptType::ScriptableObject);
+            }
+        }
+
+        Utils::log_info("Reloading Component scripts...");
+        for (const auto& [path, type] : allScriptPaths)
+        {
+            if (type == ScriptType::Component && fs::exists(path))
+            {
+                Utils::log_info(std::format("  Loading: {}", path));
                 loadScript(path, ScriptType::Component);
             }
         }
 
-        // グローバル変数を復元（上書きされていない場合のみ）
-        for (const auto& [name, value] : savedGlobals)
-        {
-            sol::object current = m_lua[name];
-            if (!current.valid() || current.is<sol::nil_t>())
-            {
-                m_lua[name] = value;
-                Utils::log_info(std::format("  Restored global: {}", name));
-            }
-        }
-
-        Utils::log_info("All Lua scripts reloaded.");
+        Utils::log_info("=== LUA VM RELOAD COMPLETE ===");
     }
 
     void ScriptManager::checkForUpdates()
     {
-        for (auto& [path, script] : m_scripts)
+        std::vector<std::pair<std::string, ScriptType>> scriptsToCheck;
+        for (const auto& [path, script] : m_scripts)
+        {
+            scriptsToCheck.emplace_back(path, script.type);
+        }
+
+        for (const auto& [path, type] : scriptsToCheck)
         {
             try
             {
@@ -265,13 +438,18 @@ namespace Engine::Scripting
                     continue;
                 }
 
+                auto it = m_scripts.find(path);
+                if (it == m_scripts.end()) continue;
+
                 auto lastWrite = fs::last_write_time(path);
 
-                // ファイルが更新されていたらリロード
-                if (lastWrite != script.lastWriteTime)
+                if (lastWrite != it->second.lastWriteTime)
                 {
                     Utils::log_info(std::format("Reloading modified script: {}", path));
-                    loadScript(path, script.type);
+
+                    invalidateAllComponents();
+
+                    loadScript(path, type);
                 }
             }
             catch (const std::exception& e)
@@ -290,7 +468,6 @@ namespace Engine::Scripting
             {
                 std::string keyStr = key.as<std::string>();
 
-                // システム関数やライブラリは除外
                 if (keyStr.find("_") == 0 || keyStr == "package" || keyStr == "coroutine" ||
                     keyStr == "string" || keyStr == "table" || keyStr == "math" ||
                     keyStr == "io" || keyStr == "os" || keyStr == "debug")

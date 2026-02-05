@@ -38,11 +38,8 @@ namespace Engine::Graphics
 			Utils::log_info("Clearing selection (object being deleted)");
 			m_selectedObject = nullptr;
 		}
-
-		// ★ 重要: isDestroyed()フラグを立てる（これで次のフレームからレンダリングされない）
 		gameObject->destroy();
 
-		// ★ 重要: 遅延削除リストに追加（実際の削除は次のフレームの最後）
 		m_pendingDestroy.push_back(gameObject);
 
 		Utils::log_info(std::format("GameObject '{}' marked for deletion (pending destroy list size: {})",
@@ -52,6 +49,7 @@ namespace Engine::Graphics
 	void Scene::clear()
 	{
 		Utils::log_info("Scene::clear() called");
+		Utils::log_info(std::format("  Current m_gameObjects.size() = {}", m_gameObjects.size()));
 
 		// GPU同期
 		if (m_device)
@@ -72,11 +70,16 @@ namespace Engine::Graphics
 		{
 			if (obj)
 			{
+				Utils::log_info(std::format("  Destroying: {}", obj->getName()));
 				obj->destroy();
 			}
 		}
 
+		Utils::log_info("Calling m_gameObjects.clear()...");
 		m_gameObjects.clear();
+
+		Utils::log_info(std::format("  After clear: m_gameObjects.size() = {}", m_gameObjects.size()));
+
 		m_pendingDestroy.clear();
 
 		Utils::log_info("Scene cleared completely");
@@ -96,13 +99,27 @@ namespace Engine::Graphics
 
 	void Scene::start()
 	{
+		Utils::log_info("=== Scene::start() called ===");
+		Utils::log_info(std::format("  m_gameObjects.size() = {}", m_gameObjects.size()));
+
 		for (auto& gameObject : m_gameObjects)
 		{
+			if (!gameObject)
+			{
+				Utils::log_warning("  Found NULL GameObject in m_gameObjects!");
+				continue;
+			}
+
+			Utils::log_info(std::format("  Starting GameObject: {} (destroyed: {})",
+				gameObject->getName(), gameObject->isDestroyed()));
+
 			if (gameObject->isActive() && !gameObject->isDestroyed())
 			{
 				gameObject->start();
 			}
 		}
+
+		Utils::log_info("=== Scene::start() completed ===");
 	}
 
 	void Scene::update(float deltaTime)
@@ -118,7 +135,6 @@ namespace Engine::Graphics
 
 		Physics::PhysicsSystem::get().update(*this);
 
-		// ★ フレームの最後に遅延削除を実行
 		processPendingDestroy();
 	}
 
@@ -140,7 +156,6 @@ namespace Engine::Graphics
 			return;
 		}
 
-		// ★ 破棄予定のオブジェクトはレンダリングしない
 		for (auto& gameObject : m_gameObjects)
 		{
 			if (gameObject->isActive() && !gameObject->isDestroyed())
@@ -203,7 +218,6 @@ namespace Engine::Graphics
 
 				Utils::log_info(std::format("  [{}] Deleting GameObject '{}'", deletedCount + 1, name));
 
-				// ★ unique_ptrが解放され、デストラクタでDirectXリソースも安全に解放される
 				m_gameObjects.erase(it);
 
 				Utils::log_info(std::format("  [{}] GameObject '{}' deleted successfully", deletedCount + 1, name));
@@ -250,6 +264,17 @@ namespace Engine::Graphics
 
 		return m_selectedObject;
 	}
+
+	Core::GameObject* Scene::findGameObjectById(Core::GameObject::ObjectID id) const
+	{
+		for (const auto& obj : m_gameObjects)
+		{
+			if (obj && !obj->isDestroyed() && obj->getId() == id)
+				return obj.get();
+		}
+		return nullptr;
+	}
+
 
 	void Scene::clearSelection()
 	{
