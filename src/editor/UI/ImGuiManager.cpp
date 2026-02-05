@@ -693,7 +693,7 @@ namespace Editor::UI
 	//======================================================================
 	//Scene HierarchyWindow実装
 	//======================================================================
-	SceneHierarchyWindow::SceneHierarchyWindow() : ImGuiWindow("Scene Hierarchy") 
+	SceneHierarchyWindow::SceneHierarchyWindow() : ImGuiWindow("Scene Hierarchy")
 	{
 		m_contextMenu = std::make_unique<ContextMenu>();
 	}
@@ -702,62 +702,138 @@ namespace Editor::UI
 	{
 		if (!m_visible || !m_scene) return;
 
-		// 位置とサイズの指定を削除し、ドッキングシステムに任せる
 		if (ImGui::Begin(m_title.c_str(), &m_visible))
 		{
-			if (m_selectedObject)
-			{
-				bool stillExists = false;
-				const auto& gameObjects = m_scene->getGameObjects();
-				for (const auto& obj : gameObjects)
-				{
-					if (obj && obj.get() == m_selectedObject)
-					{
-						stillExists = true;
-						break;
-					}
-				}
+			Core::GameObject* currentSelection = m_scene->getSelectedObject();
 
-				if (!stillExists)
-				{
-					m_selectedObject = nullptr;
-					if (m_onSelectionChanged)
-					{
-						m_onSelectionChanged(nullptr);
-					}
-				}
+			if (currentSelection && currentSelection->isDestroyed())
+			{
+				m_scene->clearSelection();
+				currentSelection = nullptr;
 			}
+
+			// GameObjectsセクション
+			ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "GameObjects");
+			ImGui::Separator();
 
 			const auto& gameObjects = m_scene->getGameObjects();
 			for (const auto& gameObject : gameObjects)
 			{
-				if (gameObject && gameObject->isActive())
+				if (gameObject && gameObject->isActive() && !gameObject->isDestroyed())
 				{
-					drawGameObject(gameObject.get());
+					drawGameObject(gameObject.get(), currentSelection);
 				}
 			}
 
-			if (m_contextMenu)
-			{
-				m_contextMenu->drawHierarchyContextMenu();
-			}
+			ImGui::Spacing();
+			ImGui::Spacing();
 
-			if (m_contextMenu)
+			// 空白エリアのコンテキストメニュー
+			if (ImGui::BeginPopupContextWindow("HierarchyContextMenu",
+				ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 			{
-				m_contextMenu->drawModals();
+				if (m_contextMenu)
+				{
+					m_contextMenu->drawCreateMenu();
+				}
+				ImGui::EndPopup();
 			}
 		}
 		ImGui::End();
+
+		if (m_contextMenu)
+		{
+			m_contextMenu->drawModals();
+		}
 	}
 
-	void SceneHierarchyWindow::drawGameObject(Core::GameObject* gameObject)
-	{
-		if (!gameObject) return;
 
-	
+
+	void SceneHierarchyWindow::drawUIText(Engine::EngineUI::UIText* text, int index)
+	{
+		if (!text) return;
+
+		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+		// 選択状態の判定
+		if (m_selectedUIText == text)
+		{
+			flags |= ImGuiTreeNodeFlags_Selected;
+		}
+
+		std::string label = text->getName() + "##uitext_" + std::to_string(index);
+		ImGui::TreeNodeEx(label.c_str(), flags);
+
+		// クリックされた場合
+		if (ImGui::IsItemClicked())
+		{
+			// GameObjectの選択をクリア
+			if (m_scene)
+			{
+				m_scene->clearSelection();
+			}
+
+			// UITextを選択
+			m_selectedUIText = text;
+
+			// Inspectorに通知
+			if (m_onUISelectionChanged)
+			{
+				m_onUISelectionChanged(text);
+			}
+
+			Utils::log_info(std::format("Selected UIText: {}", text->getName()));
+		}
+
+		// コンテキストメニュー
+		if (ImGui::BeginPopupContextItem())
+		{
+			if (m_contextMenu)
+			{
+				m_contextMenu->drawUITextContextMenu(text);
+			}
+			ImGui::EndPopup();
+		}
+	}
+
+	void SceneHierarchyWindow::setCreateUIElementCallback(
+		std::function<Engine::EngineUI::UIText* (UI::UIElementType, const std::string&)> callback)
+	{
+		if (m_contextMenu)
+		{
+			m_contextMenu->setCreateUIElementCallback(callback);
+		}
+	}
+
+	void SceneHierarchyWindow::setDeleteUITextCallback(
+		std::function<void(Engine::EngineUI::UIText*)> callback)
+	{
+		if (m_contextMenu)
+		{
+			m_contextMenu->setDeleteUITextCallback(callback);
+		}
+	}
+
+	void SceneHierarchyWindow::setRenameUITextCallback(
+		std::function<void(Engine::EngineUI::UIText*, const std::string&)> callback)
+	{
+		if (m_contextMenu)
+		{
+			m_contextMenu->setRenameUITextCallback(callback);
+		}
+	}
+
+	void SceneHierarchyWindow::drawGameObject(Core::GameObject* gameObject, Core::GameObject* currentSelection)
+	{
+		if (!gameObject || gameObject->isDestroyed())
+		{
+			return;
+		}
+
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
 
-		if (m_selectedObject == gameObject)
+		// Sceneの選択状態を反映
+		if (currentSelection == gameObject)
 		{
 			flags |= ImGuiTreeNodeFlags_Selected;
 		}
@@ -769,33 +845,69 @@ namespace Editor::UI
 
 		std::string nodeName = gameObject->getName();
 
+		// UITextコンポーネントがあればアイコンを表示
+		auto* uiTextComponent = gameObject->getComponent<Engine::EngineUI::UIText>();
+		if (uiTextComponent)
+		{
+			nodeName = "[T] " + nodeName; // Text icon
+		}
 
 		ImGui::PushID(gameObject);
 		bool nodeOpen = ImGui::TreeNodeEx(nodeName.c_str(), flags);
 
-
-		if (ImGui::IsItemClicked())
+		if (ImGui::IsItemClicked() && !gameObject->isDestroyed())
 		{
-			m_selectedObject = gameObject;
-			if (m_onSelectionChanged)
+			// Sceneの選択状態を更新
+			m_scene->setSelectedObject(gameObject);
+
+			if (uiTextComponent)
 			{
-				m_onSelectionChanged(gameObject);
+				Utils::log_info(std::format("Selected GameObject with UIText: {}", gameObject->getName()));
+
+				// UITextコンポーネントをInspectorに表示するため、UIText選択として扱う
+				m_selectedUIText = uiTextComponent;
+
+				// InspectorにUITextを通知
+				if (m_onUISelectionChanged)
+				{
+					m_onUISelectionChanged(uiTextComponent);
+				}
+			}
+			else
+			{
+				Utils::log_info(std::format("Selected GameObject: {}", gameObject->getName()));
+
+				// 通常のGameObject選択
+				m_selectedUIText = nullptr;
+
+				// InspectorにGameObjectを通知
+				if (m_onSelectionChanged)
+				{
+					m_onSelectionChanged(gameObject);
+				}
+
+				// InspectorのUIText選択をクリア
+				if (m_onUISelectionChanged)
+				{
+					m_onUISelectionChanged(nullptr);
+				}
 			}
 		}
 
-		if (m_contextMenu)
+		// コンテキストメニュー
+		if (m_contextMenu && !gameObject->isDestroyed())
 		{
 			m_contextMenu->drawGameObjectContextMenu(gameObject);
 		}
 
-		
+		// 子オブジェクトの描画
 		if (nodeOpen)
 		{
 			for (const auto& child : gameObject->getChildren())
 			{
-				if (child && child->isActive())
+				if (child && child->isActive() && !child->isDestroyed())
 				{
-					drawGameObject(child.get());
+					drawGameObject(child.get(), currentSelection);
 				}
 			}
 			ImGui::TreePop();
@@ -840,71 +952,560 @@ namespace Editor::UI
 			m_contextMenu->setRenameObjectCallback(callback);
 		}
 	}
+
 	//=======================================================================
 	//InspectorWindow
 	//=======================================================================
 	void InspectorWindow::draw()
 	{
-		if (!m_visible) return;
-
-		// 位置とサイズの指定を削除
-		if (ImGui::Begin(m_title.c_str(), &m_visible))
+		if (!ImGui::Begin("Inspector", nullptr))
 		{
-			if (m_selectedObject)
+			ImGui::End();
+			return;
+		}
+
+		if (m_selectedUIText)
+		{
+			Utils::log_info("Drawing UIText Inspector");
+			drawUITextInspector();
+			ImGui::End();
+			return;
+		}
+
+		if (m_selectedObject)
+		{
+			Utils::log_info(std::format("Drawing GameObject Inspector: {}", m_selectedObject->getName()));
+			drawGameObjectInspector();
+			ImGui::End();
+			return;
+		}
+
+		ImGui::TextDisabled("No object selected");
+		ImGui::End();
+	}
+
+	void InspectorWindow::drawGameObjectInspector()
+	{
+		if (!m_selectedObject) return;
+
+		ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
+
+		// GameObject名前表示
+		ImGui::Text("GameObject: %s", m_selectedObject->getName().c_str());
+		ImGui::Separator();
+
+		// Active状態
+		bool active = m_selectedObject->isActive();
+		if (ImGui::Checkbox("Active", &active))
+		{
+			m_selectedObject->setActive(active);
+		}
+
+		ImGui::Spacing();
+
+		// Transformコンポーネント
+		auto* transform = m_selectedObject->getTransform();
+		if (transform)
+		{
+			drawTransformComponent(transform);
+		}
+
+		// RenderComponentがあれば表示
+		auto* renderComponent = m_selectedObject->getComponent<Graphics::RenderComponent>();
+		if (renderComponent)
+		{
+			drawRenderComponent(renderComponent);
+		}
+
+		// BoxColliderがあれば表示
+		auto* boxCollider = m_selectedObject->getComponent<Physics::BoxCollider>();
+		if (boxCollider)
+		{
+			drawBoxColliderComponent(boxCollider);
+		}
+
+		// LuaScriptComponentがあれば表示
+		auto* scriptComponent = m_selectedObject->getComponent<Scripting::LuaScriptComponent>();
+
+		// AudioComponentがあれば表示
+		auto* audioComponent = m_selectedObject->getComponent<Audio::AudioComponent>();
+		if (audioComponent)
+		{
+			drawAudioComponent(audioComponent);
+		}
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		if (ImGui::CollapsingHeader("Add Component", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			// BoxCollider追加ボタン
+			if (!boxCollider)
 			{
-				std::string objectName = m_selectedObject->getName();
-				ImGui::Text("Object: %s", objectName.c_str());
-				ImGui::Separator();
-
-				if (auto* transform = m_selectedObject->getTransform())
-					drawTransformComponent(transform);
-
-				ImGui::Spacing();
-
-				if (auto* renderComponent = m_selectedObject->getComponent<Graphics::RenderComponent>())
-					drawRenderComponent(renderComponent);
-
-				ImGui::Spacing();
-
-				auto* luaScriptComponent = m_selectedObject->getComponent<Engine::Scripting::LuaScriptComponent>();
-				if (luaScriptComponent)
+				if (ImGui::Button("Box Collider", ImVec2(-1, 30)))
 				{
-					drawScriptComponent(luaScriptComponent);
+					auto* newCollider = m_selectedObject->addComponent<Physics::BoxCollider>();
+					if (newCollider)
+					{
+						newCollider->setSize(Math::Vector3(1.0f, 1.0f, 1.0f));
+						Utils::log_info(std::format("BoxCollider added to {}", m_selectedObject->getName()));
+					}
 				}
-				else
+			}
+
+			if (!audioComponent)
+			{
+				if (ImGui::Button("Audio", ImVec2(-1, 30)))
 				{
-					ImGui::Text("Script");
-					ImGui::Dummy(ImVec2(220, 40));
-					ImGui::SameLine();
-					ImGui::TextDisabled("<None>");
+					auto* newAudio = m_selectedObject->addComponent<Audio::AudioComponent>();
+					if (newAudio)
+					{
+						auto initResult = newAudio->initialize();
+						if (initResult)
+						{
+							Utils::log_info(std::format("AudioComponent added to {}", m_selectedObject->getName()));
+						}
+						else
+						{
+							Utils::log_error(initResult.error());
+						}
+					}
+				}
+			}
+		}
+
+		ImGui::Spacing();
+
+		if (ImGui::CollapsingHeader("Attach Script", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			if (!scriptComponent)
+			{
+				ImGui::BeginChild("##ScriptDropZone", ImVec2(-1, 80), true);
+				ImGui::TextWrapped("Drop Lua Script Here");
+				ImGui::TextDisabled("(or drag anywhere in Inspector)");
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
+					{
+						const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
+						if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
+						{
+							auto* newScript = m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
+							if (newScript)
+							{
+								Utils::log_info(std::format("Lua script attached: {}", dropped->path));
+							}
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+				ImGui::EndChild();
+			}
+			else
+			{
+				std::string scriptPath = scriptComponent->getScriptPath();
+				std::filesystem::path path(scriptPath);
+				std::string fileName = path.filename().string();
+
+				ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Attached Script:");
+				ImGui::SameLine();
+				ImGui::Text("%s", fileName.c_str());
+
+				ImGui::TextDisabled("Full Path:");
+				ImGui::TextWrapped("%s", scriptPath.c_str());
+
+				ImGui::Spacing();
+
+				ImGui::BeginChild("##ScriptReplaceZone", ImVec2(-1, 60), true);
+				ImGui::TextWrapped("Drop new script to replace");
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
+					{
+						const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
+						if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
+						{
+							// 既存のスクリプトを削除して新しいものを追加
+							m_selectedObject->removeComponent<Engine::Scripting::LuaScriptComponent>();
+							auto* newScript = m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
+							if (newScript)
+							{
+								Utils::log_info(std::format("Lua script replaced: {}", dropped->path));
+							}
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+				ImGui::EndChild();
+			}
+		}
+
+		if (!scriptComponent && ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
+			{
+				const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
+				if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
+				{
+					auto* newScript = m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
+					if (newScript)
+					{
+						Utils::log_info(std::format("Lua script attached (anywhere): {}", dropped->path));
+					}
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+
+		ImGui::PopStyleColor();
+	}
+
+	void InspectorWindow::drawUITextInspector()
+	{
+		if (!m_selectedUIText) return;
+
+		ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
+
+		// UIText名前表示
+		ImGui::Text("UIText: %s", m_selectedUIText->getName().c_str());
+		ImGui::Separator();
+
+		// GameObject情報も表示
+		auto* gameObject = m_selectedUIText->getGameObject();
+		if (gameObject)
+		{
+			ImGui::TextDisabled("GameObject: %s", gameObject->getName().c_str());
+			ImGui::Spacing();
+		}
+
+		// Transformセクション
+		if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			auto pos = m_selectedUIText->getPosition();
+			auto rot = m_selectedUIText->getRotation();
+			auto scale = m_selectedUIText->getScale();
+
+			float position[3] = { pos.x, pos.y, pos.z };
+			if (ImGui::DragFloat3("Position", position, 0.1f))
+			{
+				m_selectedUIText->setPosition(Math::Vector3(position[0], position[1], position[2]));
+			}
+
+			float rotation[3] = { rot.x, rot.y, rot.z };
+			if (ImGui::DragFloat3("Rotation", rotation, 1.0f))
+			{
+				m_selectedUIText->setRotation(Math::Vector3(rotation[0], rotation[1], rotation[2]));
+			}
+
+			float scaleArr[3] = { scale.x, scale.y, scale.z };
+			if (ImGui::DragFloat3("Scale", scaleArr, 0.001f, 0.001f, 10.0f))
+			{
+				m_selectedUIText->setScale(Math::Vector3(scaleArr[0], scaleArr[1], scaleArr[2]));
+			}
+		}
+
+		// Textセクション
+		if (ImGui::CollapsingHeader("Text Properties", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			static char textBuffer[256];
+			std::string currentText = m_selectedUIText->getText();
+			strncpy_s(textBuffer, currentText.c_str(), sizeof(textBuffer) - 1);
+
+			if (ImGui::InputTextMultiline("Text", textBuffer, sizeof(textBuffer), ImVec2(-1, 80)))
+			{
+				m_selectedUIText->setText(textBuffer);
+			}
+
+			float fontSize = m_selectedUIText->getFontSize();
+			if (ImGui::DragFloat("Font Size", &fontSize, 1.0f, 8.0f, 128.0f))
+			{
+				m_selectedUIText->setFontSize(fontSize);
+			}
+
+			auto color = m_selectedUIText->getColor();
+			float colorArr[3] = { color.x, color.y, color.z };
+			if (ImGui::ColorEdit3("Color", colorArr))
+			{
+				m_selectedUIText->setColor(Math::Vector3(colorArr[0], colorArr[1], colorArr[2]));
+			}
+
+			float alpha = m_selectedUIText->getAlpha();
+			if (ImGui::SliderFloat("Alpha", &alpha, 0.0f, 1.0f))
+			{
+				m_selectedUIText->setAlpha(alpha);
+			}
+		}
+
+		// Visibility
+		if (ImGui::CollapsingHeader("Visibility", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			bool visible = m_selectedUIText->isVisible();
+			if (ImGui::Checkbox("Visible", &visible))
+			{
+				m_selectedUIText->setVisible(visible);
+			}
+
+			bool enabled = m_selectedUIText->isEnabled();
+			if (ImGui::Checkbox("Enabled", &enabled))
+			{
+				m_selectedUIText->setEnabled(enabled);
+			}
+		}
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		if (gameObject)
+		{
+			if (ImGui::CollapsingHeader("Add Component", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				auto* boxCollider = gameObject->getComponent<Physics::BoxCollider>();
+				if (!boxCollider)
+				{
+					if (ImGui::Button("Box Collider", ImVec2(-1, 30)))
+					{
+						auto* newCollider = gameObject->addComponent<Physics::BoxCollider>();
+						if (newCollider)
+						{
+							newCollider->setSize(Math::Vector3(1.0f, 1.0f, 1.0f));
+							Utils::log_info(std::format("BoxCollider added to {}", gameObject->getName()));
+						}
+					}
+				}
+			}
+
+			ImGui::Spacing();
+
+			auto* scriptComponent = gameObject->getComponent<Scripting::LuaScriptComponent>();
+
+			if (ImGui::CollapsingHeader("Attach Script", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				if (!scriptComponent)
+				{
+					ImGui::BeginChild("##ScriptDropZone", ImVec2(-1, 80), true);
+					ImGui::TextWrapped("Drop Lua Script Here");
+					ImGui::TextDisabled("(or drag anywhere in Inspector)");
+
 					if (ImGui::BeginDragDropTarget())
 					{
 						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
 						{
 							const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
-							if (dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
+							if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
 							{
-								m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
-								Utils::log_info(std::format("Lua script attached: {}", dropped->path));
+								auto* newScript = gameObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
+								if (newScript)
+								{
+									Utils::log_info(std::format("Lua script attached: {}", dropped->path));
+								}
 							}
 						}
 						ImGui::EndDragDropTarget();
 					}
+					ImGui::EndChild();
+				}
+				else
+				{
+					std::string scriptPath = scriptComponent->getScriptPath();
+					std::filesystem::path path(scriptPath);
+					std::string fileName = path.filename().string();
+
+					ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Attached Script:");
+					ImGui::SameLine();
+					ImGui::Text("%s", fileName.c_str());
+
+					ImGui::TextDisabled("Full Path:");
+					ImGui::TextWrapped("%s", scriptPath.c_str());
+
+					ImGui::Spacing();
+
+					ImGui::BeginChild("##ScriptReplaceZone", ImVec2(-1, 60), true);
+					ImGui::TextWrapped("Drop new script to replace");
+
+					if (ImGui::BeginDragDropTarget())
+					{
+						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
+						{
+							const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
+							if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
+							{
+								gameObject->removeComponent<Engine::Scripting::LuaScriptComponent>();
+								auto* newScript = gameObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
+								if (newScript)
+								{
+									Utils::log_info(std::format("Lua script replaced: {}", dropped->path));
+								}
+							}
+						}
+						ImGui::EndDragDropTarget();
+					}
+					ImGui::EndChild();
 				}
 			}
-			else
+
+			if (!scriptComponent && ImGui::BeginDragDropTarget())
 			{
-				ImGui::Text("No object selected");
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
+				{
+					const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
+					if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
+					{
+						auto* newScript = gameObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
+						if (newScript)
+						{
+							Utils::log_info(std::format("Lua script attached (anywhere): {}", dropped->path));
+						}
+					}
+				}
+				ImGui::EndDragDropTarget();
 			}
 		}
-		ImGui::End();
+
+		ImGui::PopStyleColor();
+	}
+
+	void InspectorWindow::drawUITextProperties(Engine::EngineUI::UIText* text)
+	{
+		if (!text) return;
+
+		ImGui::SeparatorText("UIText Properties");
+
+		
+		ImGui::PushID(text); 
+
+		// Name
+		char nameBuffer[256];
+		strncpy_s(nameBuffer, text->getName().c_str(), sizeof(nameBuffer) - 1);
+		if (ImGui::InputText("##Name", nameBuffer, sizeof(nameBuffer)))
+		{
+			text->setName(nameBuffer);
+			text->markDirty();
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Name");
+
+		// Text content
+		char textBuffer[512];
+		strncpy_s(textBuffer, text->getText().c_str(), sizeof(textBuffer) - 1);
+		if (ImGui::InputTextMultiline("##Text", textBuffer, sizeof(textBuffer), ImVec2(-1, 60)))
+		{
+			text->setText(textBuffer);
+			text->markDirty();
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Text");
+
+		ImGui::Spacing();
+		ImGui::SeparatorText("Transform (3D World Space)");
+
+		// Position (x, y, z)
+		Math::Vector3 position = text->getPosition();
+		float pos[3] = { position.x, position.y, position.z };
+		if (ImGui::DragFloat3("##Position", pos, 0.1f))
+		{
+			text->setPosition(Math::Vector3(pos[0], pos[1], pos[2]));
+			text->markDirty();
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Position");
+
+		// Rotation (x, y, z) - Euler angles in degrees
+		Math::Vector3 rotation = text->getRotation();
+		float rot[3] = { rotation.x, rotation.y, rotation.z };
+		if (ImGui::DragFloat3("##Rotation", rot, 1.0f, -360.0f, 360.0f))
+		{
+			text->setRotation(Math::Vector3(rot[0], rot[1], rot[2]));
+			text->markDirty();
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Rotation");
+
+		// Scale (x, y, z)
+		Math::Vector3 scale = text->getScale();
+		float scl[3] = { scale.x, scale.y, scale.z };
+		if (ImGui::DragFloat3("##Scale", scl, 0.001f, 0.001f, 10.0f))
+		{
+			text->setScale(Math::Vector3(scl[0], scl[1], scl[2]));
+			text->markDirty();
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Scale");
+
+		ImGui::Spacing();
+		ImGui::SeparatorText("Text Style");
+
+		// Font Size
+		float fontSize = text->getFontSize();
+		if (ImGui::DragFloat("##FontSize", &fontSize, 1.0f, 8.0f, 128.0f))
+		{
+			text->setFontSize(fontSize);
+			text->markDirty();
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Font Size");
+
+		// Color
+		Math::Vector3 color = text->getColor();
+		float colorArray[3] = { color.x, color.y, color.z };
+		if (ImGui::ColorEdit3("##Color", colorArray))
+		{
+			text->setColor(Math::Vector3(colorArray[0], colorArray[1], colorArray[2]));
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Color");
+
+		// Alpha
+		float alpha = text->getAlpha();
+		if (ImGui::SliderFloat("##Alpha", &alpha, 0.0f, 1.0f))
+		{
+			text->setAlpha(alpha);
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("Alpha");
+
+		// Visibility
+		bool visible = text->isVisible();
+		if (ImGui::Checkbox("##Visible", &visible))
+		{
+			text->setVisible(visible);
+		}
+
+		ImGui::Spacing();
+
+		// Remove Component ボタン
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.1f, 0.1f, 1.0f));
+
+		if (ImGui::Button("Remove Component", ImVec2(150, 25)))
+		{
+			if (m_scene)
+			{
+				auto* selectedObject = m_scene->getSelectedObject();
+				if (selectedObject)
+				{
+					selectedObject->removeComponent<EngineUI::UIText>();
+					Utils::log_info(std::format("UIText removed from {}", selectedObject->getName()));
+				}
+			}
+		}
+
+		ImGui::PopID(); 
+
+		ImGui::Spacing();
+		ImGui::TextWrapped("Note: UIText is a 3D object in world space. "
+			"Position, rotation, and scale work the same as GameObjects. "
+			"Use different camera angles to view from different perspectives.");
 	}
 
 	void InspectorWindow::drawTransformComponent(Core::Transform* transform)
 	{
 		if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			
 			auto& pos = transform->getPosition();
 			float position[3] = { pos.x, pos.y, pos.z };
 			if (ImGui::DragFloat3("Position", position, 0.1f))
@@ -912,7 +1513,6 @@ namespace Editor::UI
 				transform->setPosition(Math::Vector3(position[0], position[1], position[2]));
 			}
 
-			
 			auto& rot = transform->getRotation();
 			float rotation[3] = { rot.x, rot.y, rot.z };
 			if (ImGui::DragFloat3("Rotation", rotation, 1.0f))
@@ -920,7 +1520,6 @@ namespace Editor::UI
 				transform->setRotation(Math::Vector3(rotation[0], rotation[1], rotation[2]));
 			}
 
-			
 			auto& scale = transform->getScale();
 			float scaleArray[3] = { scale.x, scale.y, scale.z };
 			if (ImGui::DragFloat3("Scale", scaleArray, 0.1f, 0.1f, 10.0f))
@@ -934,14 +1533,12 @@ namespace Editor::UI
 	{
 		if (ImGui::CollapsingHeader("Render Component", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-	
 			bool visible = renderComponent->isVisible();
 			if (ImGui::Checkbox("Visible", &visible))
 			{
 				renderComponent->setVisible(visible);
 			}
 
-	
 			const char* types[] = { "Triangle", "Cube" };
 			int currentType = static_cast<int>(renderComponent->getRenderableType());
 			if (ImGui::Combo("Type", &currentType, types, IM_ARRAYSIZE(types)))
@@ -953,6 +1550,225 @@ namespace Editor::UI
 			{
 				drawMaterialEditor(renderComponent);
 			}
+		}
+	}
+
+	void InspectorWindow::drawBoxColliderComponent(Physics::BoxCollider* collider)
+	{
+		if (ImGui::CollapsingHeader("Box Collider", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			// Is Trigger チェックボックス
+			bool isTrigger = collider->isTrigger();
+			if (ImGui::Checkbox("Is Trigger", &isTrigger))
+			{
+				collider->setTrigger(isTrigger);
+			}
+
+			// Center
+			auto center = collider->getCenter();
+			float centerArray[3] = { center.x, center.y, center.z };
+			if (ImGui::DragFloat3("Center", centerArray, 0.1f))
+			{
+				collider->setCenter(Math::Vector3(centerArray[0], centerArray[1], centerArray[2]));
+			}
+
+			// Size
+			auto size = collider->getSize();
+			float sizeArray[3] = { size.x, size.y, size.z };
+			if (ImGui::DragFloat3("Size", sizeArray, 0.1f, 0.01f, 100.0f))
+			{
+				collider->setSize(Math::Vector3(sizeArray[0], sizeArray[1], sizeArray[2]));
+			}
+
+			ImGui::Spacing();
+
+			// Remove Component ボタン
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.1f, 0.1f, 1.0f));
+
+			if (ImGui::Button("Remove Component", ImVec2(150, 25)))
+			{
+				if (m_scene)
+				{
+					auto* selectedObject = m_scene->getSelectedObject();
+					if (selectedObject)
+					{
+						selectedObject->removeComponent<Physics::BoxCollider>();
+						Utils::log_info(std::format("BoxCollider removed from {}", selectedObject->getName()));
+					}
+				}
+			}
+
+			ImGui::PopStyleColor(3);
+		}
+	}
+
+	void InspectorWindow::drawAudioComponent(Audio::AudioComponent* audioComponent)
+	{
+		if (ImGui::CollapsingHeader("Audio Component", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			// ファイルパス表示
+			std::string filepath = audioComponent->getFilePath();
+			if (!filepath.empty())
+			{
+				ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Audio File:");
+				ImGui::SameLine();
+
+				// ファイル名だけを表示
+				std::filesystem::path path(filepath);
+				std::string fileName = path.filename().string();
+				ImGui::Text("%s", fileName.c_str());
+
+				ImGui::TextDisabled("Full Path:");
+				ImGui::TextWrapped("%s", filepath.c_str());
+				ImGui::Spacing();
+			}
+			else
+			{
+				ImGui::TextDisabled("No audio file loaded");
+				ImGui::Spacing();
+			}
+
+			// ファイルドロップゾーン
+			ImGui::BeginChild("##AudioDropZone", ImVec2(-1, 80), true);
+			ImGui::TextWrapped("Drop WAV Audio File Here");
+			ImGui::TextDisabled("(Supported: .wav)");
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
+				{
+					const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
+					if (dropped)
+					{
+						std::string ext = std::filesystem::path(dropped->path).extension().string();
+						std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+						if (ext == ".wav")
+						{
+							auto loadResult = audioComponent->loadAudio(dropped->path);
+							if (loadResult)
+							{
+								Utils::log_info(std::format("Audio loaded: {}", dropped->path));
+							}
+							else
+							{
+								Utils::log_error(loadResult.error());
+							}
+						}
+						else
+						{
+							Utils::log_warning("Only .wav files are supported");
+						}
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+			ImGui::EndChild();
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// オーディオが読み込まれている場合のみコントロールを表示
+			if (!filepath.empty())
+			{
+				// 再生コントロール
+				ImGui::Text("Playback Controls");
+				ImGui::Separator();
+
+				bool isPlaying = audioComponent->isPlaying();
+				bool isPaused = audioComponent->isPaused();
+
+				ImGui::BeginDisabled(isPlaying && !isPaused);
+				if (ImGui::Button("Play", ImVec2(100, 30)))
+				{
+					audioComponent->play();
+				}
+				ImGui::EndDisabled();
+
+				ImGui::SameLine();
+
+				ImGui::BeginDisabled(!isPlaying || isPaused);
+				if (ImGui::Button("Pause", ImVec2(100, 30)))
+				{
+					audioComponent->pause();
+				}
+				ImGui::EndDisabled();
+
+				ImGui::SameLine();
+
+				ImGui::BeginDisabled(!isPaused);
+				if (ImGui::Button("Resume", ImVec2(100, 30)))
+				{
+					audioComponent->resume();
+				}
+				ImGui::EndDisabled();
+
+				if (ImGui::Button("Stop", ImVec2(-1, 30)))
+				{
+					audioComponent->stop();
+				}
+
+				ImGui::Spacing();
+
+				// ループ設定
+				bool loop = audioComponent->isLoop();
+				if (ImGui::Checkbox("Loop", &loop))
+				{
+					audioComponent->setLoop(loop);
+				}
+
+				// 音量設定
+				float volume = audioComponent->getVolume();
+				if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
+				{
+					audioComponent->setVolume(volume);
+				}
+
+				ImGui::Spacing();
+
+				// ステータス表示
+				ImGui::Text("Status:");
+				ImGui::SameLine();
+				if (isPlaying && !isPaused)
+				{
+					ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.4f, 1.0f), "Playing");
+				}
+				else if (isPaused)
+				{
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.2f, 1.0f), "Paused");
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Stopped");
+				}
+			}
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// Remove Component ボタン
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.1f, 0.1f, 1.0f));
+
+			if (ImGui::Button("Remove Component", ImVec2(150, 25)))
+			{
+				if (m_scene)
+				{
+					auto* selectedObject = m_scene->getSelectedObject();
+					if (selectedObject)
+					{
+						selectedObject->removeComponent<Audio::AudioComponent>();
+						Utils::log_info(std::format("AudioComponent removed from {}", selectedObject->getName()));
+					}
+				}
+			}
+
+			ImGui::PopStyleColor(3);
 		}
 	}
 
@@ -1000,7 +1816,6 @@ namespace Editor::UI
 				}
 			}
 
-			
 			if (currentMaterial)
 			{
 				ImGui::Separator();
@@ -1010,7 +1825,7 @@ namespace Editor::UI
 
 				if (ImGui::CollapsingHeader("PBR Properties", ImGuiTreeNodeFlags_DefaultOpen))
 				{
-					// === Albedo ===
+					// Albedo
 					if (ImGui::CollapsingHeader("Albedo", ImGuiTreeNodeFlags_DefaultOpen))
 					{
 						auto* renderMat = renderComponent ? renderComponent->getMaterial().get() : nullptr;
@@ -1022,25 +1837,21 @@ namespace Editor::UI
 						auto& props = renderMat->getProperties();
 						bool useTex = (props.useAlbedoTex != 0);
 
-						// テクスチャ使用フラグ
 						if (ImGui::Checkbox("Use Albedo Texture", &useTex)) {
 							props.useAlbedoTex = useTex ? 1 : 0;
 							if (!useTex) {
-								// テクスチャ不使用に切り替えたら外す（任意）
 								renderMat->removeTexture(Engine::Graphics::TextureType::Albedo);
 							}
 							renderMat->setDirty();
-							(void)renderMat->updateConstantBuffer(); // すぐ反映
+							(void)renderMat->updateConstantBuffer();
 						}
 
-						// 左: ドロップゾーン / 右: カラー
 						ImGui::BeginGroup();
 						{
 							ImVec2 slotSize(72, 72);
 							ImGui::TextUnformatted("Albedo Map");
 							ImGui::BeginChild("##AlbedoDropZone", slotSize, true, ImGuiWindowFlags_NoScrollbar);
 
-							// プレビュー
 							if (renderMat->hasTexture(Engine::Graphics::TextureType::Albedo)) {
 								ImGui::TextWrapped("Assigned");
 							}
@@ -1048,18 +1859,17 @@ namespace Editor::UI
 								ImGui::TextWrapped("Drop Texture Here");
 							}
 
-							//Drag&Drop 受け口
 							if (ImGui::BeginDragDropTarget()) {
 								if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET")) {
 									const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
-									if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Texture)) { // typeチェック
+									if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Texture)) {
 										if (m_textureManager) {
-											auto tex = m_textureManager->loadTexture(dropped->path, /*mips*/true, /*sRGB*/true);
+											auto tex = m_textureManager->loadTexture(dropped->path, true, true);
 											if (tex) {
 												renderMat->setTexture(Engine::Graphics::TextureType::Albedo, tex);
-												props.useAlbedoTex = 1;                   // フラグON
+												props.useAlbedoTex = 1;
 												renderMat->setDirty();
-												renderMat->updateConstantBuffer();        // すぐ反映
+												renderMat->updateConstantBuffer();
 											}
 										}
 									}
@@ -1069,7 +1879,6 @@ namespace Editor::UI
 
 							ImGui::EndChild();
 
-							// クリアボタン
 							if (ImGui::SmallButton("Clear##Albedo")) {
 								renderMat->removeTexture(Engine::Graphics::TextureType::Albedo);
 								props.useAlbedoTex = 0;
@@ -1081,7 +1890,6 @@ namespace Editor::UI
 
 						ImGui::SameLine();
 
-						// カラー編集（テクスチャ使用時は無効化）
 						ImGui::BeginGroup();
 						{
 							ImGui::TextUnformatted("Base Color");
@@ -1097,33 +1905,27 @@ namespace Editor::UI
 						ImGui::EndGroup();
 					}
 
-
-					// ==== Metallic ====
 					if (ImGui::SliderFloat("Metallic", &properties.metallic, 0.0f, 1.0f))
 					{
 						changed = true;
 					}
 
-					// ==== Roughness ====
 					if (ImGui::SliderFloat("Roughness", &properties.roughness, 0.0f, 1.0f))
 					{
 						changed = true;
 					}
 
-					// ==== AO ====
 					if (ImGui::SliderFloat("AO", &properties.ao, 0.0f, 1.0f))
 					{
 						changed = true;
 					}
 
-					// ==== Alpha ====
 					if (ImGui::SliderFloat("Alpha", &properties.alpha, 0.0f, 1.0f))
 					{
 						changed = true;
 					}
 				}
 
-				// エミッション
 				if (ImGui::CollapsingHeader("Emission"))
 				{
 					float emissive[3] = { properties.emissive.x, properties.emissive.y, properties.emissive.z };
@@ -1139,7 +1941,6 @@ namespace Editor::UI
 					}
 				}
 
-				//Texture
 				if (ImGui::CollapsingHeader("Textures"))
 				{
 					drawTextureSlot("Albedo", Graphics::TextureType::Albedo, currentMaterial);
@@ -1151,7 +1952,6 @@ namespace Editor::UI
 					drawTextureSlot("Height", Graphics::TextureType::Height, currentMaterial);
 				}
 
-				// UV調整ImGui
 				if (ImGui::CollapsingHeader("UV Settings"))
 				{
 					float uvScale[2] = { properties.uvScale.x, properties.uvScale.y };
@@ -1177,38 +1977,6 @@ namespace Editor::UI
 		}
 	}
 
-	void InspectorWindow::drawScriptComponent(Scripting::LuaScriptComponent* luaScriptComponent)
-	{
-		if (ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			std::string fileName = luaScriptComponent->getScriptPath();
-
-			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Attached Script:");
-			ImGui::SameLine();
-			ImGui::Text("%s", fileName.c_str());
-
-			// 再アタッチ用のドロップ領域
-			ImGui::Dummy(ImVec2(200, 30));
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET"))
-				{
-					const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
-					if (dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
-					{
-						m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
-						Utils::log_info(std::format("Lua script re-attached: {}", dropped->path));
-					}
-				}
-				ImGui::EndDragDropTarget();
-			}
-		}
-	}
-
-
-
-
-
 	void InspectorWindow::drawTextureSlot(const char* name,
 		Graphics::TextureType textureType,
 		std::shared_ptr<Graphics::Material> material)
@@ -1216,7 +1984,7 @@ namespace Editor::UI
 		ImGui::PushID(static_cast<int>(textureType));
 
 		auto currentTexture = material->getTexture(textureType);
-		auto properties = material->getProperties(); // 色を編集するため取得
+		auto properties = material->getProperties();
 		bool changed = false;
 
 		ImGui::Text("%s:", name);
@@ -1224,7 +1992,6 @@ namespace Editor::UI
 
 		if (currentTexture)
 		{
-			// --- 既存処理: テクスチャがある場合 ---
 			ImGui::Button(currentTexture->getDesc().debugName.c_str(), ImVec2(150, 30));
 
 			if (ImGui::IsItemHovered())
@@ -1262,10 +2029,8 @@ namespace Editor::UI
 		}
 		else
 		{
-			// --- テクスチャが無い場合 ---
 			if (textureType == Graphics::TextureType::Albedo)
 			{
-				// Albedo用: カラーピッカーを表示
 				float albedo[3] = { properties.albedo.x, properties.albedo.y, properties.albedo.z };
 				if (ImGui::ColorEdit3("Albedo Color", albedo))
 				{
@@ -1275,7 +2040,6 @@ namespace Editor::UI
 			}
 			else
 			{
-				// 他のスロットはプレースホルダー
 				ImGui::Button("Drag texture here", ImVec2(150, 30));
 			}
 
@@ -1305,5 +2069,6 @@ namespace Editor::UI
 
 		ImGui::PopID();
 	}
+
 
 }

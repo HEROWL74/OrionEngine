@@ -13,8 +13,11 @@
 #include "engine/Graphics/SceneSerializer.hpp"
 #include "engine/Graphics/Material.hpp"
 #include "engine/Graphics/Texture.hpp"
+#include "engine/Graphics/SplashScreen.hpp"
 #include "engine/Scripting/ScriptManager.hpp"
 #include "engine/Scripting/LuaBindings.hpp"
+#include "engine/Input/InputSystem.hpp"
+#include "engine/UI/UITextRenderer.hpp" 
 #include <wrl.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -32,6 +35,8 @@ namespace Runtime
 
 	private:
 		bool m_running = true;
+		bool m_showingSplash = true;
+		bool m_pendingReloadScene = false;
 
 		// ウィンドウとデバイス
 		Engine::Core::Window m_window;
@@ -41,6 +46,13 @@ namespace Runtime
 		Engine::Graphics::Scene m_scene;
 		Engine::Graphics::Camera m_camera;
 		Engine::Graphics::Skybox m_skybox;
+		Engine::Graphics::SplashScreen m_splashScreen;
+
+		// UIText
+		std::unique_ptr<Engine::EngineUI::UITextRenderer> m_uiTextRenderer;
+
+		// Luabind
+		std::unique_ptr<Engine::Scripting::LuaBindings> m_luaBindings;
 
 		// マネージャー類
 		std::unique_ptr<Engine::Graphics::ShaderManager> m_shaderManager;

@@ -21,7 +21,9 @@ namespace Editor::UI
             drawToolbar();
             ImGui::Separator();
 
-         
+            // 外部ファイルのドラッグ&ドロップを受け付ける
+            handleExternalFileDrop();
+
             if (ImGui::BeginChild("AssetArea", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())))
             {
                 if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0)) {
@@ -29,17 +31,17 @@ namespace Editor::UI
                 }
                 if (m_showGrid) drawAssetGrid();
                 else            drawAssetList();
-                 
+
                 drawContextMenu();
             }
             ImGui::EndChild();
 
-            // ここで一括処理
+            // 保留中のパス変更を一括処理
             if (!m_pendingPathChange.empty()) {
                 setProjectPath(m_pendingPathChange);
                 m_pendingPathChange.clear();
             }
- 
+
             drawAssetPreview();
         }
         ImGui::End();
@@ -74,12 +76,11 @@ namespace Editor::UI
                 m_assets.push_back(asset);
             }
 
-            // 蜷榊燕縺ｧ繧ｽ繝ｼ繝・
             std::sort(m_assets.begin(), m_assets.end(),
                 [](const AssetInfo& a, const AssetInfo& b) {
                     if (a.type != b.type)
                     {
-                        return a.type < b.type; // 繝輔か繝ｫ繝繧貞・縺ｫ
+                        return a.type < b.type;
                     }
                     return a.name < b.name;
                 });
@@ -92,7 +93,6 @@ namespace Editor::UI
 
     void ProjectWindow::drawToolbar()
     {
-
         char searchBuffer[256];
         strncpy_s(searchBuffer, m_searchFilter.c_str(), sizeof(searchBuffer) - 1);
         if (ImGui::InputText("Search", searchBuffer, sizeof(searchBuffer)))
@@ -109,7 +109,6 @@ namespace Editor::UI
 
         ImGui::SameLine();
 
-
         if (ImGui::Button("Up"))
         {
             std::filesystem::path parent = std::filesystem::path(m_projectPath).parent_path();
@@ -118,8 +117,8 @@ namespace Editor::UI
                 setProjectPath(parent.string());
             }
         }
-        ImGui::SameLine();
 
+        ImGui::SameLine();
 
         if (ImGui::Button("Refresh"))
         {
@@ -127,7 +126,6 @@ namespace Editor::UI
         }
 
         ImGui::SameLine();
-
 
         if (m_showGrid)
         {
@@ -149,28 +147,25 @@ namespace Editor::UI
 
             ImGui::PushID(index);
 
-         
             if (index > 0 && (index % columnCount) != 0)
             {
                 ImGui::SameLine();
             }
 
-          
             ImGui::BeginGroup();
 
-            
             bool isSelected = (m_selectedAsset == &asset);
             if (isSelected)
             {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
             }
+
+            // アイコン表示
             if (asset.type == AssetInfo::Type::Folder) {
-                Engine::Utils::log_info("Drawing folder icon, ID=" + std::to_string((uint64_t)m_folderIconID));
                 if (m_folderIconID)
                     ImGui::Image(m_folderIconID, ImVec2(m_iconSize, m_iconSize));
             }
             else if (asset.extension == ".lua") {
-                Engine::Utils::log_info("Drawing lua icon, ID=" + std::to_string((uint64_t)m_luaIconID));
                 if (m_luaIconID)
                     ImGui::Image(m_luaIconID, ImVec2(m_iconSize, m_iconSize));
             }
@@ -179,18 +174,18 @@ namespace Editor::UI
                 ImGui::Button("##icon", ImVec2(m_iconSize, m_iconSize));
             }
 
-
             if (isSelected)
             {
                 ImGui::PopStyleColor();
             }
 
+            // ダブルクリック処理
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
             {
-                std::string clickedPath = asset.path.string(); // ← コピーしておく
+                std::string clickedPath = asset.path.string();
 
                 if (asset.type == AssetInfo::Type::Folder) {
-                    m_pendingPathChange = clickedPath; // 次の処理にまわす
+                    m_pendingPathChange = clickedPath;
                 }
                 else if (asset.type == AssetInfo::Type::Script && !asset.renaming) {
                     if (asset.extension == ".lua")
@@ -200,8 +195,15 @@ namespace Editor::UI
                 }
             }
 
-        
+            // クリック選択
+            if (ImGui::IsItemClicked())
+            {
+                m_selectedAsset = &asset;
+                loadAssetPreview(asset);
+            }
+
             handleDragDrop(asset);
+
             // 名前部分の描画
             if (asset.renaming)
             {
@@ -231,7 +233,7 @@ namespace Editor::UI
                             in.close();
 
                             std::string content = buffer.str();
-                            std::string oldClassName = asset.path.stem().string(); // リネーム前の名前
+                            std::string oldClassName = asset.path.stem().string();
                             std::string newClassName = newPath.stem().string();
 
                             // 簡易置換
@@ -256,8 +258,7 @@ namespace Editor::UI
                     }
                 }
 
-
-                // Escでキャンセルできるようにする（任意）
+                // Escでキャンセル
                 if (ImGui::IsItemDeactivatedAfterEdit() && !ImGui::IsItemActive())
                 {
                     asset.renaming = false;
@@ -269,7 +270,6 @@ namespace Editor::UI
                 ImGui::TextWrapped("%s", asset.name.c_str());
                 ImGui::PopTextWrapPos();
             }
-
 
             ImGui::EndGroup();
 
@@ -332,9 +332,6 @@ namespace Editor::UI
                     }
                 }
 
-
-
-
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
                 {
                     std::string clickedPath = asset.path.string();
@@ -350,10 +347,8 @@ namespace Editor::UI
                     }
                 }
 
-             
                 handleDragDrop(asset);
 
-      
                 ImGui::TableNextColumn();
                 const char* typeStr = "Unknown";
                 switch (asset.type)
@@ -362,10 +357,11 @@ namespace Editor::UI
                 case AssetInfo::Type::Texture: typeStr = "Texture"; break;
                 case AssetInfo::Type::Material: typeStr = "Material"; break;
                 case AssetInfo::Type::Shader: typeStr = "Shader"; break;
+                case AssetInfo::Type::Audio: typeStr = "Audio"; break;
+                case AssetInfo::Type::Script: typeStr = "Script"; break;
                 }
                 ImGui::Text("%s", typeStr);
 
-          
                 ImGui::TableNextColumn();
                 if (asset.type != AssetInfo::Type::Folder)
                 {
@@ -431,9 +427,9 @@ namespace Editor::UI
         if (ImGui::BeginPopupContextWindow("ProjectWindowContext",
             ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
         {
-
             if (ImGui::BeginMenu("Create"))
             {
+                // Luaスクリプト作成
                 if (ImGui::MenuItem("Lua Script"))
                 {
                     std::string newScriptPath = generateUniqueScriptPath();
@@ -457,6 +453,7 @@ namespace Editor::UI
                     }
                 }
 
+                // C++スクリプト作成
                 if (ImGui::MenuItem("C++ Script")) {
                     std::string path = "assets/scripts/NewCppScript";
                     path = Engine::Scripting::CppScriptUtility::normalizePath(path);
@@ -476,15 +473,27 @@ namespace Editor::UI
                     }
                 }
 
+                // フォルダ作成
+                if (ImGui::MenuItem("Folder"))
+                {
+                    createNewFolder();
+                }
 
                 ImGui::EndMenu();
             }
 
-
+            // 削除
             if (m_selectedAsset && ImGui::MenuItem("Delete"))
             {
                 try {
-                    std::filesystem::remove(m_selectedAsset->path);
+                    if (m_selectedAsset->type == AssetInfo::Type::Folder)
+                    {
+                        std::filesystem::remove_all(m_selectedAsset->path);
+                    }
+                    else
+                    {
+                        std::filesystem::remove(m_selectedAsset->path);
+                    }
                     Engine::Utils::log_info(std::format("Deleted asset: {}", m_selectedAsset->path.string()));
                     refreshAssets();
                     m_selectedAsset = nullptr;
@@ -493,11 +502,105 @@ namespace Editor::UI
                     Engine::Utils::log_warning("Failed to delete asset");
                 }
             }
+
+            // リネーム
+            if (m_selectedAsset && ImGui::MenuItem("Rename"))
+            {
+                m_selectedAsset->renaming = true;
+                strncpy_s(m_selectedAsset->renameBuffer, m_selectedAsset->name.c_str(),
+                    sizeof(m_selectedAsset->renameBuffer));
+            }
+
             ImGui::EndPopup();
         }
-        
     }
 
+    void ProjectWindow::handleExternalFileDrop()
+    {
+        // ImGuiウィンドウ全体でドロップを受け付ける
+        if (ImGui::BeginDragDropTarget())
+        {
+            // Windowsの外部ファイルドロップ
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EXTERNAL_FILE"))
+            {
+                // ペイロードはファイルパス文字列
+                const char* droppedPath = static_cast<const char*>(payload->Data);
+
+                if (droppedPath != nullptr)
+                {
+                    std::filesystem::path sourcePath(droppedPath);
+
+                    if (std::filesystem::exists(sourcePath))
+                    {
+                        try
+                        {
+                            std::filesystem::path destPath = std::filesystem::path(m_projectPath) / sourcePath.filename();
+
+                            // 同名ファイルがある場合は番号を付ける
+                            int counter = 1;
+                            std::filesystem::path finalPath = destPath;
+                            while (std::filesystem::exists(finalPath))
+                            {
+                                std::string stem = destPath.stem().string();
+                                std::string ext = destPath.extension().string();
+                                finalPath = destPath.parent_path() / (stem + "_" + std::to_string(counter) + ext);
+                                counter++;
+                            }
+
+                            // ファイルをコピー
+                            std::filesystem::copy(sourcePath, finalPath,
+                                std::filesystem::copy_options::overwrite_existing);
+
+                            Engine::Utils::log_info(std::format("File imported: {} -> {}",
+                                sourcePath.string(), finalPath.string()));
+
+                            refreshAssets();
+                        }
+                        catch (const std::exception& e)
+                        {
+                            Engine::Utils::log_error(Engine::Utils::make_error(
+                                Engine::Utils::ErrorType::FileI0,
+                                std::format("Failed to import file: {}", e.what())
+                            ));
+                        }
+                    }
+                }
+            }
+
+            ImGui::EndDragDropTarget();
+        }
+    }
+
+    void ProjectWindow::createNewFolder()
+    {
+        std::string newFolderPath = generateUniqueFolderPath();
+
+        try
+        {
+            std::filesystem::create_directory(newFolderPath);
+            Engine::Utils::log_info(std::format("Folder created: {}", newFolderPath));
+            refreshAssets();
+
+            // 作成したフォルダを選択してリネームモードに
+            for (auto& asset : m_assets)
+            {
+                if (asset.path == newFolderPath)
+                {
+                    m_selectedAsset = &asset;
+                    asset.renaming = true;
+                    strncpy_s(asset.renameBuffer, asset.name.c_str(), sizeof(asset.renameBuffer));
+                    break;
+                }
+            }
+        }
+        catch (const std::exception& e)
+        {
+            Engine::Utils::log_error(Engine::Utils::make_error(
+                Engine::Utils::ErrorType::FileI0,
+                std::format("Failed to create folder: {}", e.what())
+            ));
+        }
+    }
 
     AssetInfo::Type ProjectWindow::getAssetType(const std::filesystem::path& path)
     {
@@ -520,6 +623,10 @@ namespace Editor::UI
         else if (ext == ".hlsl")
         {
             return AssetInfo::Type::Shader;
+        }
+        else if (ext == ".wav")
+        {
+            return AssetInfo::Type::Audio;
         }
         else if (ext == ".lua" || ext == ".cpp")
         {
@@ -571,7 +678,7 @@ namespace Editor::UI
             strncpy_s(payload.path, s.c_str(), sizeof(payload.path) - 1);
             payload.type = static_cast<int>(asset.type);
 
-            //POD を渡す（ImGui 内部でコピーされるのでローカルでOK）
+            // PODを渡す（ImGui内部でコピーされるのでローカルでOK）
             ImGui::SetDragDropPayload("ASSET", &payload, sizeof(payload));
 
             ImGui::Text("Dragging: %s", asset.name.c_str());
@@ -597,6 +704,26 @@ namespace Editor::UI
         } while (std::filesystem::exists(scriptPath.string() + ".lua"));
 
         return scriptPath.string(); // 拡張子なしで返す
+    }
+
+    std::string ProjectWindow::generateUniqueFolderPath()
+    {
+        int counter = 0;
+        std::string baseName = "NewFolder";
+        std::string folderName;
+        std::filesystem::path folderPath;
+
+        do
+        {
+            folderName = (counter == 0)
+                ? baseName
+                : baseName + " " + std::to_string(counter);
+
+            folderPath = std::filesystem::path(m_projectPath) / folderName;
+            counter++;
+        } while (std::filesystem::exists(folderPath));
+
+        return folderPath.string();
     }
 
     void ProjectWindow::setTextureManager(Engine::Graphics::TextureManager* textureManager)

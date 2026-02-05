@@ -1,7 +1,7 @@
 // src/editor/UI/BuildWindow.hpp
 #pragma once
 
-#include "editor/Builds/BuildSystem.hpp"
+#include "buildworker/BuildSystem.hpp"
 #include <vector>
 #include <string>
 #include "../UI/ImGuiManager.hpp"
@@ -36,6 +36,13 @@ namespace Editor::UI
         void addLogEntry(BuildLogEntry::Type type, const std::string& message);
         void onBuildProgressUpdate(const Build::BuildResult& result);
         static ImVec4 getLogColor(BuildLogEntry::Type type);
+
+        std::filesystem::path getExecutableDir()
+        {
+            wchar_t path[MAX_PATH];
+            GetModuleFileNameW(nullptr, path, MAX_PATH);
+            return std::filesystem::path(path).parent_path();
+        }
 
         bool m_isVisible = false;
         Build::BuildSystem* m_buildSystem = nullptr;

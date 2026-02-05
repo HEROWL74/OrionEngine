@@ -9,6 +9,8 @@
 #include "engine/Graphics/Skybox.hpp"
 #include "engine/Utils/Common.hpp"
 #include "engine/Utils/RenderContext.hpp"
+#include "engine/UI/UIComponent.hpp"
+#include "engine/UI/UITextRenderer.hpp"
 
 namespace Editor::UI
 {
@@ -27,11 +29,19 @@ namespace Editor::UI
 		Graphics::RenderTarget* getRenderTarget() const;
 
 		void setSkybox(Graphics::Skybox* skybox) { m_skybox = skybox; }
+		void setScene(Graphics::Scene* scene) { m_scene = scene; }
+		void setUITextRenderer(Engine::EngineUI::UITextRenderer* renderer)
+		{
+			m_uiTextRenderer = renderer;
+		}
 
 	private:
 		Graphics::Device* m_device = nullptr;
 		std::unique_ptr<Graphics::RenderTarget> m_renderTarget;
 		Graphics::Skybox* m_skybox = nullptr;
+		Engine::EngineUI::UITextRenderer* m_uiTextRenderer = nullptr;
+
+		Graphics::Scene* m_scene;
 
 		uint32_t m_width = 0;
 		uint32_t m_height = 0;

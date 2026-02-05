@@ -2,7 +2,7 @@
 #include <d3dcompiler.h>
 #include <DirectXTex.h>
 #include <format>
-#include "../ThirdParty/d3dx12.h"
+#include <directx/d3dx12.h>
 
 namespace Engine::Graphics
 {

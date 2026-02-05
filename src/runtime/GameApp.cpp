@@ -1,6 +1,8 @@
-// src/runtime/GameApp.cpp
+ï»¿// src/runtime/GameApp.cpp
 #include "GameApp.hpp"
+#include "engine/Utils/RenderContext.hpp"  
 #include "engine/Core/Window.hpp"
+#include "engine/Graphics/ActiveScene.hpp"
 #include <format>
 
 namespace Runtime
@@ -9,7 +11,7 @@ namespace Runtime
 	{
 		Engine::Utils::log_info("Initializing Runtime Game...");
 
-		// ƒEƒBƒ“ƒhƒE‚Ìì¬
+		// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ä½œæˆ
 		Engine::Core::WindowSettings settings{};
 		settings.title = L"Orion Game";
 		settings.width = 1280;
@@ -31,7 +33,7 @@ namespace Runtime
 
 		m_window.show(nCmdShow);
 
-		// DirectX‰Šú‰»
+		// DirectXåˆæœŸåŒ–
 		auto d3dResult = initD3D();
 		if (!d3dResult)
 		{
@@ -162,9 +164,9 @@ namespace Runtime
 	{
 		Engine::Utils::log_info("Initializing DirectX 12...");
 
-		// ƒfƒoƒCƒX‰Šú‰»
+		// ãƒ‡ãƒã‚¤ã‚¹åˆæœŸåŒ–
 		Engine::Graphics::DeviceSettings deviceSettings{
-			.enableDebugLayer = false,  // Runtime‚Å‚ÍƒfƒoƒbƒOƒŒƒCƒ„[ƒIƒt
+			.enableDebugLayer = false,  // Runtimeã§ã¯ãƒ‡ãƒãƒƒã‚°ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚ªãƒ•
 			.enableGpuValidation = false,
 			.minFeatureLevel = D3D_FEATURE_LEVEL_11_0,
 			.preferHighPerformanceAdapter = true
@@ -173,7 +175,7 @@ namespace Runtime
 		auto deviceResult = m_device.initialize(deviceSettings);
 		if (!deviceResult) return deviceResult;
 
-		// DirectXƒŠƒ\[ƒXì¬
+		// DirectXãƒªã‚½ãƒ¼ã‚¹ä½œæˆ
 		auto queueResult = createCommandQueue();
 		if (!queueResult) return queueResult;
 
@@ -192,45 +194,111 @@ namespace Runtime
 		auto syncResult = createSyncObjects();
 		if (!syncResult) return syncResult;
 
-		// ShaderManager‰Šú‰»
+		// ShaderManageråˆæœŸåŒ–
 		m_shaderManager = std::make_unique<Engine::Graphics::ShaderManager>();
 		auto shaderResult = m_shaderManager->initialize(&m_device);
 		if (!shaderResult) return shaderResult;
 
-		// Skybox‰Šú‰»
+		// SkyboxåˆæœŸåŒ–
 		auto skyboxResult = m_skybox.initialize(&m_device, m_shaderManager.get());
 		if (!skyboxResult) return skyboxResult;
 
-		// TextureManager‰Šú‰»
+		// TextureManageråˆæœŸåŒ–
 		auto textureResult = m_textureManager.initialize(&m_device);
 		if (!textureResult) return textureResult;
 
-		// MaterialManager‰Šú‰»
+		// Splash ScreenåˆæœŸåŒ–
+		Engine::Utils::log_info("Initializing Splash Screen...");
+		auto splashResult = m_splashScreen.initialize(&m_device, m_shaderManager.get(), &m_textureManager);
+		if (!splashResult)
+		{
+			Engine::Utils::log_warning("Failed to initialize splash screen, continuing anyway");
+			m_showingSplash = false;
+		}
+		else
+		{
+			Engine::Utils::log_info("Splash Screen initialized successfully");
+		}
+
+		// MaterialManageråˆæœŸåŒ–
 		auto materialResult = m_materialManager.initialize(&m_device);
 		if (!materialResult) return materialResult;
 
-		// Scene‰Šú‰»
+		// SceneåˆæœŸåŒ–
 		auto sceneResult = m_scene.initialize(&m_device);
 		if (!sceneResult) return sceneResult;
 
-		// Lua‰Šú‰»
+		Engine::Graphics::setActiveScene(&m_scene);
+		Engine::Utils::log_info("Active scene set in GameApp");
+
+		// UITextRendereråˆæœŸåŒ–
+		Engine::Utils::log_info("Initializing UITextRenderer...");
+		m_uiTextRenderer = std::make_unique<Engine::EngineUI::UITextRenderer>();
+		auto uiTextResult = m_uiTextRenderer->initialize(&m_device, m_shaderManager.get());
+		if (!uiTextResult)
+		{
+			Engine::Utils::log_error(uiTextResult.error());
+			return uiTextResult;
+		}
+		Engine::Utils::log_info("UITextRenderer initialized successfully");
+
+		// InputSystemåˆæœŸåŒ–
+		Engine::Utils::log_info("Initializing InputSystem...");
+		auto* inputManager = m_window.getInputManager();
+		if (!inputManager || !inputManager->isInitialized())
+		{
+			return std::unexpected(Engine::Utils::make_error(
+				Engine::Utils::ErrorType::Unknown,
+				"InputManager not initialized"));
+		}
+		Engine::Input::InputSystem::get().setInputManager(inputManager);
+		inputManager->resetMouseDelta();
+		Engine::Utils::log_info("InputSystem initialized successfully");
+
+		// GPUåŒæœŸã—ã¦ã‹ã‚‰Luaå´ã®åˆæœŸåŒ–ã‚’é–‹å§‹
+		m_device.waitForGpu();
+
+		// LuaBindings + ScriptManageråˆæœŸåŒ–
+		m_luaBindings = std::make_unique<Engine::Scripting::LuaBindings>();
+
 		auto& scriptMgr = Engine::Scripting::ScriptManager::get();
 		scriptMgr.initialize();
 
-		// ƒoƒCƒ“ƒfƒBƒ“ƒO“o˜^(C++ƒNƒ‰ƒX‚ğLua‚ÉŒöŠJ)
-		Engine::Scripting::registerBindings(scriptMgr.getLuaState());
+		auto& lua = scriptMgr.getLuaState();
 
-		// ƒV[ƒ“‚ğ“Ç‚İ‚İ
+		// ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ç™»éŒ²ã‚’é–¢æ•°åŒ–ï¼ˆreloadAllæ™‚ã«ã‚‚å†ç™»éŒ²ã•ã‚Œã‚‹ãŸã‚ï¼‰
+		auto registerAllBindings = [this](sol::state& lua) {
+			// Engine API
+			m_luaBindings->registerBindings(lua);
+
+			// Editor ãƒ†ãƒ¼ãƒ–ãƒ«
+			lua["Editor"] = lua.create_table();
+
+			lua["Editor"]["restartGame"] = [this]() {
+				Engine::Utils::log_info("Editor.restartGame() requested - scheduling for next frame");
+				m_pendingReloadScene = true;
+				};
+			};
+
+		// åˆå›ç™»éŒ²
+		registerAllBindings(lua);
+
+		// reloadAll()æ™‚ã®å†ç™»éŒ²ç”¨ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯è¨­å®š
+		scriptMgr.setBindingCallback(registerAllBindings);
+
+		// ã‚·ãƒ¼ãƒ³ã‚’èª­ã¿è¾¼ã¿
 		auto loadResult = loadScene();
 		if (!loadResult) return loadResult;
 
-		// ƒJƒƒ‰‰Šú‰»iGameCamera‚Ìİ’èj
+
+
+		// ã‚«ãƒ¡ãƒ©åˆæœŸåŒ–
 		const auto [width, height] = m_window.getClientSize();
 		m_camera.setPerspective(45.0f, static_cast<float>(width) / height, 0.1f, 100.0f);
 		m_camera.setPosition({ 0.0f, 5.0f, 8.0f });
 		m_camera.lookAt({ 0.0f, 0.0f, 0.0f });
 
-		// ƒV[ƒ“ŠJn
+		// ã‚·ãƒ¼ãƒ³é–‹å§‹ï¼ˆå…¨ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®onStartã‚’å®Ÿè¡Œï¼‰
 		m_scene.start();
 
 		Engine::Utils::log_info("DirectX 12 initialized successfully!");
@@ -241,7 +309,7 @@ namespace Runtime
 	{
 		Engine::Utils::log_info("Loading scene...");
 
-		// default.scene‚ğ“Ç‚İ‚İ
+		// default.sceneã‚’èª­ã¿è¾¼ã¿
 		std::string scenePath = "assets/scenes/default.scene";
 
 		auto result = m_sceneSerializer.loadScene(
@@ -415,23 +483,61 @@ namespace Runtime
 		return {};
 	}
 
+	// GameApp.cpp â€” update()
 	void GameApp::update()
 	{
 		updateDeltaTime();
 
-		// Lua‚Ì•ÏXƒ`ƒFƒbƒN
+		if (m_showingSplash)
+		{
+			m_showingSplash = m_splashScreen.update(m_deltaTime);
+			return;
+		}
+
+		// é…å»¶å®Ÿè¡Œ: Luaã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ãŒå®Œå…¨ã«æˆ»ã£ã¦ãã¦ã‹ã‚‰å®Ÿè¡Œ
+		if (m_pendingReloadScene)
+		{
+			m_pendingReloadScene = false;
+
+			Engine::Utils::log_info("Executing pending reloadScene...");
+
+			m_device.waitForGpu();
+
+			m_scene.clear();
+
+			Engine::Scripting::ScriptManager::get().reloadAll();
+
+			auto result = loadScene();
+			if (result)
+			{
+				Engine::Utils::log_info("Scene reloaded successfully");
+				m_scene.start();
+			}
+			else
+			{
+				Engine::Utils::log_error(result.error());
+			}
+
+			return; // ã“ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã®æ›´æ–°ã¯ã‚¹ã‚­ãƒƒãƒ—
+		}
+
 		Engine::Scripting::ScriptManager::get().checkForUpdates();
-		// ƒV[ƒ“‚ÌXV
+
 		m_scene.update(m_deltaTime);
 		m_scene.lateUpdate(m_deltaTime);
 	}
 
 	void GameApp::render()
 	{
+		if (m_uiTextRenderer)
+		{
+			m_uiTextRenderer->beginFrame();
+		}
+
 		m_commandAllocator->Reset();
 		m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
-		// ƒŠƒ\[ƒXƒoƒŠƒA: PRESENT -> RENDER_TARGET
+		// ãƒªã‚½ãƒ¼ã‚¹ãƒãƒªã‚¢: PRESENT -> RENDER_TARGET
 		D3D12_RESOURCE_BARRIER barrier{};
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier.Transition.pResource = m_renderTargets[m_frameIndex].Get();
@@ -440,7 +546,7 @@ namespace Runtime
 		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 		m_commandList->ResourceBarrier(1, &barrier);
 
-		// ƒŒƒ“ƒ_[ƒ^[ƒQƒbƒgİ’è
+		// ãƒ¬ãƒ³ãƒ€ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆè¨­å®š
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_rtvHeap->GetCPUDescriptorHandleForHeapStart();
 		const UINT rtvDescriptorSize = m_device.getDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		rtvHandle.ptr += m_frameIndex * rtvDescriptorSize;
@@ -449,12 +555,12 @@ namespace Runtime
 
 		m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
-		// ƒNƒŠƒA
+		// ã‚¯ãƒªã‚¢
 		const float clearColor[] = { 0.1f, 0.1f, 0.15f, 1.0f };
 		m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 		m_commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-		// ƒrƒ…[ƒ|[ƒgİ’è
+		// ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆè¨­å®š
 		const auto [width, height] = m_window.getClientSize();
 		D3D12_VIEWPORT viewport{};
 		viewport.Width = static_cast<float>(width);
@@ -469,13 +575,44 @@ namespace Runtime
 		m_commandList->RSSetViewports(1, &viewport);
 		m_commandList->RSSetScissorRects(1, &scissorRect);
 
-		// Skybox•`‰æ
-		m_skybox.render(m_commandList.Get(), m_camera);
+		if (m_showingSplash)
+		{
+			m_splashScreen.render(m_commandList.Get());
+		}
+		else
+		{
+			// Skybox
+			m_skybox.render(m_commandList.Get(), m_camera);
 
-		// ƒV[ƒ“•`‰æ
-		m_scene.render(m_commandList.Get(), m_camera, m_frameIndex);
+			// Scene
+			m_scene.render(m_commandList.Get(), m_camera, m_frameIndex);
 
-		// ƒŠƒ\[ƒXƒoƒŠƒA: RENDER_TARGET -> PRESENT
+			// UI
+			if (m_uiTextRenderer)
+			{
+				Engine::Utils::RenderContext context;
+				context.commandList = m_commandList.Get();
+				context.frameIndex = m_frameIndex;
+
+				auto uiTexts = m_scene.getUITexts();
+
+				for (auto* text : uiTexts)
+				{
+					if (text && text->isVisible())
+					{
+						m_uiTextRenderer->draw(
+							context,
+							*text,
+							width,
+							height,
+							&m_camera
+						);
+					}
+				}
+			}
+		}
+
+		// ãƒªã‚½ãƒ¼ã‚¹ãƒãƒªã‚¢: RENDER_TARGET -> PRESENT
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 		m_commandList->ResourceBarrier(1, &barrier);

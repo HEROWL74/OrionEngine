@@ -5,6 +5,15 @@
     "sol2",
     "lua",
     "directxtex",
-    "nlohmann-json"
+    "nlohmann-json",
+    "stb",
+    "miniaudio",
+    "directx-headers"
+  ],
+  "overrides": [
+    {
+      "name": "directx-headers",
+      "version-string": "1.615.0"
+    }
   ]
 }

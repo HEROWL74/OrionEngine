@@ -26,7 +26,8 @@ namespace Engine::Graphics
 		textureDesc.MipLevels = 1;
 		textureDesc.Format = format;
 		textureDesc.SampleDesc.Count = 1;
-		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET |
+			D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
 
 		D3D12_CLEAR_VALUE clearValue{};
 		clearValue.Format = format;

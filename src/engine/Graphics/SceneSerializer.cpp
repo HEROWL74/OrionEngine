@@ -14,10 +14,10 @@ namespace Engine::Graphics
             sceneJson["version"] = "1.0";
             sceneJson["gameObjects"] = nlohmann::json::array();
 
-            // 全GameObjectをシリアライズ
+            // 全てのGameObjectをシリアライズ（UITextも含む）
             for (const auto& gameObject : scene.getGameObjects())
             {
-                if (gameObject)
+                if (gameObject && !gameObject->isDestroyed())
                 {
                     sceneJson["gameObjects"].push_back(
                         serializeGameObject(gameObject.get())
@@ -35,10 +35,11 @@ namespace Engine::Graphics
                 ));
             }
 
-            file << sceneJson.dump(4); // 4スペースインデント
+            file << sceneJson.dump(4);
             file.close();
 
-            Utils::log_info(std::format("Scene saved to: {}", filepath));
+            Utils::log_info(std::format("Scene saved to: {} ({} objects)",
+                filepath, sceneJson["gameObjects"].size()));
             return {};
         }
         catch (const std::exception& e)
@@ -60,7 +61,6 @@ namespace Engine::Graphics
     {
         try
         {
-            // ファイルを開く
             std::ifstream file(filepath);
             if (!file.is_open())
             {
@@ -70,12 +70,13 @@ namespace Engine::Graphics
                 ));
             }
 
-            // JSONをパース
+            // 既存データを完全にクリア
+            scene.clear();
+
             nlohmann::json sceneJson;
             file >> sceneJson;
             file.close();
 
-            // バージョンチェック
             if (!sceneJson.contains("version"))
             {
                 return std::unexpected(Utils::make_error(
@@ -84,7 +85,7 @@ namespace Engine::Graphics
                 ));
             }
 
-            // GameObjectsを復元
+            // GameObjectsをデシリアライズ
             if (sceneJson.contains("gameObjects"))
             {
                 for (const auto& objJson : sceneJson["gameObjects"])
@@ -104,7 +105,9 @@ namespace Engine::Graphics
                 }
             }
 
-            Utils::log_info(std::format("Scene loaded from: {}", filepath));
+            Utils::log_info(std::format("Scene loaded from: {} ({} objects)",
+                filepath,
+                sceneJson.value("gameObjects", nlohmann::json::array()).size()));
             return {};
         }
         catch (const std::exception& e)
@@ -134,12 +137,30 @@ namespace Engine::Graphics
             json["renderComponent"] = serializeRenderComponent(renderComponent);
         }
 
+        // UITextコンポーネント
+        auto* uiText = gameObject->getComponent<EngineUI::UIText>();
+        if (uiText)
+        {
+            json["uiText"] = serializeUITextComponent(uiText);
+        }
+
         // Luaスクリプト情報
-        // TODO: LuaScriptComponent の情報もシリアライズ
         auto* lua = gameObject->getComponent<Engine::Scripting::LuaScriptComponent>();
         if (lua)
         {
             json["lua"] = serializeLuaComponent(lua);
+        }
+
+        // BoxCollider情報
+        if (auto* box = gameObject->getComponent<Physics::BoxCollider>())
+        {
+            json["boxCollider"] = serializeBoxCollider(box);
+        }
+
+        // Audio 情報
+        if (auto* audio = gameObject->getComponent<Audio::AudioComponent>())
+        {
+            json["audioComponent"] = serializeAudioComponent(audio);
         }
 
         return json;
@@ -153,18 +174,42 @@ namespace Engine::Graphics
         TextureManager* textureManager,
         const nlohmann::json& json)
     {
-        // GameObjectを作成
         std::string name = json.value("name", "GameObject");
         Utils::log_info(std::format("Loading GameObject: {}", name));
 
-        auto* gameObject = scene.createGameObject(name);
+        // UITextコンポーネントがあるかチェック
+        bool hasUIText = json.contains("uiText");
 
-        if (!gameObject)
+        Core::GameObject* gameObject = nullptr;
+
+        if (hasUIText)
         {
-            return std::unexpected(Utils::make_error(
-                Utils::ErrorType::Unknown,
-                "Failed to create GameObject"
-            ));
+            // UIText用のGameObjectを作成
+            auto* uiText = scene.createUIText(name);
+            if (!uiText)
+            {
+                return std::unexpected(Utils::make_error(
+                    Utils::ErrorType::Unknown,
+                    "Failed to create UIText"
+                ));
+            }
+            gameObject = uiText->getGameObject();
+
+            // UITextプロパティを復元
+            deserializeUITextComponent(uiText, json["uiText"]);
+            Utils::log_info(std::format("  UIText component loaded for {}", name));
+        }
+        else
+        {
+            // 通常のGameObjectを作成
+            gameObject = scene.createGameObject(name);
+            if (!gameObject)
+            {
+                return std::unexpected(Utils::make_error(
+                    Utils::ErrorType::Unknown,
+                    "Failed to create GameObject"
+                ));
+            }
         }
 
         // Transformを復元
@@ -213,12 +258,79 @@ namespace Engine::Graphics
             }
         }
 
-        // Active状態を設定
+        if (json.contains("boxCollider"))
+        {
+            auto* box = gameObject->addComponent<Physics::BoxCollider>();
+            deserializeBoxCollider(box, json["boxCollider"]);
+        }
+
+        if (json.contains("audioComponent"))
+        {
+            auto* audio = gameObject->addComponent<Audio::AudioComponent>();
+            if (audio)
+            {
+                auto initResult = audio->initialize();
+                if (initResult)
+                {
+                    deserializeAudioComponent(audio, json["audioComponent"]);
+                    Utils::log_info("  AudioComponent loaded");
+                }
+                else
+                {
+                    Utils::log_warning("Failed to initialize AudioComponent");
+                }
+            }
+        }
+
         bool isActive = json.value("active", true);
         gameObject->setActive(isActive);
         Utils::log_info(std::format("GameObject {} created successfully (active: {})", name, isActive));
 
         return {};
+    }
+
+    // UITextコンポーネントのシリアライズ（GameObjectとは別）
+    nlohmann::json SceneSerializer::serializeUITextComponent(const EngineUI::UIText* text)
+    {
+        nlohmann::json json;
+
+        json["text"] = text->getText();
+        json["visible"] = text->isVisible();
+
+        // Style
+        json["fontSize"] = text->getFontSize();
+
+        auto color = text->getColor();
+        json["color"] = { color.x, color.y, color.z };
+
+        json["alpha"] = text->getAlpha();
+
+        return json;
+    }
+
+    // UITextコンポーネントのデシリアライズ
+    void SceneSerializer::deserializeUITextComponent(
+        EngineUI::UIText* text,
+        const nlohmann::json& json)
+    {
+        // 基本プロパティ
+        text->setText(json.value("text", "Text"));
+        text->setVisible(json.value("visible", true));
+
+        // Style
+        text->setFontSize(json.value("fontSize", 32.0f));
+
+        if (json.contains("color"))
+        {
+            auto color = json["color"];
+            text->setColor(Math::Vector3(
+                color[0].get<float>(),
+                color[1].get<float>(),
+                color[2].get<float>()
+            ));
+        }
+
+        text->setAlpha(json.value("alpha", 1.0f));
     }
 
     nlohmann::json SceneSerializer::serializeTransform(
@@ -278,11 +390,9 @@ namespace Engine::Graphics
     {
         nlohmann::json json;
 
-        // RenderableType
         json["renderableType"] = static_cast<int>(component->getRenderableType());
         json["visible"] = component->isVisible();
 
-        // Material情報
         auto material = component->getMaterial();
         if (material)
         {
@@ -300,14 +410,12 @@ namespace Engine::Graphics
         TextureManager* textureManager,
         const nlohmann::json& json)
     {
-        // RenderableTypeを取得
         auto renderType = static_cast<RenderableType>(
             json.value("renderableType", 0)
             );
 
         Utils::log_info(std::format("    RenderableType: {}", static_cast<int>(renderType)));
 
-        // RenderComponentを追加
         auto* renderComponent = gameObject->addComponent<RenderComponent>(renderType);
         if (!renderComponent)
         {
@@ -317,10 +425,8 @@ namespace Engine::Graphics
             ));
         }
 
-        // MaterialManagerを設定
         renderComponent->setMaterialManager(materialManager);
 
-        // 初期化
         Utils::log_info("Initializing RenderComponent...");
         auto initResult = renderComponent->initialize(device, shaderManager);
         if (!initResult)
@@ -329,22 +435,18 @@ namespace Engine::Graphics
         }
         Utils::log_info("RenderComponent initialized");
 
-        // Material情報を復元
         if (json.contains("material"))
         {
             const auto& matJson = json["material"];
 
-            // ユニークなMaterial名を生成（オブジェクト名を含める）
             std::string baseName = matJson.value("name", "Material");
             std::string matName = gameObject->getName() + "_" + baseName;
 
             Utils::log_info(std::format("Creating material: {}", matName));
 
-            // Materialを作成
             auto material = materialManager->createMaterial(matName);
             if (material)
             {
-                // プロパティを復元
                 if (matJson.contains("properties"))
                 {
                     MaterialProperties props;
@@ -368,7 +470,6 @@ namespace Engine::Graphics
                     material->setProperties(props);
                 }
 
-                // テクスチャを復元
                 if (matJson.contains("textures"))
                 {
                     const auto& textures = matJson["textures"];
@@ -395,9 +496,8 @@ namespace Engine::Graphics
             }
         }
 
-        // Visible状態を設定
         renderComponent->setVisible(json.value("visible", true));
- 
+
         return {};
     }
 
@@ -405,27 +505,99 @@ namespace Engine::Graphics
     {
         nlohmann::json json;
 
-        json["name"] = "Material"; 
+        json["name"] = "Material";
 
-        // プロパティ
         auto props = material->getProperties();
         json["properties"]["albedo"] = { props.albedo.x, props.albedo.y, props.albedo.z };
         json["properties"]["metallic"] = props.metallic;
         json["properties"]["roughness"] = props.roughness;
 
-        // テクスチャパス（今後実装）
         json["textures"] = nlohmann::json::object();
 
         return json;
     }
 
-    json SceneSerializer::serializeLuaComponent(const Scripting::LuaScriptComponent* component)
+    nlohmann::json SceneSerializer::serializeLuaComponent(const Scripting::LuaScriptComponent* component)
     {
-        json json;
+        nlohmann::json json;
         json["name"] = "Lua";
-        // プロパティ
         json["scriptPath"] = component->getScriptPath();
 
         return json;
+    }
+
+    nlohmann::json SceneSerializer::serializeBoxCollider(
+        const Physics::BoxCollider* collider)
+    {
+        nlohmann::json colliderJson;
+
+        const auto& size = collider->getSize();
+        const auto& center = collider->getCenter();
+
+        colliderJson["size"] = { size.x, size.y, size.z };
+        colliderJson["center"] = { center.x, center.y, center.z };
+        colliderJson["isTrigger"] = collider->isTrigger();
+
+        return colliderJson;
+    }
+
+    void SceneSerializer::deserializeBoxCollider(
+        Physics::BoxCollider* collider,
+        const nlohmann::json& json)
+    {
+        if (json.contains("size"))
+        {
+            auto& s = json["size"];
+            collider->setSize({
+                s[0].get<float>(),
+                s[1].get<float>(),
+                s[2].get<float>()
+                });
+        }
+
+        if (json.contains("center"))
+        {
+            auto& c = json["center"];
+            collider->setCenter({
+                c[0].get<float>(),
+                c[1].get<float>(),
+                c[2].get<float>()
+                });
+        }
+
+        collider->setTrigger(json.value("isTrigger", true));
+    }
+
+    json SceneSerializer::serializeAudioComponent(const Audio::AudioComponent* audioComponent)
+    {
+        json audioJson;
+
+        audioJson["filePath"] = audioComponent->getFilePath();
+        audioJson["loop"] = audioComponent->isLoop();
+        audioJson["volume"] = audioComponent->getVolume();
+
+        return audioJson;
+    }
+
+    void SceneSerializer::deserializeAudioComponent(
+        Audio::AudioComponent* audioComponent,
+        const nlohmann::json& json)
+    {
+        std::string filePath = json.value("filePath", "");
+        if (!filePath.empty())
+        {
+            auto loadResult = audioComponent->loadAudio(filePath);
+            if (loadResult)
+            {
+                Utils::log_info(std::format("  Audio file loaded: {}", filePath));
+            }
+            else
+            {
+                Utils::log_warning(std::format("Failed to load audio: {}", filePath));
+            }
+        }
+
+        audioComponent->setLoop(json.value("loop", false));
+        audioComponent->setVolume(json.value("volume", 1.0f));
     }
 }

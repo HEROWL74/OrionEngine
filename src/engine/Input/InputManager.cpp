@@ -36,6 +36,9 @@ namespace Engine::Input
 
         setRawMouseInput(true);
 
+        updateKeyboardState();
+        m_prevKeyStates = m_keyStates;  // 初回はすべて「変化なし」とする
+
         m_initialized = true;
         Utils::log_info("InputManager initialized successfully");
     }

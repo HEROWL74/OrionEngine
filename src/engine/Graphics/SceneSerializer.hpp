@@ -6,10 +6,14 @@
 #include <nlohmann/json.hpp>
 #include "Scene.hpp"
 #include "../Scripting/LuaScriptComponent.hpp"
+#include "../Physics/BoxCollider.hpp"
+#include "../Audio/AudioComponent.hpp"
+#include "../UI/UIComponent.hpp"
 
 namespace Engine::Graphics
 {
 	using json = nlohmann::json;
+
 	// ===============================================
 	// Sceneのシリアライズ、デシリアライズを行うクラス
 	// ===============================================
@@ -38,7 +42,7 @@ namespace Engine::Graphics
 		json serializeGameObject(const Core::GameObject* gameObject);
 
 		// JSONからGameObjectを復元
-		[[nodiscatd]] Utils::VoidResult deserializeGameObject(
+		[[nodiscard]] Utils::VoidResult deserializeGameObject(
 			Scene& scene,
 			Device* device,
 			ShaderManager* shaderManager,
@@ -46,6 +50,10 @@ namespace Engine::Graphics
 			TextureManager* textureManager,
 			const json& json
 		);
+
+		// UITextコンポーネントのシリアライズ
+		json serializeUITextComponent(const EngineUI::UIText* text);
+		void deserializeUITextComponent(EngineUI::UIText* text, const json& json);
 
 		// Transform情報のシリアライズ
 		json serializeTransform(const Core::Transform* transform);
@@ -67,6 +75,13 @@ namespace Engine::Graphics
 
 		// Luaスクリプト情報のシリアライズ
 		json serializeLuaComponent(const Scripting::LuaScriptComponent* component);
-		void deserializeLuaComponent(Scripting::LuaScriptComponent* component, json& json);
+
+		// BoxCollider情報のシリアライズ & デシリアライズ
+		json serializeBoxCollider(const Physics::BoxCollider* collider);
+		void deserializeBoxCollider(Physics::BoxCollider* collider, const json& json);
+
+		// AudioComponent情報のシリアライズ & デシリアライズ
+		json serializeAudioComponent(const Audio::AudioComponent* audioComponent);
+		void deserializeAudioComponent(Audio::AudioComponent* audioComponent, const json& json);
 	};
 }

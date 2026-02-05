@@ -2,10 +2,6 @@
 # Orion Editor
 # ==============================================
 
-cmake_minimum_required(VERSION 3.21)
-
-project(OrionEditor LANGUAGES CXX RC)
-
 # ----------------------------------------------
 # ソース収集
 # ----------------------------------------------
@@ -22,11 +18,13 @@ add_executable(OrionEditor WIN32
     ${CMAKE_SOURCE_DIR}/resources/app.rc
 )
 
+
 # ----------------------------------------------
 # Engine に依存
 # ----------------------------------------------
 target_link_libraries(OrionEditor
     PRIVATE OrionEngine
+    PRIVATE OrionBuildSystem
 )
 
 # ----------------------------------------------
@@ -42,16 +40,10 @@ endif()
 set(EDITOR_OUT_DIR $<TARGET_FILE_DIR:OrionEditor>)
 
 # ----------------------------------------------
-# assets / engine-assets コピー
+# engine-assets コピー
 # ----------------------------------------------
 add_custom_command(
     TARGET OrionEditor POST_BUILD
-
-    # Game assets
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/assets"
-        "${EDITOR_OUT_DIR}/assets"
-
     # Engine assets（shader 含む）
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/engine-assets"

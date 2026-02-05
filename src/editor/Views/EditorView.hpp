@@ -2,6 +2,7 @@
 #pragma once
 #include <d3d12.h>
 #include <memory>
+#include <vector>
 #include "engine/Graphics/Camera.hpp"
 #include "engine/Graphics/Scene.hpp"
 #include "engine/Graphics/RenderComponent.hpp"
@@ -10,6 +11,8 @@
 #include "../UI/ImGuiManager.hpp"
 #include "engine/Graphics/Skybox.hpp"
 #include "Gizmo.hpp"
+#include "engine/UI/UIComponent.hpp"
+#include "engine/UI/UITextRenderer.hpp"
 
 namespace Editor::UI
 {
@@ -53,6 +56,17 @@ namespace Editor::UI
 		Gizmo* getGizmo() { return m_gizmo.get(); }
 		void setGizmoType(GizmoType type) { if (m_gizmo) m_gizmo->setType(type); }
 
+		// ‰ð•ú
+		void clearGizmoSelection()
+		{
+			if (m_gizmo)
+			{
+				m_gizmo->finishDrag();
+			}
+		}
+
+		void setScene(Graphics::Scene* scene) { m_scene = scene; }
+		void setUITextRenderer(EngineUI::UITextRenderer* renderer) { m_uiTextRenderer = renderer; }
 	private:
 		Graphics::Device* m_device = nullptr;
 		UI::ImGuiManager* m_imguiManager = nullptr;
@@ -66,6 +80,8 @@ namespace Editor::UI
 		bool m_showGizmos = true;
 		Core::GameObject* m_selectedObject = nullptr;
 
+		Graphics::Scene* m_scene;
+		EngineUI::UITextRenderer* m_uiTextRenderer = nullptr;
 		// Gizmo
 		std::unique_ptr<Gizmo> m_gizmo;
 

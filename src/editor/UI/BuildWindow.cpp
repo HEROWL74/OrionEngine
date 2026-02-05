@@ -76,31 +76,26 @@ namespace Editor::UI
 
     void BuildWindow::startBuild()
     {
-        if (!m_buildSystem)
-        {
-            addLogEntry(BuildLogEntry::Type::Error, "BuildSystem not initialized");
-            return;
-        }
-
         clearLog();
         m_isBuilding = true;
-        m_buildProgress = 0.0f;
-        m_currentStatus = "Starting build...";
 
-        addLogEntry(BuildLogEntry::Type::Info, "Build started");
+        addLogEntry(BuildLogEntry::Type::Info, "Starting build...");
 
         std::thread([this]()
             {
-                bool result = m_buildSystem->build();
-                m_isBuilding = false;
+                if (m_buildSystem)
+                {
+                    bool success = m_buildSystem->build();
+                    m_isBuilding = false;
 
-                if (result)
-                    addLogEntry(BuildLogEntry::Type::Success, "Build finished successfully");
-                else
-                    addLogEntry(BuildLogEntry::Type::Error, "Build failed");
-
+                    if (success)
+                        addLogEntry(BuildLogEntry::Type::Success, "Build completed!");
+                    else
+                        addLogEntry(BuildLogEntry::Type::Error, "Build failed");
+                }
             }).detach();
     }
+
 
     void BuildWindow::drawBuildProgress()
     {

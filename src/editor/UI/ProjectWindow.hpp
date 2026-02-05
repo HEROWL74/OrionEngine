@@ -28,10 +28,11 @@ namespace Editor::UI
             Material,
             Shader,
             Script,
+            Audio,
             Unknown
         } type{};
 
-        //リネーム情報格納
+        // リネーム情報格納
         bool renaming = false;
         char renameBuffer[256]{};
 
@@ -65,6 +66,7 @@ namespace Editor::UI
         const std::string& getProjectPath() const { return m_projectPath; }
 
         std::string generateUniqueScriptPath();
+        std::string generateUniqueFolderPath();
 
         // 選択されたアセット取得
         const AssetInfo* getSelectedAsset() const { return m_selectedAsset; }
@@ -95,6 +97,8 @@ namespace Editor::UI
         std::string m_searchFilter;
         std::string m_pendingPathChange;
 
+        std::vector<std::filesystem::path> m_pendingExternalFiles;
+
         // コールバック
         std::function<void(const AssetInfo&)> m_assetDropCallback;
 
@@ -105,6 +109,12 @@ namespace Editor::UI
         void drawAssetList();
         void drawAssetPreview();
         void drawContextMenu();
+
+        // 外部ファイルのドラッグ&ドロップ処理
+        void handleExternalFileDrop();
+
+        // フォルダ作成
+        void createNewFolder();
 
         AssetInfo::Type getAssetType(const std::filesystem::path& path);
         void loadAssetPreview(AssetInfo& asset);
