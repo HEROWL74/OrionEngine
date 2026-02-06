@@ -8,19 +8,16 @@ function Script.onStart(obj)
 end
 
 function Script.onUpdate(obj, dt)
-    if GameState.isPlaying == false then
-        return
-    end
-
-    if GameState.isGameOver == true then
+    if not GameState.isPlaying or GameState.isGameOver then
         return
     end
 
     local input = InputSystem.get()
     local transform = obj:getTransform()
+    if transform == nil then return end
+
     local speed = 5.0
 
-    -- 左右移動
     if input:isKeyA() then
         transform:moveX(-speed * dt)
     end
@@ -28,7 +25,6 @@ function Script.onUpdate(obj, dt)
         transform:moveX(speed * dt)
     end
 
-    -- 画面外に出ないように制限
     local pos = transform:getPosition()
     if pos.x < -5.0 then
         transform:setPosition(-5.0, pos.y, pos.z)
@@ -37,6 +33,7 @@ function Script.onUpdate(obj, dt)
         transform:setPosition(5.0, pos.y, pos.z)
     end
 end
+
 
 function Script.onCollisionEnter(obj, other)
     if GameState.isGameOver then

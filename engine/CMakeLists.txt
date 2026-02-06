@@ -34,3 +34,7 @@ if (MSVC)
     )
 endif()
 
+if(EMSCRIPTEN)
+     target_compile_definitions(OrionEngine PRIVATE ORION_PLATFORM_WEB)
+endif()
+
