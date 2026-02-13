@@ -12,15 +12,13 @@ Microsoftのリファレンスページや、サンプルコードを見なが�
 - ゲームエンジンの構造（Scene, Entity, Component, Rendererなど）を理解する
 - UnityやUnreal Engineのような再利用性の高いフレームワークを目指す
 - 将来的には **教育用エンジン**として使えるようにすることを目指す
-- 
 
 ---
 
 
 
-## ✨ 現在の進捗 Skybox実装中
-### Luaでオブジェクトを操作
-https://github.com/user-attachments/assets/5e0c1c9f-c0a8-4070-b3cb-c11e16472fe3
+## ✨ 現在の進捗 OrionEngine 第一作ミニゲーム完成
+https://github.com/HEROWL74/OrionEngine/releases/tag/GameVol.1
 
 
 -✅ 完成済み
