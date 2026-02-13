@@ -27,6 +27,23 @@ namespace Editor::UI
 				Utils::ErrorType::Unknown, "Failed to create EditorView render target"));
 		}
 
+		m_fxaaRenderer = std::make_unique<Graphics::FXAARenderer>();
+		auto fxaaResult = m_fxaaRenderer->initialize(m_device, shaderManager, width, height);
+		if (!fxaaResult)
+		{
+			Utils::log_warning("Failed to initialize FXAA - antialiasing disabled");
+			m_fxaaRenderer.reset();
+		}
+
+		m_fxaaOutputTarget = std::make_unique<Graphics::RenderTarget>();
+		auto fxaaTargetResult = m_fxaaOutputTarget->initialize(device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
+		if (!fxaaTargetResult)
+		{
+			Utils::log_warning("Failed to initialize FXAA - antialiasing - disabled");
+			m_fxaaOutputTarget.reset();
+			m_fxaaRenderer.reset();
+		}
+
 		if (shaderManager)
 		{
 			auto gridResult = initializeGrid(shaderManager);
@@ -177,8 +194,27 @@ namespace Editor::UI
 		// Gizmoなどのエディタ要素を描画
 		renderEditorElements(commandList, camera, frameIndex);
 
-		// 全ての描画が終わってからPIXEL_SHADER_RESOURCEに遷移
-		m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		// FXAA適用
+		if (m_enableFXAA && m_fxaaRenderer && m_fxaaOutputTarget)
+		{
+			// ソーステクスチャをシェーダーリソースに遷移
+			m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+			// FXAAを適用して出力ターゲットに描画
+			m_fxaaRenderer->apply(
+				commandList,
+				m_renderTarget->getColorResource(),
+				m_renderTarget->getColorSRV(),
+				m_fxaaOutputTarget.get()
+			);
+
+			// 最終出力をシェーダーリソースに遷移
+			m_fxaaOutputTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		}
+		else
+		{
+			m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		}
 	}
 
 	void EditorView::renderEditorElements(ID3D12GraphicsCommandList* commandList, const Graphics::Camera& camera, UINT frameIndex)
@@ -257,6 +293,17 @@ namespace Editor::UI
 			m_renderTarget->release();
 			m_renderTarget.reset();
 			Utils::log_info("EditorView::resize - Old RenderTarget released");
+		}
+
+		if (m_fxaaRenderer)
+		{
+			m_fxaaRenderer->resize(width, height);
+		}
+
+		if (m_fxaaOutputTarget)
+		{
+			m_fxaaOutputTarget->release();
+			m_fxaaOutputTarget->initialize(m_device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
 		}
 
 		Utils::log_info("EditorView::resize - Creating new RenderTarget");

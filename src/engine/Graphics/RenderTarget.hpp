@@ -14,6 +14,7 @@ namespace Engine::Graphics
 		D3D12_CPU_DESCRIPTOR_HANDLE getRTV() const noexcept { return m_rtv; }
 		D3D12_CPU_DESCRIPTOR_HANDLE getDSV() const noexcept { return m_dsv; }
 		D3D12_CPU_DESCRIPTOR_HANDLE getSRV() const noexcept { return m_srv; }
+		D3D12_GPU_DESCRIPTOR_HANDLE getColorSRV() const noexcept { return m_colorSrvGpu; }
 		DXGI_FORMAT getFormat() const noexcept { return m_format; }
 		uint32_t getWidth() const noexcept { return m_width; }
 		uint32_t getHeight() const noexcept { return m_height; }
@@ -30,7 +31,7 @@ namespace Engine::Graphics
 		D3D12_CPU_DESCRIPTOR_HANDLE m_rtv{};
 		D3D12_CPU_DESCRIPTOR_HANDLE m_dsv{};
 		D3D12_CPU_DESCRIPTOR_HANDLE m_srv{};
-
+		D3D12_GPU_DESCRIPTOR_HANDLE m_colorSrvGpu{};
 		D3D12_RESOURCE_STATES m_currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		uint32_t m_width = 0;
 		uint32_t m_height = 0;

@@ -7,6 +7,7 @@
 #include "engine/Graphics/Scene.hpp"
 #include "engine/Graphics/RenderComponent.hpp"
 #include "engine/Graphics/RenderTarget.hpp"
+#include "engine/Graphics/FXAARenderer.hpp"
 #include "engine/Graphics/Device.hpp"
 #include "../UI/ImGuiManager.hpp"
 #include "engine/Graphics/Skybox.hpp"
@@ -36,7 +37,19 @@ namespace Editor::UI
 			const Graphics::Camera& camera,
 			UINT frameIndex);
 
-		Graphics::RenderTarget* getRenderTarget() const { return m_renderTarget.get(); }
+		Graphics::RenderTarget* getRenderTarget() const 
+		{ 
+			if (m_enableFXAA && m_fxaaOutputTarget)
+			{
+				return m_fxaaOutputTarget.get();
+			}
+			return m_renderTarget.get(); 
+		}
+
+		Graphics::FXAARenderer* getFXAARenderer() const
+		{
+			return m_fxaaRenderer.get();
+		}
 
 		void resize(uint32_t width, uint32_t height);
 
@@ -82,6 +95,12 @@ namespace Editor::UI
 
 		Graphics::Scene* m_scene;
 		EngineUI::UITextRenderer* m_uiTextRenderer = nullptr;
+
+		// FXAA
+		std::unique_ptr<Graphics::FXAARenderer> m_fxaaRenderer;
+		std::unique_ptr<Graphics::RenderTarget> m_fxaaOutputTarget;
+		bool m_enableFXAA = true; //î‰äróp
+
 		// Gizmo
 		std::unique_ptr<Gizmo> m_gizmo;
 

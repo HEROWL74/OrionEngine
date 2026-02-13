@@ -26,8 +26,7 @@ namespace Engine::Graphics
 		textureDesc.MipLevels = 1;
 		textureDesc.Format = format;
 		textureDesc.SampleDesc.Count = 1;
-		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET |
-			D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
+		textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
 		D3D12_CLEAR_VALUE clearValue{};
 		clearValue.Format = format;
@@ -109,6 +108,17 @@ namespace Engine::Graphics
 		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 
 		dev->CreateDepthStencilView(m_depthStencilBuffer.Get(), &dsvDesc, m_dsv);
+
+		auto srvHandles = m_device->allocateSrvDescriptor();
+		m_colorSrvGpu = srvHandles.GpuHandle;
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+		srvDesc.Format = format;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Texture2D.MipLevels = 1;
+
+		dev->CreateShaderResourceView(m_texture.Get(), &srvDesc, srvHandles.CpuHandle);
 
 		Utils::log_info(std::format("RenderTarget initialized: {}x{}", width, height));
 		return {};

@@ -1,4 +1,4 @@
-// src/engine/UI/UIComponent.hpp - Component継承版
+// src/engine/UI/UIComponent.hpp
 #pragma once
 #include "../Graphics/Device.hpp"
 #include "../Graphics/ShaderManager.hpp"

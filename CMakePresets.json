@@ -33,7 +33,17 @@
         "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows"
       }
+    },
+    {
+      "name": "web-release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/web-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "C:/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+      }
     }
+
   ],
 
   "buildPresets": [
@@ -71,7 +81,14 @@
       "configurePreset": "x64-relwithdebinfo",
       "configuration": "RelWithDebInfo",
       "targets": [ "OrionEditor" ]
+    },
+    {
+      "name": "runtime-web-release",
+      "displayName": "Runtime Web Release",
+      "configurePreset": "web-release",
+      "targets": [ "OrionGame" ]
     }
+
   ]
 
 }
