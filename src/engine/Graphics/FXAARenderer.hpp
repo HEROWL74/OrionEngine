@@ -17,6 +17,7 @@ namespace Engine::Graphics
 		Math::Vector2 rcpFrame;
 		float fxaaQualitySubpix;
 		float fxaaQualityEdgeThreshold;
+		float fxaaQualityEdgeThresholdMin;
 	};
 
 	class FXAARenderer
@@ -40,7 +41,7 @@ namespace Engine::Graphics
 		);
 
 		void resize(uint32_t width, uint32_t height);
-		void setQuality(float subpix, float edgeThresHold);
+		void setQuality(float subpix, float edgeThresHold, float fxaaQualityEdgeThresholdMin);
 
 	private:
 		Device* m_device = nullptr;

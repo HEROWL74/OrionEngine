@@ -1,13 +1,13 @@
-// engine-assets/shaders/FXAA_PS.hlsl
 Texture2D sourceTexture : register(t0);
 SamplerState sourceSampler : register(s0);
 
 cbuffer FXAAConstants : register(b0)
 {
-    float2 rcpFrame;
-    float fxaaQualitySubpix;
-    float fxaaQualityEdgeThreshold;
-}
+    float2 rcpFrame; // 1 / screen size
+    float fxaaQualitySubpix; // 0.0 - 1.0
+    float fxaaQualityEdgeThreshold; // 0.125
+    float fxaaQualityEdgeThresholdMin; // 0.0312
+};
 
 struct PSInput
 {
@@ -23,64 +23,64 @@ float rgb2luma(float3 rgb)
 float4 main(PSInput input) : SV_TARGET
 {
     float2 uv = input.texCoord;
-    
-    // ’†S‚Æ‚»‚Ìü•Ó‚Ìƒ‹ƒ~ƒiƒ“ƒX‚ğæ“¾
+
     float3 rgbM = sourceTexture.Sample(sourceSampler, uv).rgb;
+
     float lumaM = rgb2luma(rgbM);
-    
+    float lumaN = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(0, -rcpFrame.y)).rgb);
     float lumaS = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(0, rcpFrame.y)).rgb);
     float lumaE = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(rcpFrame.x, 0)).rgb);
-    float lumaN = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(0, -rcpFrame.y)).rgb);
-    float lumaW = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(rcpFrame.x, 0)).rgb);
-    
-    // ƒGƒbƒWŒŸo
+    float lumaW = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(-rcpFrame.x, 0)).rgb);
+
     float lumaMin = min(lumaM, min(min(lumaN, lumaS), min(lumaE, lumaW)));
     float lumaMax = max(lumaM, max(max(lumaN, lumaS), max(lumaE, lumaW)));
     float lumaRange = lumaMax - lumaMin;
-    
-    // ƒGƒbƒW‚ªã‚¢ê‡‚Í‘ŠúƒŠƒ^[ƒ“
-    if (lumaRange < max(fxaaQualityEdgeThreshold, lumaMax * 0.125))
+
+    //  ã‚¨ãƒƒã‚¸æ¤œå‡ºï¼ˆMinåˆ¶å¾¡ä»˜ãï¼‰
+    if (lumaRange < max(fxaaQualityEdgeThresholdMin, lumaMax * fxaaQualityEdgeThreshold))
     {
         return float4(rgbM, 1.0);
     }
-    
-    // ‘ÎŠpü‚Ìƒ‹ƒ~ƒiƒ“ƒX
+
+    // --- å¯¾è§’ã‚µãƒ³ãƒ—ãƒ« ---
     float lumaNW = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(-rcpFrame.x, -rcpFrame.y)).rgb);
     float lumaNE = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(rcpFrame.x, -rcpFrame.y)).rgb);
     float lumaSW = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(-rcpFrame.x, rcpFrame.y)).rgb);
     float lumaSE = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(rcpFrame.x, rcpFrame.y)).rgb);
-    
-    // ƒGƒbƒW•ûŒü‚ğŒˆ’è
-    float lumaNS = lumaN + lumaS;
-    float lumaWE = lumaW + lumaE;
-    float lumaNESE = lumaNE + lumaSE;
-    float lumaNWSW = lumaNW + lumaSW;
-    
-    float edgeHorz = abs(lumaNW + lumaNE - 2.0 * lumaN) +
-                     2.0 * abs(lumaW + lumaE - 2.0 * lumaM) +
-                     abs(lumaSW + lumaSE - 2.0 * lumaS);
-    
-    float edgeVert = abs(lumaNW + lumaSW - 2.0 * lumaW) +
-                     2.0 * abs(lumaN + lumaS - 2.0 * lumaM) +
-                     abs(lumaNE + lumaSE - 2.0 * lumaE);
-    
-    bool isHorizontal = edgeHorz >= edgeVert;
-    
-    // ƒuƒŒƒ“ƒhŒW”‚ğŒvZ
-    float lengthSign = isHorizontal ? rcpFrame.y : rcpFrame.x;
-    float subpixA = 2.0 * (lumaNS + lumaWE) + lumaNESE + lumaNWSW;
-    float subpixB = (1.0 / 12.0) * subpixA;
-    
-    float gradientScaled = max(abs(isHorizontal ? (lumaN - lumaS) : (lumaW - lumaE)),
-                               abs(isHorizontal ? (lumaM - lumaN) : (lumaM - lumaW))) * 0.25;
-    
-    float blendL = max(0.0, (subpixB - gradientScaled) / lumaRange);
-    blendL = min(fxaaQualitySubpix, blendL);
-    
-    // ƒGƒbƒW‚É‰ˆ‚Á‚ÄƒTƒ“ƒvƒŠƒ“ƒO
-    float2 offset = isHorizontal ? float2(0, lengthSign * blendL) : float2(lengthSign * blendL, 0);
-    float3 result = sourceTexture.Sample(sourceSampler, uv + offset).rgb;
-    
-    return float4(result, 1.0);
 
+    // --- ã‚¨ãƒƒã‚¸æ–¹å‘è¨ˆç®— ---
+    float edgeHorz =
+        abs(lumaNW + lumaNE - 2.0 * lumaN) +
+        abs(lumaSW + lumaSE - 2.0 * lumaS) +
+        2.0 * abs(lumaW + lumaE - 2.0 * lumaM);
+
+    float edgeVert =
+        abs(lumaNW + lumaSW - 2.0 * lumaW) +
+        abs(lumaNE + lumaSE - 2.0 * lumaE) +
+        2.0 * abs(lumaN + lumaS - 2.0 * lumaM);
+
+    bool isHorizontal = edgeHorz >= edgeVert;
+
+    float2 stepDir = isHorizontal ? float2(rcpFrame.x, 0) : float2(0, rcpFrame.y);
+
+    // --- ã‚¨ãƒƒã‚¸æ¢ç´¢ï¼ˆç°¡æ˜“2tapï¼‰ ---
+    float lumaNeg = rgb2luma(sourceTexture.Sample(sourceSampler, uv - stepDir).rgb);
+    float lumaPos = rgb2luma(sourceTexture.Sample(sourceSampler, uv + stepDir).rgb);
+
+    float gradientNeg = abs(lumaNeg - lumaM);
+    float gradientPos = abs(lumaPos - lumaM);
+
+    float gradient = max(gradientNeg, gradientPos);
+
+    float blend = saturate((gradient / lumaRange) * fxaaQualitySubpix);
+
+    // --- æœ€çµ‚ãƒ–ãƒ¬ãƒ³ãƒ‰ ---
+    float2 offset = stepDir * blend * 0.5;
+
+    float3 rgbA = sourceTexture.Sample(sourceSampler, uv + offset).rgb;
+    float3 rgbB = sourceTexture.Sample(sourceSampler, uv - offset).rgb;
+
+    float3 finalColor = (rgbA + rgbB) * 0.5;
+
+    return float4(finalColor, 1.0);
 }

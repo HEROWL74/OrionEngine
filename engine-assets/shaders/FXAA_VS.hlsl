@@ -8,10 +8,23 @@ struct VSOutput
 VSOutput main(uint vertexID : SV_VertexID)
 {
     VSOutput output;
-    
-    // Create Full Screen Triangle
-    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);
-    output.position = float4(output.texCoord * float2(2, -2) + float2(-1, 1), 0, 1);
-    
+
+    float2 pos;
+
+    if (vertexID == 0)
+        pos = float2(-1.0, -1.0);
+    if (vertexID == 1)
+        pos = float2(-1.0, 3.0);
+    if (vertexID == 2)
+        pos = float2(3.0, -1.0);
+
+    output.position = float4(pos, 0.0, 1.0);
+
+    // UV
+    output.texCoord = float2(
+        (pos.x + 1.0) * 0.5,
+        1.0 - (pos.y + 1.0) * 0.5
+    );
+
     return output;
 }

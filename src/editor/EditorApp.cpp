@@ -201,6 +201,20 @@ namespace Editor
         m_editorView.setSkybox(&m_skybox);
         m_editorView.setScene(&m_scene);
         m_editorView.setUITextRenderer(m_uiTextRenderer.get());
+
+        if (auto* fxaa = m_editorView.getFXAARenderer())
+        {
+            fxaa->setQuality(
+                0.75f,   // subpix
+                0.125f,  // edgeThreshold
+                0.0312f  // edgeThresholdMin
+            );
+        }
+        else
+        {
+            Utils::log_warning("FXAA renderer not available");
+        }
+
         m_gameView.setSkybox(&m_skybox);
         m_gameView.setScene(&m_scene);
         m_gameView.setUITextRenderer(m_uiTextRenderer.get());
