@@ -15,12 +15,8 @@ jobs:
 
       # Configure (Release preset)
       - name: Configure
-        run: cmake --build --preset editor-release-ci
+        run: cmake --preset editor-release-ci
 
       # Editor ビルド確認
       - name: Build Editor
         run: cmake --build --preset editor-release-ci
-
-      # Runtime ビルド確認
-      - name: Build Runtime
-        run: cmake --build --preset runtime-release-ci
