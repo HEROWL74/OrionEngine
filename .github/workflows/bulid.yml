@@ -13,17 +13,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # vcpkg セットアップ
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgJsonGlob: 'vcpkg.json'
           runVcpkgInstall: true
 
-      - name: Configure CMake
-        run: cmake -B build -S . ^
-          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake ^
-          -DVCPKG_TARGET_TRIPLET=x64-windows ^
-          -DCMAKE_BUILD_TYPE=Release
+      # Configure (Release preset)
+      - name: Configure
+        run: cmake --preset x64-release
 
-      - name: Build
-        run: cmake --build build --config Release
+      # Editor ビルド確認
+      - name: Build Editor
+        run: cmake --build --preset editor-release
+
+      # Runtime ビルド確認
+      - name: Build Runtime
+        run: cmake --build --preset runtime-release

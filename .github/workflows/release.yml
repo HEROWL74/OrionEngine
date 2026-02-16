@@ -13,60 +13,49 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # ソース取得
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # MSBuild セットアップ
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      # vcpkg セットアップ
+      # vcpkg
       - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
+          runVcpkgInstall: true
+
+      # CMake Configure
+      - name: Configure (Release)
+        run: cmake --preset x64-release
+
+      # Editor build
+      - name: Build Editor
+        run: cmake --build --preset editor-release
+
+      # Runtime build
+      - name: Build Runtime
+        run: cmake --build --preset runtime-release
+
+      # パッケージ作成
+      - name: Create OrionEngine package
         run: |
-          git clone https://github.com/microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
+          mkdir package
+          mkdir package\editor
+          mkdir package\runtime
+          mkdir package\engine
 
-      # 依存ライブラリをインストール (manifest モード対応, 静的リンク)
-      - name: Install dependencies
-        run: .\vcpkg\vcpkg.exe install --triplet x64-windows-static
+          copy build\x64-release\Release\OrionEditor.exe package\editor\
+          copy build\x64-release\Release\OrionGame.exe package\runtime\
 
-      # Release ビルド (manifest 有効化 + 静的リンク)
-      - name: Build with MSBuild
-        run: msbuild DX12GameEngine.sln `
-              /p:Configuration=Release `
-              /p:Platform=x64 `
-              /p:VcpkgEnableManifest=true `
-              /p:VcpkgTriplet=x64-windows-static `
-              /p:VcpkgRoot=${{ github.workspace }}\vcpkg
+          xcopy assets package\engine\assets /E /I /Y
 
-      # exe + assets パッケージ
-      - name: Create package (runtime only)
-        run: |
-          mkdir package_runtime
-          copy x64\Release\DX12GameEngine.exe package_runtime\
-          xcopy assets package_runtime\assets /E /I /Y
-          copy imgui.ini package_runtime\
-          powershell Compress-Archive -Path package_runtime\* -DestinationPath DX12GameEngine.zip
+          echo { "name": "OrionEngine", "version": "${{ github.ref_name }}", "editorExecutable": "editor/OrionEditor.exe" } > package\engine.json
 
-      # exe + assets + src パッケージ
-      - name: Create package (with source)
-        run: |
-          mkdir package_src
-          copy x64\Release\DX12GameEngine.exe package_src\
-          xcopy assets package_src\assets /E /I /Y
-          xcopy src package_src\src /E /I /Y
-          copy imgui.ini package_src\
-          powershell Compress-Archive -Path package_src\* -DestinationPath DX12GameEngine-with-src.zip
+          powershell Compress-Archive -Path package\* -DestinationPath OrionEngine-${{ github.ref_name }}-win64.zip
 
-      # GitHub Release にアップロード
+      # Release upload
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            DX12GameEngine.zip
-            DX12GameEngine-with-src.zip
-          draft: false
-          prerelease: false
+          files: OrionEngine-${{ github.ref_name }}-win64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

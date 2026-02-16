@@ -12,7 +12,7 @@ namespace Editor::UI
 
 	}
 
-	void ConsoleWindow::logStack(LogType type, std::string log)
+	void ConsoleWindow::logStack(LogType type, const std::string& log)
 	{
 
 	}

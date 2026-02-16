@@ -37,6 +37,7 @@ namespace Runtime
 		bool m_running = true;
 		bool m_showingSplash = true;
 		bool m_pendingReloadScene = false;
+		bool m_isRestarting = false;
 
 		// ウィンドウとデバイス
 		Engine::Core::Window m_window;

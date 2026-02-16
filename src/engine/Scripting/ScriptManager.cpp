@@ -54,7 +54,7 @@ namespace Engine::Scripting
         {
             if (fs::exists(dir))
             {
-                scanAndLoadScriptableObjects(dir);
+                scanAndLoadSharedObjects(dir);
             }
         }
     }
@@ -113,7 +113,7 @@ namespace Engine::Scripting
         Utils::log_info("============================");
     }
 
-    bool ScriptManager::isScriptableObject(const std::string& filepath) const
+    bool ScriptManager::isSharedObject(const std::string& filepath) const
     {
         std::ifstream file(filepath);
         if (!file.is_open())
@@ -129,8 +129,8 @@ namespace Engine::Scripting
         {
             line.erase(0, line.find_first_not_of(" \t\r\n"));
 
-            if (line.find("--@ScriptableObject") == 0 ||
-                line.find("-- @ScriptableObject") == 0)
+            if (line.find("--@SharedObject") == 0 ||
+                line.find("-- @SharedObject") == 0)
             {
                 return true;
             }
@@ -160,7 +160,7 @@ namespace Engine::Scripting
                 }
             }
 
-            if (type == ScriptType::ScriptableObject)
+            if (type == ScriptType::SharedObject)
             {
                 m_lua.script_file(path);
             }
@@ -219,15 +219,15 @@ namespace Engine::Scripting
 
             m_scripts[path] = std::move(data);
 
-            if (type == ScriptType::ScriptableObject)
+            if (type == ScriptType::SharedObject)
             {
-                if (std::find(m_scriptableObjects.begin(), m_scriptableObjects.end(), path) == m_scriptableObjects.end())
+                if (std::find(m_sharedObjects.begin(), m_sharedObjects.end(), path) == m_sharedObjects.end())
                 {
-                    m_scriptableObjects.push_back(path);
+                    m_sharedObjects.push_back(path);
                 }
             }
 
-            std::string typeStr = (type == ScriptType::ScriptableObject) ? "[ScriptableObject]" : "[Component]";
+            std::string typeStr = (type == ScriptType::SharedObject) ? "[SharedObject]" : "[Component]";
             Utils::log_info(std::format("Script loaded {}: {}", typeStr, path));
             return true;
         }
@@ -243,7 +243,7 @@ namespace Engine::Scripting
         }
     }
 
-    void ScriptManager::scanAndLoadScriptableObjects(const std::string& rootDirectory)
+    void ScriptManager::scanAndLoadSharedObjects(const std::string& rootDirectory)
     {
         Utils::log_info(std::format("Scanning for ScriptableObjects in: {}", rootDirectory));
 
@@ -267,9 +267,9 @@ namespace Engine::Scripting
 
                     std::replace(path.begin(), path.end(), '\\', '/');
 
-                    if (isScriptableObject(path))
+                    if (isSharedObject(path))
                     {
-                        if (loadScript(path, ScriptType::ScriptableObject))
+                        if (loadScript(path, ScriptType::SharedObject))
                         {
                             loadedCount++;
                         }
@@ -351,7 +351,7 @@ namespace Engine::Scripting
     {
         Utils::log_info("=== COMPLETE LUA VM RELOAD ===");
 
-        std::vector<std::string> scriptableObjPaths = m_scriptableObjects;
+        std::vector<std::string> scriptableObjPaths = m_sharedObjects;
         std::unordered_map<std::string, ScriptType> allScriptPaths;
 
         for (const auto& [path, script] : m_scripts)
@@ -367,7 +367,7 @@ namespace Engine::Scripting
 
         Utils::log_info("Clearing script data...");
         m_scripts.clear();
-        m_scriptableObjects.clear();
+        m_sharedObjects.clear();
 
         Utils::log_info("Destroying old Lua VM and creating new one...");
         m_lua = sol::state();
@@ -398,13 +398,13 @@ namespace Engine::Scripting
             Utils::log_warning("Binding callback not set! Lua types may not work correctly.");
         }
 
-        Utils::log_info("Reloading ScriptableObjects...");
+        Utils::log_info("Reloading SharedObjects...");
         for (const auto& path : scriptableObjPaths)
         {
             if (fs::exists(path))
             {
                 Utils::log_info(std::format("  Loading: {}", path));
-                loadScript(path, ScriptType::ScriptableObject);
+                loadScript(path, ScriptType::SharedObject);
             }
         }
 
