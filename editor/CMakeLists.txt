@@ -49,6 +49,10 @@ add_custom_command(
         "${CMAKE_SOURCE_DIR}/engine-assets"
         "${EDITOR_OUT_DIR}/engine-assets"
 
+    # Project templates
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/project-templates"
+        "${EDITOR_OUT_DIR}/project-templates"
     COMMENT "Copying Editor assets"
 )
 

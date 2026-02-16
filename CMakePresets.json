@@ -1,94 +1,91 @@
 {
   "version": 6,
+
   "configurePresets": [
     {
       "name": "x64-debug",
+      "displayName": "Windows x64 Debug (VS2026)",
       "generator": "Visual Studio 18 2026",
-      "binaryDir": "${sourceDir}/build/x64-debug",
       "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/x64-debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows"
       }
     },
     {
-      "name": "x64-release",
+      "name": "x64-release-local",
+      "displayName": "Windows x64 Release (VS2026)",
       "generator": "Visual Studio 18 2026",
-      "binaryDir": "${sourceDir}/build/x64-release",
       "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/x64-release-local",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
+    },
+    {
+      "name": "x64-release-ci",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/x64-release-ci",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-windows"
-      }
-    },
-    {
-      "name": "x64-relwithdebinfo",
-      "generator": "Visual Studio 18 2026",
-      "binaryDir": "${sourceDir}/build/x64-relwithdebinfo",
-      "architecture": "x64",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows"
       }
     },
     {
       "name": "web-release",
+      "displayName": "Web Release (Emscripten)",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/web-release",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_TOOLCHAIN_FILE": "C:/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
       }
     }
-
   ],
 
   "buildPresets": [
     {
       "name": "editor-debug",
-      "displayName": "Editor Debug",
       "configurePreset": "x64-debug",
       "configuration": "Debug",
       "targets": [ "OrionEditor", "OrionBuildWorker" ]
     },
     {
-      "name": "editor-release",
-      "displayName": "Editor Release",
-      "configurePreset": "x64-release",
-      "configuration": "Release",
-      "targets": [ "OrionEditor" ]
-    },
-    {
       "name": "runtime-debug",
-      "displayName": "Runtime Debug",
       "configurePreset": "x64-debug",
       "configuration": "Debug",
       "targets": [ "OrionGame" ]
     },
     {
-      "name": "runtime-release",
-      "displayName": "Runtime Release",
-      "configurePreset": "x64-release",
+      "name": "editor-release-local",
+      "configurePreset": "x64-release-local",
+      "configuration": "Release",
+      "targets": [ "OrionEditor" ]
+    },
+    {
+      "name": "runtime-release-local",
+      "configurePreset": "x64-release-local",
       "configuration": "Release",
       "targets": [ "OrionGame" ]
     },
     {
-      "name": "editor-relwithdebinfo",
-      "displayName": "Editor RelWithDebInfo",
-      "configurePreset": "x64-relwithdebinfo",
-      "configuration": "RelWithDebInfo",
+      "name": "editor-release-ci",
+      "configurePreset": "x64-release-ci",
+      "configuration": "Release",
       "targets": [ "OrionEditor" ]
     },
     {
+      "name": "runtime-release-ci",
+      "configurePreset": "x64-release-ci",
+      "configuration": "Release",
+      "targets": [ "OrionGame" ]
+    },
+    {
       "name": "runtime-web-release",
-      "displayName": "Runtime Web Release",
       "configurePreset": "web-release",
       "targets": [ "OrionGame" ]
     }
-
   ]
-
 }
