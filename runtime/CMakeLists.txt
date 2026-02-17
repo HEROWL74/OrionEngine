@@ -14,7 +14,3 @@ add_executable(OrionGame WIN32
 target_link_libraries(OrionGame
     PRIVATE OrionEngine
 )
-
-# ★ runtime 側で include を足すなら「OrionGame」に対して
-# （※ 通常は Engine 側が PUBLIC include を持っていれば不要）
-# target_include_directories(OrionGame PRIVATE ${CMAKE_SOURCE_DIR}/src)

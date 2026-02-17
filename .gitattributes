@@ -59,3 +59,6 @@
 #*.RTF   diff=astextplain
 *.dds filter=lfs diff=lfs merge=lfs -text
 engine-assets/skybox/cubemap.dds filter=lfs diff=lfs merge=lfs -text
+* text=auto eol=lf
+*.cpp text eol=lf
+*.hpp text eol=lf

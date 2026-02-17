@@ -678,6 +678,11 @@ namespace Editor
 
         m_playModeController.update();
 
+        if (m_playModeController.isRestarting())
+        {
+            return;
+        }
+
         //processInput();
 
         if (m_playModeController.isPlaying())

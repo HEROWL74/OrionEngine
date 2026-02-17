@@ -501,9 +501,15 @@ namespace Runtime
 
 			Engine::Utils::log_info("Executing pending reloadScene...");
 
+			// リスタート処理中フラグON
+			m_isRestarting = true;
+
 			m_device.waitForGpu();
 
 			m_scene.clear();
+
+			// もう一度GPU同期
+			m_device.waitForGpu();
 
 			Engine::Scripting::ScriptManager::get().reloadAll();
 
@@ -518,6 +524,9 @@ namespace Runtime
 				Engine::Utils::log_error(result.error());
 			}
 
+			// リスタート処理完了
+			m_isRestarting = false;
+
 			return; // このフレームの更新はスキップ
 		}
 
@@ -529,6 +538,12 @@ namespace Runtime
 
 	void GameApp::render()
 	{
+		if (m_isRestarting)
+		{
+			Engine::Utils::log_info("Skipping render during restart");
+			return;
+		}
+
 		if (m_uiTextRenderer)
 		{
 			m_uiTextRenderer->beginFrame();

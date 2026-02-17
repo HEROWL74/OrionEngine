@@ -129,13 +129,19 @@ namespace Engine::Utils
     //情報をデバッグ出力に表示
     inline void log_info(std::string_view message) noexcept
     {
-        OutputDebugStringA(std::format("[INFO] {}\n", message).c_str());
+        std::string full_message = "[INFO] ";
+        full_message += message;
+        full_message += "\n";
+        OutputDebugStringA(full_message.c_str());
     }
 
     //警告をデバッグに表示
-    inline void log_warning(std::string_view message) noexcept 
+    inline void log_warning(std::string_view message) noexcept
     {
-        OutputDebugStringA(std::format("[WARNING] {}\n", message).c_str());
+        std::string full_message = "[WARNING] ";
+        full_message += message;
+        full_message += "\n";
+        OutputDebugStringA(full_message.c_str());
     }
 
 

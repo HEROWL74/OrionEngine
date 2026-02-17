@@ -13,17 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgJsonGlob: 'vcpkg.json'
-          runVcpkgInstall: true
+      # MSVCコンパイラ環境をパスに通す
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Configure CMake
-        run: cmake -B build -S . ^
-          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake ^
-          -DVCPKG_TARGET_TRIPLET=x64-windows ^
-          -DCMAKE_BUILD_TYPE=Release
+      # Ninjaをセットアップ
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
 
-      - name: Build
-        run: cmake --build build --config Release
+      # 3. Configure (x64-release-ci プリセットを使用)
+      - name: Configure
+        run: cmake --preset x64-release-ci
+
+      # 4. Editor ビルド
+      - name: Build Editor
+        run: cmake --build --preset editor-release-ci

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 namespace Engine::Scripting
 {
@@ -38,7 +39,7 @@ namespace Engine::Scripting
             {
                 Utils::log_error(Utils::make_error(
                     Utils::ErrorType::Unknown,
-                    std::format("Failed to execute initial bindings: {}", e.what())
+                    std::string("Failed to execute initial bindings: ") + e.what()
                 ));
             }
         }
@@ -54,7 +55,7 @@ namespace Engine::Scripting
         {
             if (fs::exists(dir))
             {
-                scanAndLoadScriptableObjects(dir);
+                scanAndLoadSharedObjects(dir);
             }
         }
     }
@@ -79,7 +80,7 @@ namespace Engine::Scripting
             {
                 Utils::log_error(Utils::make_error(
                     Utils::ErrorType::Unknown,
-                    std::format("Failed to re-register bindings: {}", e.what())
+                    std::string("Failed to re-register bindings: ") + e.what()
                 ));
             }
         }
@@ -102,18 +103,18 @@ namespace Engine::Scripting
             sol::optional<sol::table> type = m_lua[typeName];
             if (type)
             {
-                Utils::log_info(std::format("✓ {} is bound", typeName));
+                Utils::log_info("✓ " + typeName + " is bound");
             }
             else
             {
-                Utils::log_warning(std::format("✗ {} is NOT bound!", typeName));
+                Utils::log_warning("✗ " + typeName + " is NOT bound!");
             }
         }
 
         Utils::log_info("============================");
     }
 
-    bool ScriptManager::isScriptableObject(const std::string& filepath) const
+    bool ScriptManager::isSharedObject(const std::string& filepath) const
     {
         std::ifstream file(filepath);
         if (!file.is_open())
@@ -129,8 +130,8 @@ namespace Engine::Scripting
         {
             line.erase(0, line.find_first_not_of(" \t\r\n"));
 
-            if (line.find("--@ScriptableObject") == 0 ||
-                line.find("-- @ScriptableObject") == 0)
+            if (line.find("--@SharedObject") == 0 ||
+                line.find("-- @SharedObject") == 0)
             {
                 return true;
             }
@@ -146,7 +147,7 @@ namespace Engine::Scripting
         try {
             if (!fs::exists(path))
             {
-                Utils::log_warning(std::format("Script file not found: {}", path));
+                Utils::log_warning("Script file not found: " + path);
                 return false;
             }
 
@@ -160,7 +161,7 @@ namespace Engine::Scripting
                 }
             }
 
-            if (type == ScriptType::ScriptableObject)
+            if (type == ScriptType::SharedObject)
             {
                 m_lua.script_file(path);
             }
@@ -175,7 +176,7 @@ namespace Engine::Scripting
                 if (!loaded.valid())
                 {
                     sol::error err = loaded;
-                    Utils::log_warning(std::format("Failed to load script '{}': {}", path, err.what()));
+                    Utils::log_warning("Failed to load script '" + path + "': " + err.what());
                     return false;
                 }
 
@@ -185,7 +186,7 @@ namespace Engine::Scripting
                 if (!pfr.valid())
                 {
                     sol::error err = pfr;
-                    Utils::log_warning(std::format("Script execution error '{}': {}", path, err.what()));
+                    Utils::log_warning("Script execution error '" + path + "': " + err.what());
                     return false;
                 }
 
@@ -193,10 +194,7 @@ namespace Engine::Scripting
 
                 if (!result.valid() || !result.is<sol::table>())
                 {
-                    Utils::log_warning(std::format(
-                        "Script '{}' did not return a table. "
-                        "Use: local Script = {} ... return Script",
-                        path));
+                    Utils::log_warning("Script '" + path + "' did not return a table. Use: local Script = {} ... return Script");
                     return false;
                 }
 
@@ -212,44 +210,44 @@ namespace Engine::Scripting
                     if (fn.valid() && fn.is<sol::function>())
                     {
                         data.functions[name] = fn.as<sol::function>();
-                        Utils::log_info(std::format("  Loaded module function: {}.{}", path, name));
+                        Utils::log_info("  Loaded module function: " + path + "." + name);
                     }
                 }
             }
 
             m_scripts[path] = std::move(data);
 
-            if (type == ScriptType::ScriptableObject)
+            if (type == ScriptType::SharedObject)
             {
-                if (std::find(m_scriptableObjects.begin(), m_scriptableObjects.end(), path) == m_scriptableObjects.end())
+                if (std::find(m_sharedObjects.begin(), m_sharedObjects.end(), path) == m_sharedObjects.end())
                 {
-                    m_scriptableObjects.push_back(path);
+                    m_sharedObjects.push_back(path);
                 }
             }
 
-            std::string typeStr = (type == ScriptType::ScriptableObject) ? "[ScriptableObject]" : "[Component]";
-            Utils::log_info(std::format("Script loaded {}: {}", typeStr, path));
+            std::string typeStr = (type == ScriptType::SharedObject) ? "[SharedObject]" : "[Component]";
+            Utils::log_info("Script loaded " + typeStr + ": " + path);
             return true;
         }
         catch (const sol::error& e)
         {
-            Utils::log_warning(std::format("Lua error in '{}': {}", path, e.what()));
+            Utils::log_warning("Lua error in '" + path + "': " + e.what());
             return false;
         }
         catch (const std::exception& e)
         {
-            Utils::log_warning(std::format("C++ exception in '{}': {}", path, e.what()));
+            Utils::log_warning("C++ exception in '" + path + "': " + e.what());
             return false;
         }
     }
 
-    void ScriptManager::scanAndLoadScriptableObjects(const std::string& rootDirectory)
+    void ScriptManager::scanAndLoadSharedObjects(const std::string& rootDirectory)
     {
-        Utils::log_info(std::format("Scanning for ScriptableObjects in: {}", rootDirectory));
+        Utils::log_info("Scanning for ScriptableObjects in: " + rootDirectory);
 
         if (!fs::exists(rootDirectory))
         {
-            Utils::log_warning(std::format("Script directory not found: {}", rootDirectory));
+            Utils::log_warning("Script directory not found: " + rootDirectory);
             return;
         }
 
@@ -264,12 +262,11 @@ namespace Engine::Scripting
                 {
                     scannedCount++;
                     std::string path = entry.path().string();
-
                     std::replace(path.begin(), path.end(), '\\', '/');
 
-                    if (isScriptableObject(path))
+                    if (isSharedObject(path))
                     {
-                        if (loadScript(path, ScriptType::ScriptableObject))
+                        if (loadScript(path, ScriptType::SharedObject))
                         {
                             loadedCount++;
                         }
@@ -279,10 +276,10 @@ namespace Engine::Scripting
         }
         catch (const std::exception& e)
         {
-            Utils::log_warning(std::format("Error scanning directory: {}", e.what()));
+            Utils::log_warning(std::string("Error scanning directory: ") + e.what());
         }
 
-        Utils::log_info(std::format("Scanned {} Lua files, loaded {} ScriptableObjects", scannedCount, loadedCount));
+        Utils::log_info("Scanned " + std::to_string(scannedCount) + " Lua files, loaded " + std::to_string(loadedCount) + " ScriptableObjects");
     }
 
     sol::function ScriptManager::getFunction(const std::string& path, const std::string& functionName) const
@@ -325,9 +322,8 @@ namespace Engine::Scripting
 
     void ScriptManager::invalidateAllComponents()
     {
-        Utils::log_info(std::format("Invalidating {} registered LuaScriptComponents...", m_registeredComponents.size()));
+        Utils::log_info("Invalidating " + std::to_string(m_registeredComponents.size()) + " registered LuaScriptComponents...");
 
-        // コピーを作成してイテレーション
         std::vector<LuaScriptComponent*> componentsCopy;
         componentsCopy.reserve(m_registeredComponents.size());
 
@@ -351,7 +347,7 @@ namespace Engine::Scripting
     {
         Utils::log_info("=== COMPLETE LUA VM RELOAD ===");
 
-        std::vector<std::string> scriptableObjPaths = m_scriptableObjects;
+        std::vector<std::string> scriptableObjPaths = m_sharedObjects;
         std::unordered_map<std::string, ScriptType> allScriptPaths;
 
         for (const auto& [path, script] : m_scripts)
@@ -359,15 +355,12 @@ namespace Engine::Scripting
             allScriptPaths[path] = script.type;
         }
 
-        Utils::log_info(std::format(
-            "Invalidating {} registered LuaScriptComponents before VM reset...",
-            m_registeredComponents.size()
-        ));
+        Utils::log_info("Invalidating " + std::to_string(m_registeredComponents.size()) + " registered LuaScriptComponents before VM reset...");
         invalidateAllComponents();
 
         Utils::log_info("Clearing script data...");
         m_scripts.clear();
-        m_scriptableObjects.clear();
+        m_sharedObjects.clear();
 
         Utils::log_info("Destroying old Lua VM and creating new one...");
         m_lua = sol::state();
@@ -381,15 +374,13 @@ namespace Engine::Scripting
             {
                 m_bindingCallback(m_lua);
                 Utils::log_info("Lua bindings re-registered successfully");
-
-                // バインディング確認
                 verifyBindings();
             }
             catch (const std::exception& e)
             {
                 Utils::log_error(Utils::make_error(
                     Utils::ErrorType::Unknown,
-                    std::format("Failed to re-register bindings: {}", e.what())
+                    std::string("Failed to re-register bindings: ") + e.what()
                 ));
             }
         }
@@ -398,13 +389,13 @@ namespace Engine::Scripting
             Utils::log_warning("Binding callback not set! Lua types may not work correctly.");
         }
 
-        Utils::log_info("Reloading ScriptableObjects...");
+        Utils::log_info("Reloading SharedObjects...");
         for (const auto& path : scriptableObjPaths)
         {
             if (fs::exists(path))
             {
-                Utils::log_info(std::format("  Loading: {}", path));
-                loadScript(path, ScriptType::ScriptableObject);
+                Utils::log_info("  Loading: " + path);
+                loadScript(path, ScriptType::SharedObject);
             }
         }
 
@@ -413,7 +404,7 @@ namespace Engine::Scripting
         {
             if (type == ScriptType::Component && fs::exists(path))
             {
-                Utils::log_info(std::format("  Loading: {}", path));
+                Utils::log_info("  Loading: " + path);
                 loadScript(path, ScriptType::Component);
             }
         }
@@ -445,16 +436,14 @@ namespace Engine::Scripting
 
                 if (lastWrite != it->second.lastWriteTime)
                 {
-                    Utils::log_info(std::format("Reloading modified script: {}", path));
-
+                    Utils::log_info("Reloading modified script: " + path);
                     invalidateAllComponents();
-
                     loadScript(path, type);
                 }
             }
             catch (const std::exception& e)
             {
-                Utils::log_warning(std::format("File check error for '{}': {}", path, e.what()));
+                Utils::log_warning("File check error for '" + path + "': " + e.what());
             }
         }
     }
@@ -482,7 +471,7 @@ namespace Engine::Scripting
                 else if (value.is<sol::table>()) typeStr = "table";
                 else if (value.is<sol::function>()) typeStr = "function";
 
-                Utils::log_info(std::format("  {} : {}", keyStr, typeStr));
+                Utils::log_info("  " + keyStr + " : " + typeStr);
             }
             });
 

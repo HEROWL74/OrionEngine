@@ -16,7 +16,7 @@ namespace Engine::Scripting
     enum class ScriptType
     {
         Component,
-        ScriptableObject
+        SharedObject
     };
 
     struct ScriptData
@@ -41,7 +41,7 @@ namespace Engine::Scripting
         void verifyBindings();
 
         bool loadScript(const std::string& path, ScriptType type);
-        void scanAndLoadScriptableObjects(const std::string& rootDirectory);
+        void scanAndLoadSharedObjects(const std::string& rootDirectory);
 
         sol::function getFunction(const std::string& path, const std::string& functionName) const;
 
@@ -75,11 +75,11 @@ namespace Engine::Scripting
         ScriptManager(const ScriptManager&) = delete;
         ScriptManager& operator=(const ScriptManager&) = delete;
 
-        bool isScriptableObject(const std::string& filepath) const;
+        bool isSharedObject(const std::string& filepath) const;
 
         sol::state m_lua;
         std::unordered_map<std::string, ScriptData> m_scripts;
-        std::vector<std::string> m_scriptableObjects;
+        std::vector<std::string> m_sharedObjects;
         std::unordered_set<LuaScriptComponent*> m_registeredComponents;
 
         std::function<void(sol::state&)> m_bindingCallback;
