@@ -102,11 +102,11 @@ namespace Engine::Scripting
             sol::optional<sol::table> type = m_lua[typeName];
             if (type)
             {
-                Utils::log_info(std::format("✓ {} is bound", typeName));
+                Utils::log_info(std::format("✓ {} is bound", typeName.c_str()));
             }
             else
             {
-                Utils::log_warning(std::format("✗ {} is NOT bound!", typeName));
+                Utils::log_warning(std::format("✗ {} is NOT bound!", typeName.c_str()));
             }
         }
 
@@ -146,7 +146,7 @@ namespace Engine::Scripting
         try {
             if (!fs::exists(path))
             {
-                Utils::log_warning(std::format("Script file not found: {}", path));
+                Utils::log_warning(std::format("Script file not found: {}", path.c_str()));
                 return false;
             }
 
@@ -175,7 +175,7 @@ namespace Engine::Scripting
                 if (!loaded.valid())
                 {
                     sol::error err = loaded;
-                    Utils::log_warning(std::format("Failed to load script '{}': {}", path, err.what()));
+                    Utils::log_warning(std::format("Failed to load script '{}': {}", path.c_str(), err.what()));
                     return false;
                 }
 
@@ -185,7 +185,7 @@ namespace Engine::Scripting
                 if (!pfr.valid())
                 {
                     sol::error err = pfr;
-                    Utils::log_warning(std::format("Script execution error '{}': {}", path, err.what()));
+                    Utils::log_warning(std::format("Script execution error '{}': {}", path.c_str(), err.what()));
                     return false;
                 }
 
@@ -196,7 +196,7 @@ namespace Engine::Scripting
                     Utils::log_warning(std::format(
                         "Script '{}' did not return a table. "
                         "Use: local Script = {} ... return Script",
-                        path));
+                        path.c_str()));
                     return false;
                 }
 
@@ -228,7 +228,7 @@ namespace Engine::Scripting
             }
 
             std::string typeStr = (type == ScriptType::SharedObject) ? "[SharedObject]" : "[Component]";
-            Utils::log_info(std::format("Script loaded {}: {}", typeStr, path));
+            Utils::log_info(std::format("Script loaded {}: {}", typeStr.c_str(), path.c_str()));
             return true;
         }
         catch (const sol::error& e)
@@ -245,11 +245,11 @@ namespace Engine::Scripting
 
     void ScriptManager::scanAndLoadSharedObjects(const std::string& rootDirectory)
     {
-        Utils::log_info(std::format("Scanning for ScriptableObjects in: {}", rootDirectory));
+        Utils::log_info(std::format("Scanning for ScriptableObjects in: {}", rootDirectory.c_str()));
 
         if (!fs::exists(rootDirectory))
         {
-            Utils::log_warning(std::format("Script directory not found: {}", rootDirectory));
+            Utils::log_warning(std::format("Script directory not found: {}", rootDirectory.c_str()));
             return;
         }
 
@@ -361,7 +361,7 @@ namespace Engine::Scripting
 
         Utils::log_info(std::format(
             "Invalidating {} registered LuaScriptComponents before VM reset...",
-            m_registeredComponents.size()
+            (unsigned long long)m_registeredComponents.size()
         ));
         invalidateAllComponents();
 
@@ -403,7 +403,7 @@ namespace Engine::Scripting
         {
             if (fs::exists(path))
             {
-                Utils::log_info(std::format("  Loading: {}", path));
+                Utils::log_info(std::format("  Loading: {}", path.c_str()));
                 loadScript(path, ScriptType::SharedObject);
             }
         }
@@ -411,9 +411,9 @@ namespace Engine::Scripting
         Utils::log_info("Reloading Component scripts...");
         for (const auto& [path, type] : allScriptPaths)
         {
-            if (type == ScriptType::Component && fs::exists(path))
+            if (type == ScriptType::Component && fs::exists(path.c_str()))
             {
-                Utils::log_info(std::format("  Loading: {}", path));
+                Utils::log_info(std::format("  Loading: {}", path.c_str()));
                 loadScript(path, ScriptType::Component);
             }
         }
@@ -445,7 +445,7 @@ namespace Engine::Scripting
 
                 if (lastWrite != it->second.lastWriteTime)
                 {
-                    Utils::log_info(std::format("Reloading modified script: {}", path));
+                    Utils::log_info(std::format("Reloading modified script: {}", path.c_str()));
 
                     invalidateAllComponents();
 
@@ -454,7 +454,7 @@ namespace Engine::Scripting
             }
             catch (const std::exception& e)
             {
-                Utils::log_warning(std::format("File check error for '{}': {}", path, e.what()));
+                Utils::log_warning(std::format("File check error for '{}': {}", path.c_str(), e.what()));
             }
         }
     }
@@ -482,7 +482,7 @@ namespace Engine::Scripting
                 else if (value.is<sol::table>()) typeStr = "table";
                 else if (value.is<sol::function>()) typeStr = "function";
 
-                Utils::log_info(std::format("  {} : {}", keyStr, typeStr));
+                Utils::log_info(std::format("  {} : {}", keyStr.c_str(), typeStr.c_str()));
             }
             });
 
