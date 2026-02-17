@@ -13,10 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Configure (Release preset)
+      # MSVCコンパイラ環境をパスに通す
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      # Ninjaをセットアップ
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+
+      # 3. Configure (x64-release-ci プリセットを使用)
       - name: Configure
         run: cmake --preset x64-release-ci
 
-      # Editor ビルド確認
+      # 4. Editor ビルド
       - name: Build Editor
         run: cmake --build --preset editor-release-ci
