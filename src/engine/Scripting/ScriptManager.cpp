@@ -212,7 +212,7 @@ namespace Engine::Scripting
                     if (fn.valid() && fn.is<sol::function>())
                     {
                         data.functions[name] = fn.as<sol::function>();
-                        Utils::log_info(std::format("  Loaded module function: {}.{}", path, name));
+                        Utils::log_info(std::format("  Loaded module function: {}.{}", path.c_str(), name.c_str()));
                     }
                 }
             }
@@ -325,7 +325,7 @@ namespace Engine::Scripting
 
     void ScriptManager::invalidateAllComponents()
     {
-        Utils::log_info(std::format("Invalidating {} registered LuaScriptComponents...", m_registeredComponents.size()));
+        Utils::log_info(std::format("Invalidating {} registered LuaScriptComponents...", (unsigned long long)m_registeredComponents.size()));
 
         // コピーを作成してイテレーション
         std::vector<LuaScriptComponent*> componentsCopy;
