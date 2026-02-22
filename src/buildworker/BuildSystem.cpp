@@ -1,4 +1,4 @@
-#include "BuildSystem.hpp"
+ï»¿#include "BuildSystem.hpp"
 
 #include <Windows.h>
 #include <filesystem>
@@ -6,120 +6,195 @@
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 namespace Editor::Build
 {
     namespace fs = std::filesystem;
 
-    // =========================================================
-    // İ’è
-    // =========================================================
-    static constexpr const char* RUNTIME_TARGET = "OrionGame";
+    bool BuildSystem::RunCommandWithOutput(
+        const std::string& command,
+        std::function<void(const std::string&)> onOutput)
+    {
+        FILE* pipe = _popen(command.c_str(), "r");
+        if (!pipe)
+            return false;
+
+        char buffer[4096];
+
+        while (fgets(buffer, sizeof(buffer), pipe))
+        {
+            if (m_cancelled)
+            {
+                _pclose(pipe);
+                return false;
+            }
+
+            onOutput(buffer);
+        }
+
+        int result = _pclose(pipe);
+
+        return result == 0;
+    }
 
     // =========================================================
-    // Editor Àsƒtƒ@ƒCƒ‹‚ÌƒfƒBƒŒƒNƒgƒŠ
+    // Returns the directory of the currently running executable.
+    // When running as OrionBuildWorker, this is tools/{Config}/.
     // =========================================================
-    static fs::path GetEditorExeDir()
+    static fs::path GetWorkerExeDir()
     {
         wchar_t path[MAX_PATH]{};
         GetModuleFileNameW(nullptr, path, MAX_PATH);
         return fs::path(path).parent_path();
     }
 
+    // =========================================================
+    // Returns the source root directory (contains CMakeLists.txt).
+    // =========================================================
+    static fs::path GetSourceRootDir()
+    {
+        auto current = fs::current_path();
+        while (current.has_parent_path())
+        {
+            if (fs::exists(current / "CMakeLists.txt"))
+                return current;
+            current = current.parent_path();
+        }
+        return {};
+    }
 
+    // =========================================================
+    // Returns the editor's CMake build directory
+    // (the one containing CMakeCache.txt).
+    // e.g. build/x64-release-local/
+    // =========================================================
+    static fs::path GetEditorBuildDir()
+    {
+        auto current = fs::current_path();
+        while (current.has_parent_path())
+        {
+            if (fs::exists(current / "CMakeCache.txt"))
+                return current;
+            current = current.parent_path();
+        }
+        return {};
+    }
+
+    // =========================================================
+    // Returns the editor's executable output directory.
+    // build/<preset>/editor/{Config}/
+    // buildDir ã‚’æ˜ç¤ºæŒ‡å®šã™ã‚‹ã“ã¨ã§ fs::current_path() ä¾å­˜ã‚’é¿ã‘ã‚‹
+    // =========================================================
+    static fs::path GetEditorOutputDir(const BuildConfig& cfg, const fs::path& buildDir)
+    {
+        return buildDir / "editor" / cfg.config;
+    }
+
+    // =========================================================
+    // Detects the current build configuration from the exe path.
+    // =========================================================
     static BuildConfig DetectCurrentBuildConfig()
     {
-        auto exeDir = GetEditorExeDir();
-
-        // Àsƒtƒ@ƒCƒ‹‚ÌƒpƒX‚©‚ç\¬‚ğ„‘ª
-        // build/x64-debug/editor/Debug/OrionEditor.exe
-        // ‚Ü‚½‚Í
-        // build/x64-release/editor/Release/OrionEditor.exe
-
+        auto exeDir = GetWorkerExeDir();
         std::string exePath = exeDir.string();
-        std::cout << "[DEBUG] Editor exe dir: " << exePath << std::endl;
 
         BuildConfig config;
 
-        // ƒpƒX‚É "x64-release" ‚ªŠÜ‚Ü‚ê‚Ä‚¢‚é‚©Šm”F
         if (exePath.find("x64-release") != std::string::npos)
         {
             config.buildDir = "x64-release";
             config.config = "Release";
         }
-        // ƒpƒX‚É "x64-debug" ‚ªŠÜ‚Ü‚ê‚Ä‚¢‚é‚©Šm”F
         else if (exePath.find("x64-debug") != std::string::npos)
         {
             config.buildDir = "x64-debug";
             config.config = "Debug";
         }
-        // ƒtƒH[ƒ‹ƒoƒbƒN: ƒfƒBƒŒƒNƒgƒŠ–¼‚©‚ç”»’è
         else
         {
             auto configDir = exeDir.filename().string();
-            if (configDir == "Release")
-            {
-                config.buildDir = "x64-release";
-                config.config = "Release";
-            }
-            else // "Debug" or ‚»‚Ì‘¼
-            {
-                config.buildDir = "x64-debug";
-                config.config = "Debug";
-            }
+            config.buildDir = (configDir == "Release") ? "x64-release" : "x64-debug";
+            config.config = (configDir == "Release") ? "Release" : "Debug";
         }
 
         std::cout << "[INFO] Detected build config: " << config.buildDir
             << " (" << config.config << ")" << std::endl;
-
         return config;
     }
 
     // =========================================================
-    // build ƒfƒBƒŒƒNƒgƒŠæ“¾
+    // Returns the runtime executable name from ProjectSettings.
     // =========================================================
-    static fs::path GetBuildRootFromEditor()
+    static std::string GetRuntimeExeName()
     {
-        auto exeDir = GetEditorExeDir();
-        std::cout << "[DEBUG] Editor exe dir: " << exeDir.string() << std::endl;
+        const auto& name = Engine::Core::ProjectSettings::get().getProjectName();
 
-        // build/x64-{debug|release}/editor/{Debug|Release}/OrionEditor.exe ‚Ìê‡
-        auto current = exeDir;
+        // ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã®ãƒ—ãƒ¬ãƒ¼ã‚¹ãƒ›ãƒ«ãƒ€æœªç½®æ› or ç©ºã®å ´åˆ
+        if (name.empty() || name.find("__") != std::string::npos)
+            return "OrionGame";
 
-        // ƒvƒƒWƒFƒNƒgƒ‹[ƒg‚Ü‚Å‘k‚é
-        while (current.has_parent_path())
-        {
-            // build ƒfƒBƒŒƒNƒgƒŠ‚ğ’T‚·
-            if (fs::exists(current / "build"))
-            {
-                auto buildRoot = current / "build";
-                std::cout << "[DEBUG] Found build root: " << buildRoot.string() << std::endl;
-                return buildRoot;
-            }
-
-            // CMakeLists.txt ‚ª‚ ‚ê‚ÎƒvƒƒWƒFƒNƒgƒ‹[ƒg
-            if (fs::exists(current / "CMakeLists.txt"))
-            {
-                auto buildRoot = current / "build";
-                std::cout << "[DEBUG] Build root (from project root): " << buildRoot.string() << std::endl;
-                return buildRoot;
-            }
-
-            current = current.parent_path();
-        }
-
-        // ƒtƒH[ƒ‹ƒoƒbƒN: Œ³‚ÌƒƒWƒbƒN
-        auto buildRoot = exeDir.parent_path()
-            .parent_path()
-            .parent_path()
-            .parent_path();
-
-        std::cout << "[DEBUG] Build root (fallback): " << buildRoot.string() << std::endl;
-        return buildRoot;
+        return name;
     }
 
     // =========================================================
-    // Progress
+    // Resolves the project-templates/3d path.
+    // =========================================================
+    static fs::path GetProjectTemplatesRoot(const fs::path& editorOutputDir)
+    {
+        auto& settings = Engine::Core::ProjectSettings::get();
+        auto projectRoot = settings.getProjectRootDir();
+
+        if (!projectRoot.empty())
+        {
+            if (projectRoot.is_absolute() && fs::exists(projectRoot))
+                return projectRoot;
+
+            auto resolved = editorOutputDir / projectRoot;
+            if (fs::exists(resolved))
+                return fs::weakly_canonical(resolved);
+        }
+
+        return editorOutputDir / "project-templates" / "3d";
+    }
+
+    // =========================================================
+    // Read a variable from CMakeCache.txt.
+    // Matches lines of the form:  VAR_NAME:TYPE=value
+    // =========================================================
+    static std::string ReadCMakeCache(const fs::path& buildDir, const std::string& varName)
+    {
+        fs::path cacheFile = buildDir / "CMakeCache.txt";
+        if (!fs::exists(cacheFile))
+            return {};
+
+        std::ifstream cache(cacheFile);
+        std::string line;
+        while (std::getline(cache, line))
+        {
+            // Match "VARNAME:" or "VARNAME=" at the start
+            if (line.rfind(varName, 0) != 0)
+                continue;
+            if (line.size() <= varName.size())
+                continue;
+            char sep = line[varName.size()];
+            if (sep != ':' && sep != '=')
+                continue;
+
+            auto eq = line.find('=');
+            if (eq == std::string::npos)
+                continue;
+
+            std::string val = line.substr(eq + 1);
+            while (!val.empty() && (val.back() == '\r' || val.back() == '\n' || val.back() == ' '))
+                val.pop_back();
+            return val;
+        }
+        return {};
+    }
+
+    // =========================================================
+    // Callbacks
     // =========================================================
     void BuildSystem::setProgressCallback(ProgressCallback callback)
     {
@@ -130,15 +205,12 @@ namespace Editor::Build
         const std::string& message,
         float progress)
     {
-        auto editorDir = GetEditorExeDir();
-
         m_currentResult.status = status;
         m_currentResult.message = message;
         m_currentResult.progress = progress;
         m_currentResult.outputPath =
-            (editorDir / "dist" / m_currentConfig.config).string();
+            (GetEditorOutputDir(m_currentConfig, m_cachedEditorBuildDir) / "dist" / m_currentConfig.config).string();
 
-        // ƒfƒoƒbƒOo—Í
         std::cout << "[BuildSystem] " << message
             << " (Progress: " << (progress * 100.0f) << "%)" << std::endl;
 
@@ -147,56 +219,89 @@ namespace Editor::Build
     }
 
     // =========================================================
-    // Build entry
+    // Build entry point
     // =========================================================
     bool BuildSystem::build()
     {
         m_cancelled = false;
 
-        // Œ»İ‚Ì\¬‚ğŒŸo
         m_currentConfig = DetectCurrentBuildConfig();
+        m_cachedEditorBuildDir = GetEditorBuildDir();
+        m_cachedSourceRootDir = GetSourceRootDir();
 
-        updateProgress(BuildStatus::Preparing, "Preparing build...", 0.0f);
-        if (!prepareOutputDirectory()) return false;
+        auto& settings = Engine::Core::ProjectSettings::get();
+        settings.loadForEditor();
 
-        updateProgress(BuildStatus::Building, "Building Runtime...", 0.2f);
-        if (!buildRuntimeExecutable()) return false;
+        // ã‚¹ãƒ†ãƒƒãƒ—å®Ÿè¡Œãƒ˜ãƒ«ãƒ‘ãƒ¼: ã‚­ãƒ£ãƒ³ã‚»ãƒ«ãƒã‚§ãƒƒã‚¯â†’ã‚¹ãƒ†ãƒƒãƒ—å®Ÿè¡Œâ†’å¤±æ•—æ™‚ã«Failedé€šçŸ¥
+        // å„ã‚µãƒ–é–¢æ•°ãŒè‡ªå‰ã§updateProgressã—ãªã„å ´åˆã‚‚ã“ã“ã§ã‚«ãƒãƒ¼ã™ã‚‹
+        auto runStep = [this](auto stepFn, const std::string& failMsg, float failProgress) -> bool {
+            if (m_cancelled) {
+                updateProgress(BuildStatus::Failed, "Build cancelled by user", failProgress);
+                return false;
+            }
+            if (!stepFn()) {
+                // ã‚µãƒ–é–¢æ•°ãŒã™ã§ã«Failedé€šçŸ¥æ¸ˆã¿ã®å ´åˆã‚‚ã€ã¾ã ã®å ´åˆã‚‚ã“ã“ã§é€šçŸ¥ã™ã‚‹ã€‚
+                // äºŒé‡é€šçŸ¥ã«ãªã£ã¦ã‚‚è¡¨ç¤ºä¸Šã¯å•é¡Œãªã„ã€‚
+                if (!m_cancelled) {
+                    updateProgress(BuildStatus::Failed, failMsg, failProgress);
+                }
+                else {
+                    updateProgress(BuildStatus::Failed, "Build cancelled by user", failProgress);
+                }
+                return false;
+            }
+            return true;
+            };
 
-        updateProgress(BuildStatus::Building, "Copying executable...", 0.6f);
-        if (!copyExecutable()) return false;
+        updateProgress(BuildStatus::Preparing, "Preparing build...", 0.00f);
+        if (!runStep([this] { return prepareOutputDirectory(); },
+            "Failed to prepare output directory", 0.00f)) return false;
 
-        updateProgress(BuildStatus::CopyingAssets, "Copying assets...", 0.75f);
-        if (!copyAssets()) return false;
+        updateProgress(BuildStatus::Building, "Building Runtime...", 0.20f);
+        if (!runStep([this] { return buildRuntimeExecutable(); },
+            "Runtime build failed", 0.20f)) return false;
 
-        updateProgress(BuildStatus::CopyingAssets, "Copying engine assets...", 0.9f);
-        if (!copyEngineAssets()) return false;
+        updateProgress(BuildStatus::Building, "Copying executable...", 0.60f);
+        if (!runStep([this] { return copyExecutable(); },
+            "Failed to copy executable", 0.60f)) return false;
 
-        updateProgress(BuildStatus::Success, "Build completed successfully", 1.0f);
+        updateProgress(BuildStatus::CopyingAssets, "Copying assets...", 0.70f);
+        if (!runStep([this] { return copyAssets(); },
+            "Failed to copy assets", 0.70f)) return false;
+
+        updateProgress(BuildStatus::CopyingAssets, "Copying ProjectSettings...", 0.80f);
+        if (!runStep([this] { return copyProjectSettings(); },
+            "Failed to copy ProjectSettings.json", 0.80f)) return false;
+
+        updateProgress(BuildStatus::CopyingAssets, "Copying engine assets...", 0.85f);
+        if (!runStep([this] { return copyEngineAssets(); },
+            "Failed to copy engine assets", 0.85f)) return false;
+
+        updateProgress(BuildStatus::Success, "Build completed successfully", 1.00f);
         return true;
     }
 
+
     bool BuildSystem::cancel()
     {
-        if (m_cancelled)
-            return false;
-
+        if (m_cancelled) return false;
         m_cancelled = true;
-        updateProgress(BuildStatus::Failed, "Build cancelled", 0.0f);
+        // updateProgress ã¯ãƒ“ãƒ«ãƒ‰ã‚¹ãƒ¬ãƒƒãƒ‰å´ã‹ã‚‰å‘¼ã°ã‚Œã‚‹ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ã‚’ä½¿ã†ãŸã‚ã€
+        // UIã‚¹ãƒ¬ãƒƒãƒ‰ã‹ã‚‰ã“ã“ã§å‘¼ã¶ã¨m_resultMutexã®ãƒ‡ãƒƒãƒ‰ãƒ­ãƒƒã‚¯ã‚’å¼•ãèµ·ã“ã™ã€‚
+        // ãƒ•ãƒ©ã‚°ã®ã¿ç«‹ã¦ã€ãƒ“ãƒ«ãƒ‰ã‚¹ãƒ¬ãƒƒãƒ‰ã®ãƒ«ãƒ¼ãƒ—ãŒæ¬¡ã®ãƒã‚§ãƒƒã‚¯ã§
+        // Failedã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã‚’ã‚­ãƒ¥ãƒ¼ã«ç©ã‚€ã€‚
         return true;
     }
 
     // =========================================================
-    // dist/{Config} €”õ
+    // Prepare the dist/{Config} output directory.
     // =========================================================
     bool BuildSystem::prepareOutputDirectory()
     {
         try
         {
-            auto editorDir = GetEditorExeDir();
-            auto outDir = editorDir / "dist" / m_currentConfig.config;
-
-            std::cout << "[DEBUG] Preparing output directory: " << outDir.string() << std::endl;
-
+            auto outDir = GetEditorOutputDir(m_currentConfig, m_cachedEditorBuildDir) / "dist" / m_currentConfig.config;
+            std::cout << "[DEBUG] Output dir: " << outDir.string() << std::endl;
             fs::create_directories(outDir);
             return true;
         }
@@ -208,176 +313,248 @@ namespace Editor::Build
         }
     }
 
-    // =========================================================
-    // Runtime build
-    // =========================================================
     bool BuildSystem::buildRuntimeExecutable()
     {
-        auto buildRoot = GetBuildRootFromEditor();
-        auto buildDir = buildRoot / m_currentConfig.buildDir;
-
-        std::cout << "[DEBUG] Build dir: " << buildDir.string() << std::endl;
-
-        if (!fs::exists(buildDir / "CMakeCache.txt"))
+        try
         {
-            updateProgress(
-                BuildStatus::Failed,
-                std::format("{} build not configured. Expected CMakeCache.txt at: {}",
-                    m_currentConfig.config,
-                    (buildDir / "CMakeCache.txt").string()),
-                0.2f
-            );
+            fs::path root = GetSourceRootDir();
+            if (root.empty()) return false;
+
+            std::string projectName = GetRuntimeExeName();
+
+            auto cacheProject =
+                ReadCMakeCache(m_cachedEditorBuildDir, "RUNTIME_PROJECT_NAME");
+
+            bool needReconfigure = (cacheProject != projectName);
+
+            std::string configurePreset =
+                (m_currentConfig.config == "Debug")
+                ? "x64-debug"
+                : "x64-release-local";
+
+            std::string buildPreset =
+                (m_currentConfig.config == "Debug")
+                ? "runtime-debug"
+                : "runtime-release-local";
+
+            // ã‚«ãƒ¬ãƒ³ãƒˆãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚’å¤‰æ›´ã™ã‚‹å‰ã«ä¿å­˜ã—ã€
+            // ã‚¹ã‚³ãƒ¼ãƒ—ã‚’æŠœã‘ãŸã‚‰å¿…ãšå…ƒã«æˆ»ã™ï¼ˆRAIIã‚¬ãƒ¼ãƒ‰ï¼‰
+            fs::path prevPath = fs::current_path();
+            struct RestorePath {
+                fs::path saved;
+                ~RestorePath() { try { fs::current_path(saved); } catch (...) {} }
+            } restorePath{ prevPath };
+
+            fs::current_path(root);
+
+            if (needReconfigure)
+            {
+                std::string configureCmd =
+                    "cmake --preset " + configurePreset +
+                    " -DRUNTIME_PROJECT_NAME=" + projectName;
+
+                if (!RunCommandWithOutput(configureCmd,
+                    [this](const std::string& line)
+                    {
+                        if (m_progressCallback)
+                        {
+                            BuildResult r;
+                            r.status = BuildStatus::Building;
+                            r.progress = 0.3f;
+                            r.message = line;
+                            m_progressCallback(r);
+                        }
+                    }))
+                {
+                    updateProgress(BuildStatus::Failed,
+                        "CMake reconfigure failed", 0.3f);
+                    return false;
+                }
+            }
+
+            std::string buildCmd =
+                "cmake --build --preset " + buildPreset +
+                " --target " + projectName;
+
+            bool result = RunCommandWithOutput(buildCmd,
+                [this](const std::string& line)
+                {
+                    if (m_progressCallback)
+                    {
+                        BuildResult r;
+                        r.status = BuildStatus::Building;
+                        r.progress = 0.5f;
+                        r.message = line;
+                        m_progressCallback(r);
+                    }
+                });
+
+            // restorePathã®ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã§current_pathãŒå…ƒã«æˆ»ã£ã¦ã‹ã‚‰ return
+            return result;
+        }
+        catch (...)
+        {
+            updateProgress(BuildStatus::Failed, "Runtime build failed (exception)", 0.5f);
+            return false;
+        }
+    }
+
+    // =========================================================
+    // Copy the built exe from buildDir/runtime/{Config}/
+    // to editor/{Config}/dist/{Config}/.
+    // =========================================================
+    bool BuildSystem::copyExecutable()
+    {
+        fs::path buildDir = GetEditorBuildDir();
+        fs::path runtimeOut = m_cachedEditorBuildDir / "runtime" / m_currentConfig.config;
+        std::string exeName = GetRuntimeExeName() + ".exe";
+        fs::path exeSrc = runtimeOut / exeName;
+
+        std::cout << "[DEBUG] Looking for exe at: " << exeSrc.string() << std::endl;
+
+        if (!fs::exists(exeSrc))
+        {
+            updateProgress(BuildStatus::Failed,
+                std::format("Runtime executable not found: {}", exeSrc.string()), 0.6f);
             return false;
         }
 
-        // runtimeƒfƒBƒŒƒNƒgƒŠ‚Ì‘¶İŠm”F
-        auto runtimeDir = buildDir / "runtime";
-        if (!fs::exists(runtimeDir))
+        fs::path outDir = GetEditorOutputDir(m_currentConfig, m_cachedEditorBuildDir) / "dist" / m_currentConfig.config;
+
+        try
         {
-            updateProgress(
-                BuildStatus::Failed,
-                std::format("Runtime directory not found: {}", runtimeDir.string()),
-                0.2f
-            );
+            fs::create_directories(outDir);
+            fs::copy_file(exeSrc, outDir / exeName, fs::copy_options::overwrite_existing);
+            std::cout << "[DEBUG] Copied exe to: " << (outDir / exeName).string() << std::endl;
+        }
+        catch (const std::exception& e)
+        {
+            updateProgress(BuildStatus::Failed,
+                std::format("Failed to copy executable: {}", e.what()), 0.6f);
             return false;
         }
 
-        std::string cmd = std::format(
-            "cmake --build \"{}\" --target {} --config {} 2>&1",
-            (buildDir / "runtime").string(),
-            RUNTIME_TARGET,
-            m_currentConfig.config
-        );
-
-        std::cout << "[DEBUG] Executing: " << cmd << std::endl;
-
-        // ƒpƒCƒv‚ğg‚Á‚ÄƒGƒ‰[o—Í‚ğƒLƒƒƒvƒ`ƒƒ
-        FILE* pipe = _popen(cmd.c_str(), "r");
-        if (!pipe)
-        {
-            updateProgress(
-                BuildStatus::Failed,
-                "Failed to execute build command",
-                0.2f
-            );
-            return false;
-        }
-
-        std::stringstream output;
-        char buffer[256];
-        while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
-        {
-            output << buffer;
-            std::cout << buffer; // ƒŠƒAƒ‹ƒ^ƒCƒ€o—Í
-        }
-
-        int exitCode = _pclose(pipe);
-
-        if (exitCode != 0)
-        {
-            updateProgress(
-                BuildStatus::Failed,
-                std::format("Build failed with exit code {}. Output:\n{}",
-                    exitCode, output.str()),
-                0.2f
-            );
-            return false;
-        }
-
-        std::cout << "[DEBUG] Build succeeded" << std::endl;
+        copyDependencyDLLs(outDir, runtimeOut);
         return true;
     }
 
     // =========================================================
-    // Runtime exe ƒRƒs[
+    // Copy assets.
     // =========================================================
-    bool BuildSystem::copyExecutable()
+    bool BuildSystem::copyAssets()
     {
-        auto editorDir = GetEditorExeDir();
-        auto buildRoot = GetBuildRootFromEditor();
+        fs::path editorDir = GetEditorOutputDir(m_currentConfig, m_cachedEditorBuildDir);
+        auto projectRoot = GetProjectTemplatesRoot(editorDir);
+        auto& settings = Engine::Core::ProjectSettings::get();
 
-        fs::path exe =
-            buildRoot / m_currentConfig.buildDir / "runtime" / m_currentConfig.config /
-            (std::string(RUNTIME_TARGET) + ".exe");
+        fs::path src = projectRoot / settings.getAssetRoot();
+        fs::path dst = editorDir / "dist" / m_currentConfig.config / "assets";
 
-        std::cout << "[DEBUG] Looking for exe at: " << exe.string() << std::endl;
+        std::cout << "[DEBUG] Assets: " << src.string() << " -> " << dst.string() << std::endl;
 
-        if (!fs::exists(exe))
+        if (!fs::exists(src))
         {
-            updateProgress(
-                BuildStatus::Failed,
-                std::format("Runtime executable not found at: {}", exe.string()),
-                0.6f
-            );
-            return false;
+            updateProgress(BuildStatus::Warning,
+                std::format("Warning: Asset folder not found: {}", src.string()), 0.70f);
+            return true;
         }
 
-        fs::path dst =
-            editorDir / "dist" / m_currentConfig.config / exe.filename();
+        return copyDirectory(src, dst);
+    }
 
-        std::cout << "[DEBUG] Copying exe to: " << dst.string() << std::endl;
+    // =========================================================
+    // Copy ProjectSettings.json to dist/{Config}/assets/.
+    // __PROJECT_NAME__ ãƒ—ãƒ¬ãƒ¼ã‚¹ãƒ›ãƒ«ãƒ€ã‚’å®Ÿéš›ã®ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆåã«ç½®æ›ã™ã‚‹
+    // =========================================================
+    bool BuildSystem::copyProjectSettings()
+    {
+        fs::path editorDir = GetEditorOutputDir(m_currentConfig, m_cachedEditorBuildDir);
+        auto projectRoot = GetProjectTemplatesRoot(editorDir);
+
+        fs::path src = projectRoot / "ProjectSettings.json";
+        fs::path dst = editorDir / "dist" / m_currentConfig.config / "assets" / "ProjectSettings.json";
+
+        std::cout << "[DEBUG] ProjectSettings: " << src.string() << " -> " << dst.string() << std::endl;
+
+        if (!fs::exists(src))
+        {
+            updateProgress(BuildStatus::Warning,
+                std::format("Warning: ProjectSettings.json not found: {}", src.string()), 0.80f);
+            return true;
+        }
 
         try
         {
-            fs::copy_file(
-                exe, dst,
-                fs::copy_options::overwrite_existing
-            );
+            // ãƒ•ã‚¡ã‚¤ãƒ«ã‚’æ–‡å­—åˆ—ã¨ã—ã¦èª­ã¿è¾¼ã¿ã€ãƒ—ãƒ¬ãƒ¼ã‚¹ãƒ›ãƒ«ãƒ€ã‚’ç½®æ›ã—ã¦ã‹ã‚‰æ›¸ãå‡ºã™
+            std::ifstream inFile(src);
+            if (!inFile.is_open())
+            {
+                updateProgress(BuildStatus::Warning,
+                    std::format("Warning: Cannot open ProjectSettings.json: {}", src.string()), 0.80f);
+                return true;
+            }
 
-            copyDependencyDLLs(dst.parent_path(), exe.parent_path());
+            std::string content((std::istreambuf_iterator<char>(inFile)),
+                std::istreambuf_iterator<char>());
+            inFile.close();
+
+            // __PROJECT_NAME__ ã‚’å®Ÿéš›ã®ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆåã§ç½®æ›
+            std::string projectName = GetRuntimeExeName();
+            auto replaceAll = [](std::string& str, const std::string& from, const std::string& to) {
+                size_t pos = 0;
+                while ((pos = str.find(from, pos)) != std::string::npos) {
+                    str.replace(pos, from.length(), to);
+                    pos += to.length();
+                }
+                };
+
+            replaceAll(content, "__PROJECT_NAME__", projectName);
+            // __ENGINE_VERSION__ ã¯ç¾çŠ¶å›ºå®šå€¤ã§ç½®æ›ï¼ˆå°†æ¥çš„ã«CMakeã‹ã‚‰å–å¾—å¯ã«ã™ã‚‹ï¼‰
+            replaceAll(content, "__ENGINE_VERSION__", "0.0.0");
+
+            fs::create_directories(dst.parent_path());
+            std::ofstream outFile(dst);
+            if (!outFile.is_open())
+            {
+                updateProgress(BuildStatus::Warning,
+                    std::format("Warning: Cannot write ProjectSettings.json to: {}", dst.string()), 0.80f);
+                return true;
+            }
+            outFile << content;
+            outFile.close();
+
+            std::cout << "[DEBUG] ProjectSettings written with ProjectName=" << projectName << std::endl;
             return true;
         }
         catch (const std::exception& e)
         {
-            updateProgress(
-                BuildStatus::Failed,
-                std::format("Failed to copy executable: {}", e.what()),
-                0.6f
-            );
-            return false;
+            updateProgress(BuildStatus::Warning,
+                std::format("Warning: Failed to copy ProjectSettings.json: {}", e.what()), 0.80f);
+            return true;
         }
     }
 
     // =========================================================
-    // Assets(Editor‚Å•ÒW‚µ‚½‚à‚Ì)
+    // Copy engine-assets.
     // =========================================================
-    bool BuildSystem::copyAssets()
-    {
-        auto editorDir = GetEditorExeDir();
-        auto src = editorDir / "assets";
-        auto dst = editorDir / "dist" / m_currentConfig.config / "assets";
-
-        std::cout << "[DEBUG] Copying assets from: " << src.string()
-            << " to: " << dst.string() << std::endl;
-
-        return copyDirectory(src, dst);
-    }
-
     bool BuildSystem::copyEngineAssets()
     {
-        auto editorDir = GetEditorExeDir();
+        fs::path editorDir = GetEditorOutputDir(m_currentConfig, m_cachedEditorBuildDir);
         auto src = editorDir / "engine-assets";
         auto dst = editorDir / "dist" / m_currentConfig.config / "engine-assets";
 
-        std::cout << "[DEBUG] Copying engine assets from: " << src.string()
-            << " to: " << dst.string() << std::endl;
-
+        std::cout << "[DEBUG] Engine assets: " << src.string() << std::endl;
         return copyDirectory(src, dst);
     }
 
     // =========================================================
-    // DLL ƒRƒs[
+    // Copy dependency DLLs from sourceDir to outputDir.
     // =========================================================
     void BuildSystem::copyDependencyDLLs(
         const fs::path& outputDir,
         const fs::path& sourceDir)
     {
-        if (!fs::exists(sourceDir))
-        {
-            std::cout << "[DEBUG] Source dir for DLLs does not exist: "
-                << sourceDir.string() << std::endl;
-            return;
-        }
+        if (!fs::exists(sourceDir)) return;
 
         try
         {
@@ -385,28 +562,21 @@ namespace Editor::Build
             {
                 if (f.path().extension() == ".dll")
                 {
-                    std::cout << "[DEBUG] Copying DLL: " << f.path().filename().string() << std::endl;
-
-                    fs::copy_file(
-                        f.path(),
-                        outputDir / f.path().filename(),
-                        fs::copy_options::overwrite_existing
-                    );
+                    std::cout << "[DEBUG] DLL: " << f.path().filename().string() << std::endl;
+                    fs::copy_file(f.path(), outputDir / f.path().filename(),
+                        fs::copy_options::overwrite_existing);
                 }
             }
         }
         catch (const std::exception& e)
         {
-            updateProgress(
-                BuildStatus::Warning,
-                std::format("Warning: Failed to copy some DLLs: {}", e.what()),
-                0.0f
-            );
+            updateProgress(BuildStatus::Warning,
+                std::format("Warning: Failed to copy some DLLs: {}", e.what()), 0.0f);
         }
     }
 
     // =========================================================
-    // ƒfƒBƒŒƒNƒgƒŠÄ‹AƒRƒs[
+    // Recursively copy a directory.
     // =========================================================
     bool BuildSystem::copyDirectory(
         const fs::path& source,
@@ -414,41 +584,28 @@ namespace Editor::Build
     {
         if (!fs::exists(source))
         {
-            std::cout << "[DEBUG] Source directory does not exist (skipping): "
-                << source.string() << std::endl;
+            std::cout << "[DEBUG] Skipping (not found): " << source.string() << std::endl;
             return true;
         }
 
         try
         {
             fs::create_directories(dest);
-
             for (auto& e : fs::recursive_directory_iterator(source))
             {
                 auto rel = fs::relative(e.path(), source);
                 auto dst = dest / rel;
-
                 if (e.is_directory())
-                {
                     fs::create_directories(dst);
-                }
                 else
-                {
-                    fs::copy_file(
-                        e.path(), dst,
-                        fs::copy_options::overwrite_existing
-                    );
-                }
+                    fs::copy_file(e.path(), dst, fs::copy_options::overwrite_existing);
             }
             return true;
         }
         catch (const std::exception& e)
         {
-            updateProgress(
-                BuildStatus::Failed,
-                std::format("Failed to copy directory: {} - {}", source.string(), e.what()),
-                0.0f
-            );
+            updateProgress(BuildStatus::Failed,
+                std::format("Failed to copy directory: {} - {}", source.string(), e.what()), 0.0f);
             return false;
         }
     }

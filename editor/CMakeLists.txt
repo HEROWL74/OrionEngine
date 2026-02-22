@@ -18,6 +18,12 @@ add_executable(OrionEditor WIN32
     ${CMAKE_SOURCE_DIR}/resources/app.rc
 )
 
+set_target_properties(OrionEditor PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${CMAKE_BINARY_DIR}/editor"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/editor"
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/editor"
+    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/editor"
+)
 
 # ----------------------------------------------
 # Engine に依存
@@ -37,22 +43,21 @@ endif()
 # ----------------------------------------------
 # 出力ディレクトリ
 # ----------------------------------------------
-set(EDITOR_OUT_DIR $<TARGET_FILE_DIR:OrionEditor>)
+set(EDITOR_OUT_DIR "${CMAKE_BINARY_DIR}/editor")
 
 # ----------------------------------------------
 # engine-assets コピー
 # ----------------------------------------------
 add_custom_command(
     TARGET OrionEditor POST_BUILD
-    # Engine assets（shader 含む）
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/engine-assets"
         "${EDITOR_OUT_DIR}/engine-assets"
 
-    # Project templates
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/project-templates"
         "${EDITOR_OUT_DIR}/project-templates"
+
     COMMENT "Copying Editor assets"
 )
 

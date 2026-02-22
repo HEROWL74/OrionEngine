@@ -1,0 +1,188 @@
+﻿// src/engine/Core/ProjectSettings.cpp
+#include "ProjectSettings.hpp"
+#include "../Utils/Common.hpp"
+
+#include <fstream>
+#include <sstream>
+
+namespace Engine::Core
+{
+	// Singleton
+	ProjectSettings& ProjectSettings::get()
+	{
+		static ProjectSettings instance;
+		return instance;
+	}
+
+	// Json Parser
+	namespace
+	{
+        bool parseString(const std::string& src, const std::string& key, std::string& out)
+        {
+            std::string searchKey = "\"" + key + "\"";
+            auto pos = src.find(searchKey);
+            if (pos == std::string::npos) return false;
+
+            pos = src.find(':', pos + searchKey.size());
+            if (pos == std::string::npos) return false;
+
+            auto q1 = src.find('"', pos + 1);
+            if (q1 == std::string::npos) return false;
+
+            auto q2 = src.find('"', q1 + 1);
+            if (q2 == std::string::npos) return false;
+
+            out = src.substr(q1 + 1, q2 - q1 - 1);
+            return true;
+        }
+
+        bool parseInt(const std::string& src, const std::string& key, int& out)
+        {
+            std::string searchKey = "\"" + key + "\"";
+            auto pos = src.find(searchKey);
+            if (pos == std::string::npos) return false;
+
+            pos = src.find(':', pos + searchKey.size());
+            if (pos == std::string::npos) return false;
+
+            auto numStart = src.find_first_not_of(" \t\r\n", pos + 1);
+            if (numStart == std::string::npos) return false;
+
+            try {
+                size_t consumed = 0;
+                out = std::stoi(src.substr(numStart), &consumed);
+                return consumed > 0;
+            }
+            catch (...) { return false; }
+        }
+
+        bool parseBool(const std::string& src, const std::string& key, bool& out)
+        {
+            std::string searchKey = "\"" + key + "\"";
+            auto pos = src.find(searchKey);
+            if (pos == std::string::npos) return false;
+
+            pos = src.find(':', pos + searchKey.size());
+            if (pos == std::string::npos) return false;
+
+            auto valStart = src.find_first_not_of(" \t\r\n", pos + 1);
+            if (valStart == std::string::npos) return false;
+
+            if (src.compare(valStart, 4, "true") == 0) { out = true;  return true; }
+            if (src.compare(valStart, 5, "false") == 0) { out = false; return true; }
+            return false;
+        }
+
+        bool extractBlock(const std::string& src, const std::string& key, std::string& block)
+        {
+            std::string searchKey = "\"" + key + "\"";
+            auto pos = src.find(searchKey);
+            if (pos == std::string::npos) return false;
+
+            auto brace = src.find('{', pos + searchKey.size());
+            if (brace == std::string::npos) return false;
+
+            int depth = 0;
+            auto it = brace;
+            while (it < src.size()) {
+                if (src[it] == '{') ++depth;
+                else if (src[it] == '}') {
+                    if (--depth == 0) { block = src.substr(brace, it - brace + 1); return true; }
+                }
+                ++it;
+            }
+            return false;
+        }
+	}
+
+    bool ProjectSettings::load(const std::filesystem::path& jsonPath)
+    {
+        std::ifstream file(jsonPath);
+        if (!file.is_open())
+        {
+            Utils::log_warning("ProjectSettings: cannot open " + jsonPath.string() + " — using defaults");
+            return false;
+        }
+
+        std::ostringstream ss;
+        ss << file.rdbuf();
+        std::string src = ss.str();
+
+        parseString(src, "ProjectName", m_projectName);
+        parseString(src, "EngineVersion", m_engineVersion);
+        parseString(src, "DefaultScene", m_defaultScene);
+        parseString(src, "AssetRoot", m_assetRoot);
+        parseString(src, "ProjectType", m_projectType);
+
+        std::string windowBlock;
+        if (extractBlock(src, "Window", windowBlock))
+        {
+            parseInt(windowBlock, "Width", m_window.width);
+            parseInt(windowBlock, "Height", m_window.height);
+            parseBool(windowBlock, "Fullscreen", m_window.fullscreen);
+            parseBool(windowBlock, "VSync", m_window.vsync);
+        }
+
+        // JSON が置かれているディレクトリを記憶
+        m_jsonPath = std::filesystem::weakly_canonical(jsonPath);
+        m_projectRootDir = m_jsonPath.parent_path();
+
+        Utils::log_info("ProjectSettings loaded from: " + m_jsonPath.string());
+        Utils::log_info("  ProjectName  : " + m_projectName);
+        Utils::log_info("  AssetRoot    : " + m_assetRoot);
+        Utils::log_info("  AssetRootPath: " + getAssetRootPath().string());
+        Utils::log_info("  DefaultScene : " + getDefaultScenePath().string());
+        return true;
+    }
+
+    void ProjectSettings::loadForEditor()
+    {
+        m_projectName.clear();
+        const std::vector<std::filesystem::path> candidates = {
+            "project-templates/3d/ProjectSettings.json",
+            "../project-templates/3d/ProjectSettings.json",
+        };
+
+        for (const auto& p : candidates)
+        {
+            if (std::filesystem::exists(p))
+            {
+                if (load(p)) return;
+            }
+        }
+
+        // 見つからない場合はデフォルト値 + projectRootDir を手動設定
+        Utils::log_warning("ProjectSettings(Editor): JSON not found — using built-in defaults");
+        m_projectRootDir = std::filesystem::path("project-templates/3d");
+    }
+
+    void ProjectSettings::loadForRuntime()
+    {
+        const std::vector<std::filesystem::path> candidates = {
+            "assets/ProjectSettings.json",
+            "ProjectSettings.json",
+        };
+
+        for (const auto& p : candidates)
+        {
+            if (std::filesystem::exists(p))
+            {
+                if (load(p)) return;
+            }
+        }
+
+        Utils::log_warning("ProjectSettings(Runtime): JSON not found — using built-in defaults");
+        m_projectRootDir = std::filesystem::path(".");
+    }
+
+    std::wstring ProjectSettings::getProjectNameW() const
+    {
+        std::wstring result;
+        result.reserve(m_projectName.size());
+        for (unsigned char c : m_projectName)
+        {
+            result += static_cast<wchar_t>(c);
+        }
+        return result;
+    }
+}

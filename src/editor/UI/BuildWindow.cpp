@@ -1,4 +1,4 @@
-// src/editor/UI/BuildWindow.cpp
+﻿// src/editor/UI/BuildWindow.cpp
 
 #include "BuildWindow.hpp"
 #include "imgui.h"
@@ -11,24 +11,36 @@ namespace Editor::UI
 {
     BuildWindow::BuildWindow() = default;
 
-    void BuildWindow::initialize(Build::BuildSystem* buildSystem)
+    void BuildWindow::initialize()
     {
-        m_buildSystem = buildSystem;
 
-        if (m_buildSystem)
-        {
-            m_buildSystem->setProgressCallback(
-                [this](const Build::BuildResult& result)
-                {
-                    onBuildProgressUpdate(result);
-                }
-            );
-        }
     }
 
     void BuildWindow::draw()
     {
         if (!m_isVisible) return;
+
+        // ロック範囲を最小限にしてキューをローカルにスワップし、
+        // ロック外で処理することでデッドロックを防ぐ
+        std::queue<Build::BuildResult> localQueue;
+        {
+            std::lock_guard<std::mutex> lock(m_resultMutex);
+            std::swap(localQueue, m_resultQueue);
+        }
+
+        while (!localQueue.empty())
+        {
+            auto result = localQueue.front();
+            localQueue.pop();
+
+            onBuildProgressUpdate(result);
+
+            if (result.status == Build::BuildStatus::Success ||
+                result.status == Build::BuildStatus::Failed)
+            {
+                m_isBuilding = false;
+            }
+        }
 
         ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
 
@@ -60,10 +72,14 @@ namespace Editor::UI
             {
                 if (m_buildSystem)
                 {
+                    // cancel()はm_cancelledフラグを立てるだけ。
+                    // ビルドスレッドがFailed結果をキューに積んだ後、
+                    // draw()のキュー処理でm_isBuildingがfalseになる。
+                    // UIスレッドで即座にfalseにするとスレッドがまだ動いていても
+                    // 完了扱いになってしまうのでここでは変更しない。
                     m_buildSystem->cancel();
-                    addLogEntry(BuildLogEntry::Type::Warning, "Build cancelled by user");
+                    addLogEntry(BuildLogEntry::Type::Warning, "Cancelling build...");
                 }
-                m_isBuilding = false;
             }
             ImGui::EndDisabled();
 
@@ -78,24 +94,27 @@ namespace Editor::UI
     {
         clearLog();
         m_isBuilding = true;
+        m_buildProgress = 0.0f;
+        m_currentStatus = "Starting build...";
 
-        addLogEntry(BuildLogEntry::Type::Info, "Starting build...");
+        // shared_ptrで管理することで、スレッドがBuildWindowより
+        // 長生きしてもUse-After-Freeにならない
+        m_buildSystem = std::make_shared<Build::BuildSystem>();
 
-        std::thread([this]()
+        m_buildSystem->setProgressCallback(
+            [this](const Build::BuildResult& result)
             {
-                if (m_buildSystem)
-                {
-                    bool success = m_buildSystem->build();
-                    m_isBuilding = false;
+                std::lock_guard<std::mutex> lock(m_resultMutex);
+                m_resultQueue.push(result);
+            });
 
-                    if (success)
-                        addLogEntry(BuildLogEntry::Type::Success, "Build completed!");
-                    else
-                        addLogEntry(BuildLogEntry::Type::Error, "Build failed");
-                }
+        // スレッドにshared_ptrのコピーを渡して所有権を共有する。
+        // こうするとBuildWindowが先に破棄されてもスレッドは安全に動作する。
+        auto buildSystemCopy = m_buildSystem;
+        std::thread([buildSystemCopy]() {
+            buildSystemCopy->build();
             }).detach();
     }
-
 
     void BuildWindow::drawBuildProgress()
     {
@@ -128,6 +147,7 @@ namespace Editor::UI
             result.message
         );
     }
+
 
     void BuildWindow::clearLog()
     {
