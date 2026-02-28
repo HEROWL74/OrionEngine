@@ -32,20 +32,24 @@ endif()
 
 add_custom_command(
     TARGET OrionEditor POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/editor/player"
+    
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/engine-assets"
         "${CMAKE_BINARY_DIR}/editor/engine-assets"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/project"
         "${CMAKE_BINARY_DIR}/editor/project"
+
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<TARGET_FILE:OrionGame>"
         "${CMAKE_BINARY_DIR}/editor/player/OrionGame.exe"
+
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<TARGET_FILE:OrionRuntime>"
         "${CMAKE_BINARY_DIR}/editor/OrionRuntime.dll"
-    COMMENT "Bundling player runtime into editor"
-    COMMENT "Copying Editor assets"
+
+    COMMENT "Bundling player runtime and assets into editor directory"
 )
 
 if (MSVC)
