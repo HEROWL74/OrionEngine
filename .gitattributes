@@ -71,6 +71,7 @@ src/runtime/**/*.hpp   text eol=crlf
 *.jpg binary
 *.ico binary
 *.cso binary
-engine-assets/** binary
+engine-assets/**/*.hlsl  text eol=crlf
+engine-assets/**/*.hlsli text eol=crlf
 
 *.dds filter=lfs diff=lfs merge=lfs -text

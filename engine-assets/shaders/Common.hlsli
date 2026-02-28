@@ -1,4 +1,4 @@
-//assets/shaders/Common.hlsli
+﻿//assets/shaders/Common.hlsli
 //Same struct and constantbuffe
 #ifndef COMMON_HLSLI_INCLUDED
 #define COMMON_HLSLI_INCLUDED

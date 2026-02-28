@@ -1,4 +1,4 @@
-//assets/shaders/Lighting.hlsli
+﻿//assets/shaders/Lighting.hlsli
 //PBRLightingFunc
 
 #include "Common.hlsli"
