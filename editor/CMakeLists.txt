@@ -43,7 +43,7 @@ add_custom_command(
         "${CMAKE_BINARY_DIR}/editor/player/OrionGame.exe"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<TARGET_FILE:OrionRuntime>"
-        "${CMAKE_BINARY_DIR}/editor/player/OrionRuntime.dll"
+        "${CMAKE_BINARY_DIR}/editor/OrionRuntime.dll"
     COMMENT "Bundling player runtime into editor"
     COMMENT "Copying Editor assets"
 )

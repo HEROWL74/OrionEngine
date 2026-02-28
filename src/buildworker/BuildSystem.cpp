@@ -521,24 +521,25 @@ namespace Editor::Build
 
     // =========================================================
     // preparePlayerCache
-    // =========================================================
     bool BuildSystem::preparePlayerCache(bool forceRebuild)
     {
         fs::path playerDir = getPlayerDir();
+        fs::path exeDir = GetWorkerExeDir(); // エディタ/Workerの実行ファイルがある階層
 
-        // DLL は常に OrionRuntime.dll という固定名で player/ に同梱される
+        // ランチャーは player/、DLL は exe の真横にある前提
         bool hasLauncher = fs::exists(playerDir / "OrionGame.exe");
-        bool hasGameDll = fs::exists(playerDir / "OrionRuntime.dll"); // ← 固定名
+        bool hasGameDll = fs::exists(exeDir / "OrionRuntime.dll");
 
         if (!forceRebuild && hasLauncher && hasGameDll)
         {
-            writeLog("INFO", "player/ cache exists (launcher + dll), skipping cmake build.");
+            writeLog("INFO", "Cache exists (Launcher in player/, DLL in exe root), skipping cmake build.");
             return true;
         }
 
+        // エラーメッセージも実態に合わせて修正
         updateProgress(BuildStatus::Failed,
-            "player/ directory is missing OrionGame.exe or OrionRuntime.dll.\n"
-            "These files should be bundled with the editor. Please reinstall the editor.",
+            "Missing OrionGame.exe (in player/) or OrionRuntime.dll (in exe root).\n"
+            "Please check your installation.",
             0.1f);
         return false;
     }
@@ -558,6 +559,7 @@ namespace Editor::Build
     bool BuildSystem::copyPlayerExecutable()
     {
         fs::path playerDir = getPlayerDir();
+        fs::path exeDir = GetWorkerExeDir();
         fs::path outDir = getDistOutputDir();
 
         // ---- ランチャー EXE: OrionGame.exe → {ProjectName}.exe にリネームしてコピー ----
@@ -588,11 +590,12 @@ namespace Editor::Build
         const std::string dllName = (m_cachedProjectName == "OrionGame")
             ? "OrionRuntime"
             : m_cachedProjectName;
-        fs::path gameDllSrc = playerDir / "OrionRuntime.dll";  // 常に固定名
+        fs::path gameDllSrc = exeDir / "OrionRuntime.dll";
+
         if (!fs::exists(gameDllSrc))
         {
             updateProgress(BuildStatus::Failed,
-                std::format("Game DLL not found: {}", gameDllSrc.string()), 0.5f);
+                std::format("Game DLL not found at exe root: {}", gameDllSrc.string()), 0.5f);
             return false;
         }
 
@@ -600,7 +603,7 @@ namespace Editor::Build
         {
             fs::copy_file(gameDllSrc, outDir / "OrionRuntime.dll",
                 fs::copy_options::overwrite_existing);
-            writeLog("DEBUG", "GameDLL: OrionRuntime.dll -> OrionRuntime.dll");
+            writeLog("DEBUG", "GameDLL copied from exe root to dist.");
         }
         catch (const std::exception& e)
         {
@@ -609,7 +612,7 @@ namespace Editor::Build
             return false;
         }
 
-        // ---- 依存 DLL (.exe と .dll 以外の .dll) をコピー ----
+        // 3. 依存DLLも exe の横から優先的にコピー
         copyDependencyDLLs(outDir, playerDir);
         return true;
     }

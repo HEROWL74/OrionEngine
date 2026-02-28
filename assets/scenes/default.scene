@@ -1,0 +1,198 @@
+{
+    "gameObjects": [
+        {
+            "active": true,
+            "boxCollider": {
+                "center": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "isTrigger": false,
+                "size": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "lua": {
+                "name": "Lua",
+                "scriptPath": "assets\\scripts\\move.lua"
+            },
+            "name": "Player",
+            "renderComponent": {
+                "material": {
+                    "name": "Material",
+                    "properties": {
+                        "albedo": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "metallic": 0.0,
+                        "roughness": 0.5
+                    },
+                    "textures": {}
+                },
+                "renderableType": 1,
+                "visible": true
+            },
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "active": true,
+            "lua": {
+                "name": "Lua",
+                "scriptPath": "assets\\scripts\\text.lua"
+            },
+            "name": "StartText",
+            "transform": {
+                "position": [
+                    -1.399999976158142,
+                    4.300000190734863,
+                    5.413000106811523
+                ],
+                "rotation": [
+                    151.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    0.009999999776482582,
+                    0.009999999776482582,
+                    0.009999999776482582
+                ]
+            },
+            "uiText": {
+                "alpha": 0.9490000009536743,
+                "color": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "fontSize": 25.0,
+                "text": "Score: 0",
+                "visible": true
+            }
+        },
+        {
+            "active": true,
+            "boxCollider": {
+                "center": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "isTrigger": false,
+                "size": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "lua": {
+                "name": "Lua",
+                "scriptPath": "assets\\scripts\\Obstacle.lua"
+            },
+            "name": "Obstacle",
+            "renderComponent": {
+                "material": {
+                    "name": "Material",
+                    "properties": {
+                        "albedo": [
+                            0.3970588445663452,
+                            0.1206747516989708,
+                            0.1206747516989708
+                        ],
+                        "metallic": 0.0,
+                        "roughness": 0.5
+                    },
+                    "textures": {}
+                },
+                "renderableType": 1,
+                "visible": true
+            },
+            "transform": {
+                "position": [
+                    -0.5708813667297363,
+                    -0.38974714279174805,
+                    -10.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "active": true,
+            "audioComponent": {
+                "filePath": "assets\\audio\\game_bgm.wav",
+                "loop": true,
+                "volume": 0.5
+            },
+            "lua": {
+                "name": "Lua",
+                "scriptPath": "assets\\scripts\\bgm.lua"
+            },
+            "name": "MusicSystem",
+            "renderComponent": {
+                "material": {
+                    "name": "Material",
+                    "properties": {
+                        "albedo": [
+                            1.0,
+                            0.5,
+                            0.5
+                        ],
+                        "metallic": 0.0,
+                        "roughness": 0.5
+                    },
+                    "textures": {}
+                },
+                "renderableType": 1,
+                "visible": false
+            },
+            "transform": {
+                "position": [
+                    1.3261232376098633,
+                    3.410003185272217,
+                    5.456005096435547
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        }
+    ],
+    "version": "1.0"
+}
