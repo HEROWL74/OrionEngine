@@ -1,4 +1,4 @@
-// src/engine/Core/Window/IWindow.hpp
+﻿// src/engine/Core/Window/IWindow.hpp
 #pragma once
 #include <cstdint>
 #include <string>
@@ -37,3 +37,4 @@ namespace Engine::Window
 		virtual void SetTitle(const std::string& title) = 0;
 	};
 }
+

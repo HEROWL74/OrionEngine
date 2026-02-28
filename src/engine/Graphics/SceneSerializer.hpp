@@ -1,4 +1,4 @@
-// src/engine/Graphics/SceneSerializer.hpp
+﻿// src/engine/Graphics/SceneSerializer.hpp
 #pragma once
 
 #include <string>
@@ -15,7 +15,7 @@ namespace Engine::Graphics
 	using json = nlohmann::json;
 
 	// ===============================================
-	// Sceneのシリアライズ、デシリアライズを行うクラス
+	// Scene縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ縲√ョ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ繧定｡後≧繧ｯ繝ｩ繧ｹ
 	// ===============================================
 	class SceneSerializer
 	{
@@ -23,12 +23,12 @@ namespace Engine::Graphics
 		SceneSerializer() = default;
 		~SceneSerializer() = default;
 
-		// SceneをJSONに保存
+		// Scene繧谷SON縺ｫ菫晏ｭ・
 		[[nodiscard]] Utils::VoidResult saveScene(
 			const Scene& scene,
 			const std::string& filePath);
 
-		// JSONからSceneを読み込み
+		// JSON縺九ｉScene繧定ｪｭ縺ｿ霎ｼ縺ｿ
 		[[nodiscard]] Utils::VoidResult loadScene(
 			Scene& scene,
 			Device* device,
@@ -38,10 +38,10 @@ namespace Engine::Graphics
 			const std::string& filePath);
 
 	private:
-		// GameObjectをJSON化
+		// GameObject繧谷SON蛹・
 		json serializeGameObject(const Core::GameObject* gameObject);
 
-		// JSONからGameObjectを復元
+		// JSON縺九ｉGameObject繧貞ｾｩ蜈・
 		[[nodiscard]] Utils::VoidResult deserializeGameObject(
 			Scene& scene,
 			Device* device,
@@ -51,15 +51,15 @@ namespace Engine::Graphics
 			const json& json
 		);
 
-		// UITextコンポーネントのシリアライズ
+		// UIText繧ｳ繝ｳ繝昴・繝阪Φ繝医・繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ
 		json serializeUITextComponent(const EngineUI::UIText* text);
 		void deserializeUITextComponent(EngineUI::UIText* text, const json& json);
 
-		// Transform情報のシリアライズ
+		// Transform諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ
 		json serializeTransform(const Core::Transform* transform);
 		void deserializeTransform(Core::Transform* transform, const json& json);
 
-		// RenderComponent情報のシリアライズ
+		// RenderComponent諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ
 		json serializeRenderComponent(const RenderComponent* renderComponent);
 
 		[[nodiscard]] Utils::VoidResult deserializeRenderComponent(
@@ -70,18 +70,19 @@ namespace Engine::Graphics
 			TextureManager* textureManager,
 			const json& json);
 
-		// Material情報のシリアライズ
+		// Material諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ
 		json serializeMaterial(const Material* material);
 
-		// Luaスクリプト情報のシリアライズ
+		// Lua繧ｹ繧ｯ繝ｪ繝励ヨ諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ
 		json serializeLuaComponent(const Scripting::LuaScriptComponent* component);
 
-		// BoxCollider情報のシリアライズ & デシリアライズ
+		// BoxCollider諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ & 繝・す繝ｪ繧｢繝ｩ繧､繧ｺ
 		json serializeBoxCollider(const Physics::BoxCollider* collider);
 		void deserializeBoxCollider(Physics::BoxCollider* collider, const json& json);
 
-		// AudioComponent情報のシリアライズ & デシリアライズ
+		// AudioComponent諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ & 繝・す繝ｪ繧｢繝ｩ繧､繧ｺ
 		json serializeAudioComponent(const Audio::AudioComponent* audioComponent);
 		void deserializeAudioComponent(Audio::AudioComponent* audioComponent, const json& json);
 	};
 }
+

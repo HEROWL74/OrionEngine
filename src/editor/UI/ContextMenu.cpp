@@ -539,3 +539,4 @@ namespace Editor::UI
         return baseName + "_" + std::to_string(globalCounter);
     }
 }
+

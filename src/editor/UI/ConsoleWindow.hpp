@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "ImGuiManager.hpp"
 
 namespace Editor::UI
@@ -28,3 +28,4 @@ namespace Editor::UI
 		std::unordered_map<std::string , std::vector<std::string>> m_consoleLogStacks;
 	};
 }
+

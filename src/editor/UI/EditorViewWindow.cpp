@@ -1,4 +1,4 @@
-#include "EditorViewWindow.hpp"
+ï»¿#include "EditorViewWindow.hpp"
 #include "../Utils/RayPicking.hpp"
 #include "imgui.h"
 #include "engine/Utils/Common.hpp"
@@ -31,7 +31,7 @@ namespace Editor::UI
 		if (!m_texture)
 			return;
 
-		// ˆÊ’u‚ÆƒTƒCƒYw’è‚ğíœ‚µAƒhƒbƒLƒ“ƒO‚É”C‚¹‚é
+		// ä½ç½®ã¨ã‚µã‚¤ã‚ºæŒ‡å®šã‚’å‰Šé™¤ã—ã€ãƒ‰ãƒƒã‚­ãƒ³ã‚°ã«ä»»ã›ã‚‹
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar |
 			ImGuiWindowFlags_NoScrollWithMouse;
 
@@ -284,3 +284,4 @@ namespace Editor::UI
 		}
 	}
 }
+

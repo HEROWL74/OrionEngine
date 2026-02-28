@@ -176,3 +176,4 @@ namespace Engine::Graphics
         ConstantBuffer<ObjectConstants> m_objectConstants;
     };
 }
+

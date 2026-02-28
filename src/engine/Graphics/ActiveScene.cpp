@@ -1,4 +1,4 @@
-#include "ActiveScene.hpp"
+﻿#include "ActiveScene.hpp"
 
 namespace Engine::Graphics
 {
@@ -14,3 +14,4 @@ namespace Engine::Graphics
         g_activeScene = scene;
     }
 }
+

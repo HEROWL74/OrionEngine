@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "IScript.hpp"
 #include "../Core/GameObject.hpp"
 
@@ -12,13 +12,13 @@ namespace Engine::Scripting
 
 		virtual ~CppScriptComponent() = default;
 
-		//Component ‚Ìƒ‰ƒCƒtƒTƒCƒNƒ‹‚Æ“¯Šú
+		//Component ã®ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«ã¨åŒæœŸ
 		void start()override { OnStart(); }
 		void update(float dt)override { OnUpdate(dt); }
 		void lateUpdate(float dt) override {}
 		void onDestroy()override { OnDestroy(); }
 
-		//IScript‚ÌŒp³ƒƒ\ƒbƒh
+		//IScriptã®ç¶™æ‰¿ãƒ¡ã‚½ãƒƒãƒ‰
 		virtual void OnStart() override {};
 		virtual void OnUpdate(float dt) override{}
 		virtual void OnDestroy() override {}
@@ -27,3 +27,4 @@ namespace Engine::Scripting
 		Core::GameObject* m_owner = nullptr;
 	}; 
 }
+

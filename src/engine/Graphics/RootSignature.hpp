@@ -1,4 +1,4 @@
-// src/Graphics/RootSignature.hpp
+﻿// src/Graphics/RootSignature.hpp
 #pragma once
 #include <d3d12.h>
 #include "../Utils/Common.hpp"
@@ -39,3 +39,4 @@ namespace Engine::Graphics
 
 	};
 }
+

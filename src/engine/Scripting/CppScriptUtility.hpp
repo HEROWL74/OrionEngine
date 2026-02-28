@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <string>
 
 namespace Engine::Scripting
@@ -6,13 +6,14 @@ namespace Engine::Scripting
 	class CppScriptUtility
 	{
 	public:
-		//ƒtƒ@ƒCƒ‹‚ğì¬‚·‚éiƒfƒtƒHƒ‹ƒg“à—eŠÜ‚Şj
+		//ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œæˆã™ã‚‹ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå†…å®¹å«ã‚€ï¼‰
 		static bool createNewScript(const std::string& path);
 
-		//VSCodeŠJ‚­
+		//VSCodeé–‹ã
 		static void openInVSCode(const std::string& path);
 
-		//ƒtƒ@ƒCƒ‹–¼cpp•â³
+		//ãƒ•ã‚¡ã‚¤ãƒ«åcppè£œæ­£
 		static std::string normalizePath(const std::string& name);
 	};
 }
+

@@ -1,4 +1,4 @@
-// src/editor/UI/ToolbarWindow.hpp
+Ôªø// src/editor/UI/ToolbarWindow.hpp
 #pragma once
 #include "ImGuiManager.hpp"
 #include "../Core/PlayModeController.hpp"
@@ -14,12 +14,12 @@ namespace Editor::UI
 		{
 			if (!m_visible || !m_playModeController) return;
 
-			// ÉÅÉCÉìÉrÉÖÅ[É|Å[ÉgÇÃè„ïîÇ…å≈íË
+			// „É°„Ç§„É≥„Éì„É•„Éº„Éù„Éº„Éà„ÅÆ‰∏äÈÉ®„Å´Âõ∫ÂÆö
 			ImGuiViewport* viewport = ImGui::GetMainViewport();
 			ImVec2 workPos = viewport->WorkPos;
 			ImVec2 workSize = viewport->WorkSize;
 
-			// ÉcÅ[ÉãÉoÅ[ÇÃÉTÉCÉYÇ∆à íu
+			// „ÉÑ„Éº„É´„Éê„Éº„ÅÆ„Çµ„Ç§„Ç∫„Å®‰ΩçÁΩÆ
 			const float toolbarHeight = 40.0f;
 			ImGui::SetNextWindowPos(ImVec2(workPos.x, workPos.y), ImGuiCond_Always);
 			ImGui::SetNextWindowSize(ImVec2(workSize.x, toolbarHeight), ImGuiCond_Always);
@@ -33,7 +33,7 @@ namespace Editor::UI
 
 			if (ImGui::Begin("##Toolbar", &m_visible, flags))
 			{
-				// íÜâõëµÇ¶ópÇÃÉXÉyÅ[ÉX
+				// ‰∏≠Â§ÆÊèÉ„ÅàÁî®„ÅÆ„Çπ„Éö„Éº„Çπ
 				float buttonWidth = 60.0f;
 				float spacing = 10.0f;
 				float totalWidth = (buttonWidth * 3) + (spacing * 2);
@@ -41,10 +41,10 @@ namespace Editor::UI
 
 				ImGui::SetCursorPosX(offsetX);
 
-				// åªç›ÇÃèÛë‘ÇéÊìæ
+				// ÁèæÂú®„ÅÆÁä∂ÊÖã„ÇíÂèñÂæó
 				EditorCore::EditorState currentState = m_playModeController->getState();
 
-				// Play É{É^Éì
+				// Play „Éú„Çø„É≥
 				bool isPlaying = (currentState == EditorCore::EditorState::Playing);
 				if (isPlaying)
 				{
@@ -63,7 +63,7 @@ namespace Editor::UI
 
 				ImGui::SameLine(0.0f, spacing);
 
-				// Pause É{É^Éì
+				// Pause „Éú„Çø„É≥
 				bool isPaused = (currentState == EditorCore::EditorState::Paused);
 				if (isPaused)
 				{
@@ -100,7 +100,7 @@ namespace Editor::UI
 
 				ImGui::SameLine(0.0f, spacing);
 
-				// Stop É{É^Éì
+				// Stop „Éú„Çø„É≥
 				bool canStop = (currentState != EditorCore::EditorState::Edit);
 				if (!canStop)
 				{
@@ -117,7 +117,7 @@ namespace Editor::UI
 					ImGui::EndDisabled();
 				}
 
-				// âEë§Ç…èÛë‘ï\é¶
+				// Âè≥ÂÅ¥„Å´Áä∂ÊÖãË°®Á§∫
 				ImGui::SameLine();
 				ImGui::SetCursorPosX(workSize.x - 150.0f);
 
@@ -154,3 +154,4 @@ namespace Editor::UI
 		EditorCore::PlayModeController* m_playModeController = nullptr;
 	};
 }
+

@@ -1,4 +1,4 @@
-// src/engine/Core/Window/Window_Web.hpp
+﻿// src/engine/Core/Window/Window_Web.hpp
 #pragma once
 #include "IWindow.hpp"
 
@@ -29,3 +29,4 @@ namespace Engine::Window
 		bool m_shouldClose = false;
 	};
 }
+

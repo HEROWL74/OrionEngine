@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <wrl.h>
 #include <memory>
@@ -16,11 +16,11 @@ namespace Engine::Graphics
 		Utils::VoidResult initialize(Device* device, ShaderManager* shaderManager);
 		void shutdown();
 
-		//毎フレーム呼び出し
+		//豈弱ヵ繝ｬ繝ｼ繝蜻ｼ縺ｳ蜃ｺ縺・
 		void render(ID3D12GraphicsCommandList* cmd, const Camera& camera);
 
 	private:
-		//GPUリソース
+		//GPU繝ｪ繧ｽ繝ｼ繧ｹ
 		ComPtr<ID3D12RootSignature> m_rootSig;
 		ComPtr<ID3D12PipelineState> m_pso;
 
@@ -36,11 +36,11 @@ namespace Engine::Graphics
 		ComPtr<ID3D12Resource> m_cameraCB;
 		void* m_cameraCbMapped = nullptr;
 
-		//参照
+		//蜿ら・
 		Device* m_device = nullptr;
 		ShaderManager* m_shaderManager = nullptr;
 
-		//内部関数
+		//蜀・Κ髢｢謨ｰ
 		Utils::VoidResult loadCubeTexture(const std::wstring& filepath);
 		Utils::VoidResult createRootSignature();
 		Utils::VoidResult createPipelineState();
@@ -49,3 +49,4 @@ namespace Engine::Graphics
 		void updateCameraCB(const Camera& camera);
  	};
 }
+

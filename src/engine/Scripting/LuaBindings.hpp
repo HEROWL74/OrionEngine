@@ -33,3 +33,4 @@ namespace Engine::Scripting
 	    void registerBindings(sol::state& lua);
 	};
 }
+

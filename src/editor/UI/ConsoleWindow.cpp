@@ -1,4 +1,4 @@
-#include "ConsoleWindow.hpp"
+﻿#include "ConsoleWindow.hpp"
 
 namespace Editor::UI
 {
@@ -17,3 +17,4 @@ namespace Editor::UI
 
 	}
 }
+

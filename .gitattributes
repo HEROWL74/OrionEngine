@@ -59,9 +59,12 @@
 #*.RTF   diff=astextplain
 * text=auto
 
-src/**/*.cpp text eol=crlf
-src/**/*.hpp text eol=crlf
-src/**/*.h   text eol=crlf
+src/engine/**/*.cpp    text eol=crlf
+src/engine/**/*.hpp    text eol=crlf
+src/editor/**/*.cpp    text eol=crlf
+src/editor/**/*.hpp    text eol=crlf
+src/runtime/**/*.cpp   text eol=crlf
+src/runtime/**/*.hpp   text eol=crlf
 
 *.dds binary
 *.png binary

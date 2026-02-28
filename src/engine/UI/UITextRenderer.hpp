@@ -1,4 +1,4 @@
-// src/engine/UI/UITextRenderer.hpp
+﻿// src/engine/UI/UITextRenderer.hpp
 #pragma once
 #include "../Graphics/Device.hpp"
 #include "../Graphics/ShaderManager.hpp"
@@ -90,7 +90,7 @@ namespace Engine::EngineUI
         ComPtr<ID3D12RootSignature> m_rootSignature;
         ComPtr<ID3D12PipelineState> m_pipelineState;
 
-        // 動的頂点バッファ（各描画で使用）
+        // 蜍慕噪鬆らせ繝舌ャ繝輔ぃ・亥推謠冗判縺ｧ菴ｿ逕ｨ・・
         ComPtr<ID3D12Resource> m_vertexBuffer;
         D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView{};
         uint32_t m_maxVertices = 10000;
@@ -102,7 +102,7 @@ namespace Engine::EngineUI
 
         uint32_t m_currentVertexOffset = 0;
 
-        // 定数バッファ（フレームごと）
+        // 螳壽焚繝舌ャ繝輔ぃ・医ヵ繝ｬ繝ｼ繝縺斐→・・
         static constexpr uint32_t kFrameCount = 3;
         static constexpr uint32_t kMaxUITexts = 100;
         struct FrameConstantBuffer
@@ -125,3 +125,4 @@ namespace Engine::EngineUI
         FontAtlas* getOrCreateAtlas(float fontSize);
     };
 }
+

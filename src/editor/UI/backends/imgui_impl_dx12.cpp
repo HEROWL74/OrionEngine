@@ -1257,3 +1257,4 @@ void ImGui_ImplDX12_ShutdownPlatformInterface()
 //-----------------------------------------------------------------------------
 
 #endif // #ifndef IMGUI_DISABLE
+

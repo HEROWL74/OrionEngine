@@ -1,4 +1,4 @@
-// src/editor/Views/EditorView.hpp
+ï»¿// src/editor/Views/EditorView.hpp
 #pragma once
 #include <d3d12.h>
 #include <memory>
@@ -65,11 +65,11 @@ namespace Editor::UI
 		Core::GameObject* getSelectedObject() const { return m_selectedObject; }
 		void setSkybox(Graphics::Skybox* skybox) { m_skybox = skybox; }
 
-		// GizmoŠÖ˜A
+		// Gizmoé–¢é€£
 		Gizmo* getGizmo() { return m_gizmo.get(); }
 		void setGizmoType(GizmoType type) { if (m_gizmo) m_gizmo->setType(type); }
 
-		// ‰ğ•ú
+		// è§£æ”¾
 		void clearGizmoSelection()
 		{
 			if (m_gizmo)
@@ -99,7 +99,7 @@ namespace Editor::UI
 		// FXAA
 		std::unique_ptr<Graphics::FXAARenderer> m_fxaaRenderer;
 		std::unique_ptr<Graphics::RenderTarget> m_fxaaOutputTarget;
-		bool m_enableFXAA = true; //”äŠr—p
+		bool m_enableFXAA = true; //æ¯”è¼ƒç”¨
 
 		// Gizmo
 		std::unique_ptr<Gizmo> m_gizmo;
@@ -110,7 +110,7 @@ namespace Editor::UI
 			Core::GameObject* object);
 
 	private:
-		// Grid ŠÖ˜A‚Ì•Ï”
+		// Grid é–¢é€£ã®å¤‰æ•°
 		struct GridVertex
 		{
 			Math::Vector3 position;
@@ -122,7 +122,7 @@ namespace Editor::UI
 			Math::Matrix4 viewProjection;
 		};
 
-		// ƒOƒŠƒbƒh—pƒŠƒ\[ƒX
+		// ã‚°ãƒªãƒƒãƒ‰ç”¨ãƒªã‚½ãƒ¼ã‚¹
 		ComPtr<ID3D12Resource> m_gridVertexBuffer;
 		ComPtr<ID3D12Resource> m_gridCameraBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_gridVertexBufferView{};
@@ -133,10 +133,11 @@ namespace Editor::UI
 		bool m_gridInitialized = false;
 
 	private:
-		// Grid ŠÖ˜A‚ÌŠÖ”
+		// Grid é–¢é€£ã®é–¢æ•°
 		[[nodiscard]] Engine::Utils::VoidResult initializeGrid(Graphics::ShaderManager* shaderManager);
 		[[nodiscard]] Engine::Utils::VoidResult createGridGeometry();
 		[[nodiscard]] Engine::Utils::VoidResult createGridRootSignature();
 		[[nodiscard]] Engine::Utils::VoidResult createGridPipelineState(Graphics::ShaderManager* shaderManager);
 	};
 }
+

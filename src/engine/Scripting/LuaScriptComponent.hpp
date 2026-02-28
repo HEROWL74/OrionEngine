@@ -1,4 +1,4 @@
-//src/Scripting/LuaScriptComponent.hpp
+ï»¿//src/Scripting/LuaScriptComponent.hpp
 #pragma once
 
 #include <string>
@@ -9,31 +9,31 @@
 namespace Engine::Scripting
 {
     // ================================================
-    // LuaƒXƒNƒŠƒvƒg‚ğGameObject‚É•t—^‚·‚éƒRƒ“ƒ|[ƒlƒ“ƒg
+    // Luaã‚¹ã‚¯ãƒªãƒ—ãƒˆã‚’GameObjectã«ä»˜ä¸ã™ã‚‹ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ
     // ================================================
     class LuaScriptComponent : public Core::Component
     {
     public:
         explicit LuaScriptComponent(const std::string& scriptPath);
 
-        // ƒRƒ“ƒ|[ƒlƒ“ƒg”jŠü‚ÉScriptManager‚©‚ç“o˜^‰ğœ‚·‚é‚½‚ß–¾¦“I‚ÉéŒ¾
+        // ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆç ´æ£„æ™‚ã«ScriptManagerã‹ã‚‰ç™»éŒ²è§£é™¤ã™ã‚‹ãŸã‚æ˜ç¤ºçš„ã«å®£è¨€
         ~LuaScriptComponent() override;
 
-        //ƒRƒs[Eƒ€[ƒu‹Ö~
+        //ã‚³ãƒ”ãƒ¼ãƒ»ãƒ ãƒ¼ãƒ–ç¦æ­¢
         LuaScriptComponent(const LuaScriptComponent&) = delete;
         LuaScriptComponent& operator=(const LuaScriptComponent&) = delete;
         LuaScriptComponent(LuaScriptComponent&&) = delete;
         LuaScriptComponent& operator=(LuaScriptComponent&&) = delete;
 
-        // ƒ‰ƒCƒtƒTƒCƒNƒ‹
+        // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«
         void start() override;
         void update(float deltaTime) override;
 
-        // ƒXƒNƒŠƒvƒgƒpƒX‚Ìæ“¾iƒVƒŠƒAƒ‰ƒCƒY‚Ég—pj
+        // ã‚¹ã‚¯ãƒªãƒ—ãƒˆãƒ‘ã‚¹ã®å–å¾—ï¼ˆã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚ºæ™‚ã«ä½¿ç”¨ï¼‰
         const std::string& getScriptPath() const { return m_scriptPath; }
 
-        // ScriptManager‚©‚çVMÄ\’z‘O‚ÉŒÄ‚Î‚ê‚éB
-        // ƒLƒƒƒbƒVƒ…‚³‚ê‚½sol::function‚ğ‘S‚Ä–³Œø‰»‚·‚éB
+        // ScriptManagerã‹ã‚‰VMå†æ§‹ç¯‰å‰ã«å‘¼ã°ã‚Œã‚‹ã€‚
+        // ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã•ã‚ŒãŸsol::functionã‚’å…¨ã¦ç„¡åŠ¹åŒ–ã™ã‚‹ã€‚
         void invalidateCachedFunctions();
 
     private:
@@ -42,8 +42,9 @@ namespace Engine::Scripting
         sol::function m_onStart;
         sol::function m_onUpdate;
 
-        // true‚Ìê‡AŸ‚Ìupdate()‚ÅŠÖ”ƒnƒ“ƒhƒ‹‚ğÄæ“¾‚·‚é
+        // trueã®å ´åˆã€æ¬¡ã®update()ã§é–¢æ•°ãƒãƒ³ãƒ‰ãƒ«ã‚’å†å–å¾—ã™ã‚‹
         bool m_needsRefresh = true;
         bool m_luaStarted = false;
     };
 }
+

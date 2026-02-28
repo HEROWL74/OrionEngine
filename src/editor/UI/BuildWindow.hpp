@@ -1,4 +1,4 @@
-// src/editor/UI/BuildWindow.hpp
+﻿// src/editor/UI/BuildWindow.hpp
 #pragma once
 
 #include "buildworker/BuildSystem.hpp"
@@ -59,3 +59,4 @@ namespace Editor::UI
         std::queue<Build::BuildResult> m_resultQueue;
     };
 }
+

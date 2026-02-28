@@ -1,4 +1,4 @@
-#include "LuaBindings.hpp"
+ï»¿#include "LuaBindings.hpp"
 #include "LuaAPI.hpp"
 
 namespace Engine::Scripting
@@ -40,21 +40,21 @@ namespace Engine::Scripting
 			sol::no_constructor,
 			"get", &InputSystem::get,
 
-			// ‰Ÿ‚³‚ê‚Ä‚¢‚éŠÔ‚¸‚Á‚Ætrue (˜A‘±“ü—Í—p)
+			// æŠ¼ã•ã‚Œã¦ã„ã‚‹é–“ãšã£ã¨true (é€£ç¶šå…¥åŠ›ç”¨)
 			"isKeyW", &InputSystem::isKeyW,
 			"isKeyS", &InputSystem::isKeyS,
 			"isKeyA", &InputSystem::isKeyA,
 			"isKeyD", &InputSystem::isKeyD,
 			"isKeySpace", &InputSystem::isKeySpace,
 
-			// ‰Ÿ‚³‚ê‚½uŠÔ‚¾‚¯true (ƒgƒOƒ‹—p)
+			// æŠ¼ã•ã‚ŒãŸç¬é–“ã ã‘true (ãƒˆã‚°ãƒ«ç”¨)
 			"isKeyWPressed", &InputSystem::isKeyWPressed,
 			"isKeySPressed", &InputSystem::isKeySPressed,
 			"isKeyAPressed", &InputSystem::isKeyAPressed,
 			"isKeyDPressed", &InputSystem::isKeyDPressed,
 			"isKeySpacePressed", &InputSystem::isKeySpacePressed,
 
-			// —£‚³‚ê‚½uŠÔ‚¾‚¯true
+			// é›¢ã•ã‚ŒãŸç¬é–“ã ã‘true
 			"isKeyWReleased", &InputSystem::isKeyWReleased,
 			"isKeySReleased", &InputSystem::isKeySReleased,
 			"isKeyAReleased", &InputSystem::isKeyAReleased,
@@ -88,23 +88,23 @@ namespace Engine::Scripting
 
 		lua.new_usertype<Audio::AudioComponent>("AudioComponent",
 			sol::no_constructor,
-			// ƒtƒ@ƒCƒ‹ƒpƒXİ’èiInspectorŒo—R‚Åİ’èj
+			// ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹è¨­å®šï¼ˆInspectorçµŒç”±ã§è¨­å®šï¼‰
 			"setFilePath", &AudioComponent::setFilePath,
 			"getFilePath", &AudioComponent::getFilePath,
 
-			// Ä¶§Œä
+			// å†ç”Ÿåˆ¶å¾¡
 			"play", &AudioComponent::play,
 			"stop", &AudioComponent::stop,
 			"pause", &AudioComponent::pause,
 			"resume", &AudioComponent::resume,
 
-			// İ’è
+			// è¨­å®š
 			"setLoop", &AudioComponent::setLoop,
 			"isLoop", &AudioComponent::isLoop,
 			"setVolume", &AudioComponent::setVolume,
 			"getVolume", &AudioComponent::getVolume,
 
-			// ó‘Ôæ“¾
+			// çŠ¶æ…‹å–å¾—
 			"isPlaying", &AudioComponent::isPlaying,
 			"isPaused", &AudioComponent::isPaused
 		);
@@ -116,17 +116,17 @@ namespace Engine::Scripting
 
 		lua.new_usertype<UIText>("UIText",
 			sol::no_constructor,
-			// Šî–{ƒvƒƒpƒeƒB
+			// åŸºæœ¬ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£
 			"getName", &UIText::getName,
 			"setName", &UIText::setName,
 			"getText", &UIText::getText,
 			"setText", &UIText::setText,
 
-			// •\¦§Œä
+			// è¡¨ç¤ºåˆ¶å¾¡
 			"isVisible", &UIText::isVisible,
 			"setVisible", &UIText::setVisible,
 
-			// Transform (Vector3”Å)
+			// Transform (Vector3ç‰ˆ)
 			"getPosition", &UIText::getPosition,
 			"setPosition", &UIText::setPosition,
 			"getRotation", &UIText::getRotation,
@@ -134,12 +134,12 @@ namespace Engine::Scripting
 			"getScale", &UIText::getScale,
 			"setScale", &UIText::setScale,
 
-			// Transform (float x, y, z”Å - Lua‚©‚çg‚¢‚â‚·‚¢)
+			// Transform (float x, y, zç‰ˆ - Luaã‹ã‚‰ä½¿ã„ã‚„ã™ã„)
 			"setPositionXYZ", &UIText::setPositionXYZ,
 			"setRotationXYZ", &UIText::setRotationXYZ,
 			"setScaleXYZ", &UIText::setScaleXYZ,
 
-			// ƒXƒ^ƒCƒ‹
+			// ã‚¹ã‚¿ã‚¤ãƒ«
 			"getFontSize", &UIText::getFontSize,
 			"setFontSize", &UIText::setFontSize,
 			"getColor", &UIText::getColor,
@@ -170,24 +170,24 @@ namespace Engine::Scripting
 
 		lua.set_function("ResolveGameObject", &Engine::Scripting::resolveGameObject);
 
-		// GameObject ƒoƒCƒ“ƒfƒBƒ“ƒO
+		// GameObject ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°
 		lua.new_usertype<Core::GameObject>("GameObject",
 			"getName", &Core::GameObject::getName,
 			"getId", &Core::GameObject::getId,
 			"getTransform", &Core::GameObject::getTransform,
 			"isActive", &Core::GameObject::isActive,
 			"setActive", &Core::GameObject::setActive,
-			// UITextƒRƒ“ƒ|[ƒlƒ“ƒg‚ğæ“¾
+			// UITextã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã‚’å–å¾—
 			"getUIText", [](Core::GameObject* obj) -> EngineUI::UIText* {
 				return obj->getComponent<EngineUI::UIText>();
 			},
-			// AudioComponent‚ğæ“¾
+			// AudioComponentã‚’å–å¾—
 			"getAudio", [](Core::GameObject* obj) -> Audio::AudioComponent* {
 				return obj->getComponent<Audio::AudioComponent>();
 			}
 		);
 
-		// Transform ƒoƒCƒ“ƒfƒBƒ“ƒO
+		// Transform ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°
 		lua.new_usertype<Core::Transform>("Transform",
 			"getPosition", &Core::Transform::getPosition,
 			"setPosition", sol::overload(
@@ -240,3 +240,4 @@ namespace Engine::Scripting
 		);
 	}
 }
+

@@ -1,4 +1,4 @@
-
+﻿
 #include <iostream>
 #include "engine/Utils/Common.hpp"
 #include "EditorApp.hpp"
@@ -32,3 +32,4 @@ namespace Editor
         return exitCode;
     }
 }
+

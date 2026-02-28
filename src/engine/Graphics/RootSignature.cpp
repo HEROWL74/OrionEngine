@@ -1,4 +1,4 @@
-#include "RootSignature.hpp"
+﻿#include "RootSignature.hpp"
 
 namespace Engine::Graphics
 {
@@ -13,3 +13,4 @@ namespace Engine::Graphics
 		return{};
 	}
 }
+

@@ -1,4 +1,4 @@
-// src/engine/Audio/AudioComponent.hpp
+ï»¿// src/engine/Audio/AudioComponent.hpp
 #pragma once
 #include <miniaudio.h>
 #include <string>
@@ -20,25 +20,25 @@ namespace Engine::Audio
 		// Load wav 
 		[[nodiscard]] Utils::VoidResult loadAudio(const std::string& filepath);
 
-		// Ä¶§ŒäŠÖ”ŒR
+		// å†ç”Ÿåˆ¶å¾¡é–¢æ•°è»
 		void play();
 		void stop();
 		void pause();
 		void resume();
 
-		// ƒ‹[ƒvİ’è
+		// ãƒ«ãƒ¼ãƒ—è¨­å®š
 		void setLoop(bool loop) { m_loop = loop; }
 		bool isLoop()const { return m_loop; }
 
-		// ‰¹—Êİ’è
+		// éŸ³é‡è¨­å®š
 		void setVolume(float volume);
 		float getVolume() const noexcept { return m_volume; }
 
-		// ó‘Ôæ“¾
+		// çŠ¶æ…‹å–å¾—
 		bool isPlaying()const;
 		bool isPaused()const { return m_paused; }
 
-		// ƒtƒ@ƒCƒ‹ƒpƒXæ“¾Eİ’è
+		// ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹å–å¾—ãƒ»è¨­å®š
 		const std::string& getFilePath()const { return m_filepath; }
 		void setFilePath(const std::string& filepath) { m_filepath = filepath; }
 
@@ -64,3 +64,4 @@ namespace Engine::Audio
 		void cleanup();
 	};
 }
+

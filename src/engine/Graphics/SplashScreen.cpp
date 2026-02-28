@@ -1,4 +1,4 @@
-// src/Graphics/SplashScreen.cpp
+﻿// src/Graphics/SplashScreen.cpp
 #include "SplashScreen.hpp"
 #include <format>
 
@@ -367,3 +367,4 @@ namespace Engine::Graphics
         }
     }
 }
+

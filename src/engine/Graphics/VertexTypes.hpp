@@ -27,3 +27,4 @@ namespace Engine::Graphics
         float color[3];     // r, g, b
     };
 }
+

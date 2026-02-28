@@ -795,3 +795,4 @@ namespace Engine::Math
         const float* data() const { return &m[0][0]; }
     };
 }
+

@@ -427,3 +427,4 @@ namespace Engine::Graphics
         m_worldMatrix = translationMatrix * rotationMatrix * scaleMatrix;
     }
 }
+

@@ -45,3 +45,4 @@ namespace Engine::Graphics
         return m_cameraConstants.isValid() && m_objectConstants.isValid();
     }
 }
+

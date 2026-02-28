@@ -150,3 +150,4 @@ namespace Engine::Input
         KeyCode virtualKeyToKeyCode(WPARAM vkCode) const;
     };
 }
+

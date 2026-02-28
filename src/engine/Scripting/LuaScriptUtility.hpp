@@ -1,4 +1,4 @@
-//src/Scripting/LuaScriptUtility
+ï»¿//src/Scripting/LuaScriptUtility
 #pragma once
 #include <string>
 
@@ -7,13 +7,14 @@ namespace Engine::Scripting
 	class LuaScriptUtility
 	{
 	public:
-		//V‚µ‚¢Luaƒtƒ@ƒCƒ‹‚ğì¬iƒfƒtƒHƒ‹ƒg“à—e‚àŠÜ‚Şj
+		//æ–°ã—ã„Luaãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œæˆï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå†…å®¹ã‚‚å«ã‚€ï¼‰
 		static bool createNewScript(const std::string& path);
 
-		//VSCode‚ÅŠJ‚­
+		//VSCodeã§é–‹ã
 		static void openInVSCode(const std::string& path);
 
-		//ƒtƒ@ƒCƒ‹–¼lua•â³
+		//ãƒ•ã‚¡ã‚¤ãƒ«åluaè£œæ­£
 		static std::string normalizePath(const std::string& name);
 	};
 }
+

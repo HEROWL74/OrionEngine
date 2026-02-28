@@ -300,3 +300,4 @@ namespace Engine::Graphics
     D3D12_RESOURCE_FLAGS textureUsageToD3D12Flags(TextureUsage usage);
     D3D12_RESOURCE_STATES textureUsageToD3D12State(TextureUsage usage);
 }
+

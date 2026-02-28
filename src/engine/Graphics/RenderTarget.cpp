@@ -1,4 +1,4 @@
-// RenderTarget.cpp
+﻿// RenderTarget.cpp
 #include "RenderTarget.hpp"
 
 namespace Engine::Graphics
@@ -173,3 +173,4 @@ namespace Engine::Graphics
 		Utils::log_info("RenderTarget released");
 	}
 }
+

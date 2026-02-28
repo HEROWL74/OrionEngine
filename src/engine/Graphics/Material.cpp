@@ -1,4 +1,4 @@
-//src/Graphics/Material.cpp
+ï»¿//src/Graphics/Material.cpp
 #include "Material.hpp"
 //#include "Texture.hpp" 
 #include <format>
@@ -6,7 +6,7 @@
 namespace Engine::Graphics
 {
     //=========================================================================
-    // MaterialÀ‘•
+    // Materialå®Ÿè£…
     //=========================================================================
 
     Material::Material(const std::string& name)
@@ -168,7 +168,7 @@ namespace Engine::Graphics
             m_properties.uvOffset.y
         );
 
-        cbData.hasAlbedoTexture = (m_properties.useAlbedoTex != 0) ? 1 : 0;  // int‚Å‘—‚é
+        cbData.hasAlbedoTexture = (m_properties.useAlbedoTex != 0) ? 1 : 0;  // intã§é€ã‚‹
 
 
        
@@ -286,7 +286,7 @@ namespace Engine::Graphics
     {
         Utils::log_info(std::format("Creating descriptors for material '{}'", m_name));
 
-        // CBV + SRVì¬
+        // CBV + SRVä½œæˆ
         D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc{};
         srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         srvHeapDesc.NumDescriptors = 2; // CBV(1) + SRV(1)
@@ -304,10 +304,10 @@ namespace Engine::Graphics
                     m_name, static_cast<unsigned>(hr)), hr));
         }
 
-        // CBVì¬
+        // CBVä½œæˆ
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
         cbvDesc.BufferLocation = m_constantBuffer->GetGPUVirtualAddress();
-        cbvDesc.SizeInBytes = (sizeof(MaterialConstantBuffer) + 255) & ~255; // 256ƒAƒ‰ƒCƒ“ƒƒ“ƒg
+        cbvDesc.SizeInBytes = (sizeof(MaterialConstantBuffer) + 255) & ~255; // 256ã‚¢ãƒ©ã‚¤ãƒ³ãƒ¡ãƒ³ãƒˆ
 
         D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle = m_srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
         m_device->getDevice()->CreateConstantBufferView(&cbvDesc, cbvHandle);
@@ -317,8 +317,8 @@ namespace Engine::Graphics
         D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = cbvHandle;
         srvHandle.ptr += descriptorSize;
 
-        // CPUƒnƒ“ƒhƒ‹æ“¾
-        // ptr‚ÉƒfƒBƒXƒNƒŠƒvƒ^ƒTƒCƒY‚ğ{
+        // CPUãƒãƒ³ãƒ‰ãƒ«å–å¾—
+        // ptrã«ãƒ‡ã‚£ã‚¹ã‚¯ãƒªãƒ—ã‚¿ã‚µã‚¤ã‚ºã‚’ï¼‹
         m_srvGpuHandle = m_srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
         m_srvGpuHandle.ptr += descriptorSize;
 
@@ -337,7 +337,7 @@ namespace Engine::Graphics
     }
 
     //=========================================================================
-    // MaterialManagerÀ‘•
+    // MaterialManagerå®Ÿè£…
     //=========================================================================
     Utils::VoidResult MaterialManager::initialize(Device* device)
     {
@@ -351,7 +351,7 @@ namespace Engine::Graphics
 
         m_device = device;
 
-        //ƒ}ƒeƒŠƒAƒ‹‰Šú‰»
+        //ãƒãƒ†ãƒªã‚¢ãƒ«åˆæœŸåŒ–
         auto defaultResult = createDefaultMaterial();
         if (!defaultResult) {
             m_device = nullptr;
@@ -459,7 +459,7 @@ namespace Engine::Graphics
         defaultProps.roughness = 0.5f;
         defaultProps.ao = 1.0f;
 
-        // setProperties‚ğƒZƒbƒg
+        // setPropertiesã‚’ã‚»ãƒƒãƒˆ
         m_defaultMaterial->setProperties(defaultProps);
 
 
@@ -499,7 +499,7 @@ namespace Engine::Graphics
 
 
     //=========================================================================
-    //ƒeƒNƒXƒ`ƒƒƒ^ƒCƒv•ÏŠ·À‘•
+    //ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚¿ã‚¤ãƒ—å¤‰æ›å®Ÿè£…
     //=========================================================================
 
     std::string textureTypeToString(TextureType type)
@@ -528,6 +528,7 @@ namespace Engine::Graphics
         if (str == "Height")    return TextureType::Height;
 
         Utils::log_warning(std::format("Unknown texture type: {}", str));
-        return TextureType::Albedo; //ƒfƒtƒH‚Å‚ÍAAlbedo‚ğ•Ô‚·
+        return TextureType::Albedo; //ãƒ‡ãƒ•ã‚©ã§ã¯ã€Albedoã‚’è¿”ã™
     }
 }
+

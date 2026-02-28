@@ -1,4 +1,4 @@
-//src/Core/GameObject.cpp
+﻿//src/Core/GameObject.cpp
 #include "GameObject.hpp"
 #include <algorithm>
 #include <atomic>
@@ -214,3 +214,4 @@ namespace Engine::Core
 	}
 
 } 
+

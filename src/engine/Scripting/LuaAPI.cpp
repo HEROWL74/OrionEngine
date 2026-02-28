@@ -1,4 +1,4 @@
-#include "LuaAPI.hpp"
+﻿#include "LuaAPI.hpp"
 #include "../Graphics/ActiveScene.hpp"
 
 namespace Engine::Scripting
@@ -14,3 +14,4 @@ namespace Engine::Scripting
         );
     }
 }
+

@@ -1,4 +1,4 @@
-// src/engine/UI/UIComponent.cpp
+﻿// src/engine/UI/UIComponent.cpp
 #include "UIComponent.hpp"
 
 namespace Engine::EngineUI
@@ -17,3 +17,4 @@ namespace Engine::EngineUI
 		return{};
 	}
 }
+

@@ -1,4 +1,4 @@
-//src/engine/Core/Window/Window_Windows.hpp
+﻿//src/engine/Core/Window/Window_Windows.hpp
 #pragma once
 #include "IWindow.hpp"
 
@@ -34,3 +34,4 @@ namespace Engine::Window
 	};
 }
 #endif
+

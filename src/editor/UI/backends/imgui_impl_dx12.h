@@ -78,3 +78,4 @@ struct ImGui_ImplDX12_RenderState
 };
 
 #endif // #ifndef IMGUI_DISABLE
+

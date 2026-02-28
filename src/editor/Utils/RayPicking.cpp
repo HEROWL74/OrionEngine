@@ -1,4 +1,4 @@
-// src/editor/Utils/RayPicking.cpp
+﻿// src/editor/Utils/RayPicking.cpp
 #define NOMINMAX
 #include "RayPicking.hpp"
 #include <algorithm>
@@ -15,23 +15,23 @@ namespace Editor::EditorUtils
 		Math::Vector3& outOrigin,
 		Math::Vector3& outDirection)
 	{
-		// スクリーン座標を NDC (Normalized Device Coordinates) に変換
-		// NDC: x, y は [-1, 1] の範囲
+		// 繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ蠎ｧ讓吶ｒ NDC (Normalized Device Coordinates) 縺ｫ螟画鋤
+		// NDC: x, y 縺ｯ [-1, 1] 縺ｮ遽・峇
 		float ndcX = (2.0f * screenX) / screenWidth - 1.0f;
-		float ndcY = 1.0f - (2.0f * screenY) / screenHeight; // Y軸は上が正
+		float ndcY = 1.0f - (2.0f * screenY) / screenHeight; // Y霆ｸ縺ｯ荳翫′豁｣
 
-		// NDC から クリップ空間へ（near planeとfar plane）
+		// NDC 縺九ｉ 繧ｯ繝ｪ繝・・遨ｺ髢薙∈・・ear plane縺ｨfar plane・・
 		Math::Vector4 rayClipNear(ndcX, ndcY, -1.0f, 1.0f);
 		Math::Vector4 rayClipFar(ndcX, ndcY, 1.0f, 1.0f);
 
-		// プロジェクション行列の逆行列を取得
+		// 繝励Ο繧ｸ繧ｧ繧ｯ繧ｷ繝ｧ繝ｳ陦悟・縺ｮ騾・｡悟・繧貞叙蠕・
 		Math::Matrix4 invProj = camera.getProjectionMatrix().inverse();
 
-		// ビュー空間に変換
+		// 繝薙Η繝ｼ遨ｺ髢薙↓螟画鋤
 		Math::Vector4 rayViewNear = invProj * rayClipNear;
 		Math::Vector4 rayViewFar = invProj * rayClipFar;
 
-		// 透視除算
+		// 騾剰ｦ夜勁邂・
 		if (rayViewNear.w != 0.0f)
 		{
 			rayViewNear.x /= rayViewNear.w;
@@ -48,13 +48,13 @@ namespace Editor::EditorUtils
 			rayViewFar.w = 1.0f;
 		}
 
-		// ビュー行列の逆行列を取得してワールド空間に変換
+		// 繝薙Η繝ｼ陦悟・縺ｮ騾・｡悟・繧貞叙蠕励＠縺ｦ繝ｯ繝ｼ繝ｫ繝臥ｩｺ髢薙↓螟画鋤
 		Math::Matrix4 invView = camera.getViewMatrix().inverse();
 
 		Math::Vector4 rayWorldNear = invView * rayViewNear;
 		Math::Vector4 rayWorldFar = invView * rayViewFar;
 
-		// レイの原点と方向を計算
+		// 繝ｬ繧､縺ｮ蜴溽せ縺ｨ譁ｹ蜷代ｒ險育ｮ・
 		outOrigin = Math::Vector3(rayWorldNear.x, rayWorldNear.y, rayWorldNear.z);
 		Math::Vector3 farPoint(rayWorldFar.x, rayWorldFar.y, rayWorldFar.z);
 		outDirection = (farPoint - outOrigin).normalized();
@@ -67,7 +67,7 @@ namespace Editor::EditorUtils
 		const Math::Vector3& aabbMax,
 		float& outDistance)
 	{
-		// Slab法による高速AABB交差判定
+		// Slab豕輔↓繧医ｋ鬮倬蘗ABB莠､蟾ｮ蛻､螳・
 		float tMin = 0.0f;
 		float tMax = std::numeric_limits<float>::max();
 
@@ -75,10 +75,10 @@ namespace Editor::EditorUtils
 		{
 			if (std::abs(rayDirection[i]) < 1e-6f)
 			{
-				// レイがこの軸に平行
+				// 繝ｬ繧､縺後％縺ｮ霆ｸ縺ｫ蟷ｳ陦・
 				if (rayOrigin[i] < aabbMin[i] || rayOrigin[i] > aabbMax[i])
 				{
-					return false; // レイがAABBの外側
+					return false; // 繝ｬ繧､縺窟ABB縺ｮ螟門・
 				}
 			}
 			else
@@ -94,7 +94,7 @@ namespace Editor::EditorUtils
 
 				if (tMin > tMax)
 				{
-					return false; // 交差なし
+					return false; // 莠､蟾ｮ縺ｪ縺・
 				}
 			}
 		}
@@ -119,7 +119,7 @@ namespace Editor::EditorUtils
 
 		if (discriminant < 0.0f)
 		{
-			return false; // 交差なし
+			return false; // 莠､蟾ｮ縺ｪ縺・
 		}
 
 		float t = (-b - std::sqrt(discriminant)) / (2.0f * a);
@@ -130,7 +130,7 @@ namespace Editor::EditorUtils
 
 		if (t < 0.0f)
 		{
-			return false; // 球がレイの後ろ
+			return false; // 逅・′繝ｬ繧､縺ｮ蠕後ｍ
 		}
 
 		outDistance = t;
@@ -148,21 +148,21 @@ namespace Editor::EditorUtils
 
 		if (std::abs(denom) < 1e-6f)
 		{
-			return false; // レイが平面に平行
+			return false; // 繝ｬ繧､縺悟ｹｳ髱｢縺ｫ蟷ｳ陦・
 		}
 
 		float t = Math::Vector3::dot(planePoint - rayOrigin, planeNormal) / denom;
 
 		if (t < 0.0f)
 		{
-			return false; // 交点がレイの後ろ
+			return false; // 莠､轤ｹ縺後Ξ繧､縺ｮ蠕後ｍ
 		}
 
 		outDistance = t;
 		return true;
 	}
 
-	// unique_ptrのvectorからレイキャスト（オーバーロード）
+	// unique_ptr縺ｮvector縺九ｉ繝ｬ繧､繧ｭ繝｣繧ｹ繝茨ｼ医が繝ｼ繝舌・繝ｭ繝ｼ繝会ｼ・
 	RaycastHit RayPicking::raycast(
 		const Math::Vector3& rayOrigin,
 		const Math::Vector3& rayDirection,
@@ -179,25 +179,25 @@ namespace Editor::EditorUtils
 				continue;
 			}
 
-			// オブジェクトの境界ボックスを取得
+			// 繧ｪ繝悶ず繧ｧ繧ｯ繝医・蠅・阜繝懊ャ繧ｯ繧ｹ繧貞叙蠕・
 			Math::Vector3 minBounds, maxBounds;
 			if (!getObjectBounds(obj.get(), minBounds, maxBounds))
 			{
 				continue;
 			}
 
-			// レイとの交差判定
+			// 繝ｬ繧､縺ｨ縺ｮ莠､蟾ｮ蛻､螳・
 			float distance;
 			if (rayIntersectsAABB(rayOrigin, rayDirection, minBounds, maxBounds, distance))
 			{
-				// より近いオブジェクトが見つかった
+				// 繧医ｊ霑代＞繧ｪ繝悶ず繧ｧ繧ｯ繝医′隕九▽縺九▲縺・
 				if (distance < closestHit.distance)
 				{
 					closestHit.hit = true;
 					closestHit.object = obj.get();
 					closestHit.distance = distance;
 					closestHit.point = rayOrigin + rayDirection * distance;
-					// 法線は簡易的に上方向にしておく
+					// 豕慕ｷ壹・邁｡譏鍋噪縺ｫ荳頑婿蜷代↓縺励※縺翫￥
 					closestHit.normal = Math::Vector3(0.0f, 1.0f, 0.0f);
 				}
 			}
@@ -216,7 +216,7 @@ namespace Editor::EditorUtils
 			return false;
 		}
 
-		// オブジェクトの位置とスケールを取得
+		// 繧ｪ繝悶ず繧ｧ繧ｯ繝医・菴咲ｽｮ縺ｨ繧ｹ繧ｱ繝ｼ繝ｫ繧貞叙蠕・
 		auto* transform = object->getTransform();
 		if (!transform)
 		{
@@ -226,40 +226,40 @@ namespace Editor::EditorUtils
 		Math::Vector3 position = transform->getPosition();
 		Math::Vector3 scale = transform->getScale();
 
-		// RenderComponentから実際のサイズを取得
+		// RenderComponent縺九ｉ螳滄圀縺ｮ繧ｵ繧､繧ｺ繧貞叙蠕・
 		auto* renderComponent = object->getComponent<Engine::Graphics::RenderComponent>();
 		if (renderComponent && renderComponent->isValid())
 		{
 			auto renderableType = renderComponent->getRenderableType();
 
-			// レンダラブルタイプに応じた境界ボックスを計算
+			// 繝ｬ繝ｳ繝繝ｩ繝悶Ν繧ｿ繧､繝励↓蠢懊§縺溷｢・阜繝懊ャ繧ｯ繧ｹ繧定ｨ育ｮ・
 			Math::Vector3 halfExtents;
 			switch (renderableType)
 			{
 			case Engine::Graphics::RenderableType::Triangle:
-				// 三角形の場合（概算）
+				// 荳芽ｧ貞ｽ｢縺ｮ蝣ｴ蜷茨ｼ域ｦらｮ暦ｼ・
 				halfExtents = Math::Vector3(0.5f, 0.5f, 0.1f);
 				break;
 
 			case Engine::Graphics::RenderableType::Cube:
-				// 立方体の場合
+				// 遶区婿菴薙・蝣ｴ蜷・
 				halfExtents = Math::Vector3(0.5f, 0.5f, 0.5f);
 				break;
 
 			default:
-				// デフォルトサイズ
+				// 繝・ヵ繧ｩ繝ｫ繝医し繧､繧ｺ
 				halfExtents = Math::Vector3(0.5f, 0.5f, 0.5f);
 				break;
 			}
 
-			// スケールを適用
+			// 繧ｹ繧ｱ繝ｼ繝ｫ繧帝←逕ｨ
 			halfExtents = halfExtents * scale;
 			outMin = position - halfExtents;
 			outMax = position + halfExtents;
 		}
 		else
 		{
-			// RenderComponentがない場合は、デフォルトの境界ボックス
+			// RenderComponent縺後↑縺・ｴ蜷医・縲√ョ繝輔か繝ｫ繝医・蠅・阜繝懊ャ繧ｯ繧ｹ
 			Math::Vector3 halfExtents = Math::Vector3(0.5f, 0.5f, 0.5f) * scale;
 			outMin = position - halfExtents;
 			outMax = position + halfExtents;
@@ -268,3 +268,4 @@ namespace Editor::EditorUtils
 		return true;
 	}
 }
+

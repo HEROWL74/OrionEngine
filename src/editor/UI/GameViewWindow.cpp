@@ -1,4 +1,4 @@
-#include "GameViewWindow.hpp"
+ï»¿#include "GameViewWindow.hpp"
 #include "imgui.h"
 
 namespace Editor::UI
@@ -67,7 +67,7 @@ namespace Editor::UI
 				m_camera->updateAspect(static_cast<float>(m_pendingWidth) / m_pendingHeight);
 			}
 
-			// ƒeƒNƒXƒ`ƒƒ‚ðÄ“o˜^
+			// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’å†ç™»éŒ²
 			auto* rt = m_view->getRenderTarget();
 			if (rt && m_imgui)
 			{
@@ -81,3 +81,4 @@ namespace Editor::UI
 		}
 	}
 }
+

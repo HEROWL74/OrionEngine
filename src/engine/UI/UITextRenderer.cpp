@@ -1,4 +1,4 @@
-// src/engine/UI/UITextRenderer.cpp
+﻿// src/engine/UI/UITextRenderer.cpp
 #include "UITextRenderer.hpp"
 #include <directx/d3dx12.h>
 #include <fstream>
@@ -71,13 +71,13 @@ namespace Engine::EngineUI
         auto* mutableText = const_cast<UIText*>(&text);
         if (mutableText && mutableText->getGameObject())
         {
-            // GameObjectのTransformがGizmoで変更されている可能性があるので同期
+            // GameObject縺ｮTransform縺隈izmo縺ｧ螟画峩縺輔ｌ縺ｦ縺・ｋ蜿ｯ閭ｽ諤ｧ縺後≠繧九・縺ｧ蜷梧悄
             mutableText->syncFromGameObjectTransform();
         }
-        // GameObjectが破棄されていないかチェック
+        // GameObject縺檎ｴ譽・＆繧後※縺・↑縺・°繝√ぉ繝・け
         if (mutableText->getGameObject()->isDestroyed())
         {
-            return;  // 破棄済みなら描画しない
+            return;  // 遐ｴ譽・ｸ医∩縺ｪ繧画緒逕ｻ縺励↑縺・
         }
         FontAtlas* atlas = getOrCreateAtlas(text.getFontSize());
         if (!atlas) {
@@ -87,25 +87,25 @@ namespace Engine::EngineUI
 
         const uint32_t frameIndex = context.frameIndex;
 
-        // パイプライン設定
+        // 繝代う繝励Λ繧､繝ｳ險ｭ螳・
         context.commandList->SetPipelineState(m_pipelineState.Get());
         context.commandList->SetGraphicsRootSignature(m_rootSignature.Get());
         context.commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         context.commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 
-        // テクスチャ設定
+        // 繝・け繧ｹ繝√Ε險ｭ螳・
         ID3D12DescriptorHeap* heaps[] = { m_srvHeap.Get() };
         context.commandList->SetDescriptorHeaps(_countof(heaps), heaps);
         context.commandList->SetGraphicsRootDescriptorTable(1, atlas->srvGpuHandle);
 
-        // 頂点データ生成
+        // 鬆らせ繝・・繧ｿ逕滓・
         uint32_t vertexCount = 0;
         uint32_t startVertex = m_currentVertexOffset;
 
         Math::Vector4 color(text.getColor(), text.getAlpha());
         const std::string& str = text.getText();
 
-        // ローカル座標系で頂点を生成
+        // 繝ｭ繝ｼ繧ｫ繝ｫ蠎ｧ讓咏ｳｻ縺ｧ鬆らせ繧堤函謌・
         float x = 0.0f;
         float y = 0.0f;
 
@@ -151,7 +151,7 @@ namespace Engine::EngineUI
             x += glyph.xadvance;
         }
 
-        // 描画実行
+        // 謠冗判螳溯｡・
         if (vertexCount > 0)
         {
             TextConstants constants{};
@@ -605,3 +605,4 @@ namespace Engine::EngineUI
         return {};
     }
 }
+

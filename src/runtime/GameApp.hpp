@@ -1,11 +1,11 @@
-// src/runtime/GameApp.hpp
+ï»¿// src/runtime/GameApp.hpp
 #pragma once
 
 #include <Windows.h>
 #include <memory>
 #include "engine/Utils/Common.hpp"
 #include "engine/Core/Window.hpp"
-#include "engine/Core/ProjectSettings.hpp"          // š ’Ç‰Á
+#include "engine/Core/ProjectSettings.hpp"          // â˜… è¿½åŠ 
 #include "engine/Graphics/Device.hpp"
 #include "engine/Graphics/Scene.hpp"
 #include "engine/Graphics/Camera.hpp"
@@ -40,11 +40,11 @@ namespace Runtime
         bool m_pendingReloadScene = false;
         bool m_isRestarting = false;
 
-        // ƒEƒBƒ“ƒhƒE‚ÆƒfƒoƒCƒX
+        // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã¨ãƒ‡ãƒã‚¤ã‚¹
         Engine::Core::Window     m_window;
         Engine::Graphics::Device m_device;
 
-        // ƒV[ƒ“‚ÆƒJƒƒ‰
+        // ã‚·ãƒ¼ãƒ³ã¨ã‚«ãƒ¡ãƒ©
         Engine::Graphics::Scene        m_scene;
         Engine::Graphics::Camera       m_camera;
         Engine::Graphics::Skybox       m_skybox;
@@ -56,13 +56,13 @@ namespace Runtime
         // Luabind
         std::unique_ptr<Engine::Scripting::LuaBindings> m_luaBindings;
 
-        // ƒ}ƒl[ƒWƒƒ[—Ş
+        // ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼é¡
         std::unique_ptr<Engine::Graphics::ShaderManager> m_shaderManager;
         Engine::Graphics::MaterialManager m_materialManager;
         Engine::Graphics::TextureManager  m_textureManager;
         Engine::Graphics::SceneSerializer m_sceneSerializer;
 
-        // DirectX ƒŠƒ\[ƒX
+        // DirectX ãƒªã‚½ãƒ¼ã‚¹
         ComPtr<ID3D12CommandQueue>        m_commandQueue;
         ComPtr<IDXGISwapChain3>           m_swapChain;
         ComPtr<ID3D12DescriptorHeap>      m_rtvHeap;
@@ -76,11 +76,11 @@ namespace Runtime
         HANDLE m_fenceEvent = nullptr;
         UINT   m_frameIndex = 0;
 
-        // ŠÔŠÇ—
+        // æ™‚é–“ç®¡ç†
         std::chrono::high_resolution_clock::time_point m_lastFrameTime{};
         float m_deltaTime = 0.0f;
 
-        // ‰Šú‰»ƒwƒ‹ƒp[
+        // åˆæœŸåŒ–ãƒ˜ãƒ«ãƒ‘ãƒ¼
         [[nodiscard]] Engine::Utils::VoidResult initD3D();
         [[nodiscard]] Engine::Utils::VoidResult createCommandQueue();
         [[nodiscard]] Engine::Utils::VoidResult createSwapChain();
@@ -90,7 +90,7 @@ namespace Runtime
         [[nodiscard]] Engine::Utils::VoidResult createSyncObjects();
         [[nodiscard]] Engine::Utils::VoidResult loadScene();
 
-        // XVE•`‰æ
+        // æ›´æ–°ãƒ»æç”»
         void update();
         void render();
         void updateDeltaTime();
@@ -100,3 +100,4 @@ namespace Runtime
         void onWindowClose();
     };
 }
+

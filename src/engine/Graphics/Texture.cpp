@@ -765,3 +765,4 @@ namespace Engine::Graphics
         return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     }
 }
+

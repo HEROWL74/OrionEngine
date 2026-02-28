@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "ImGuiManager.hpp"
 #include "../Views/EditorView.hpp"
 #include "../Views/Gizmo.hpp"
@@ -21,7 +21,7 @@ namespace Editor::UI
 		void setScene(Graphics::Scene* scene) { m_scene = scene; }
 		void processResize();
 
-		// ƒJƒƒ‰Š´“xİ’è
+		// ã‚«ãƒ¡ãƒ©æ„Ÿåº¦è¨­å®š
 		void setCameraSensitivity(float sensitivity) { m_cameraSensitivity = sensitivity; }
 		float getCameraSensitivity() const { return m_cameraSensitivity; }
 
@@ -34,7 +34,7 @@ namespace Editor::UI
 		ImTextureID m_texture = {};
 
 		ImVec2 m_lastSize = { 0, 0 };
-		ImVec2 m_viewportPos = { 0, 0 };  // ƒrƒ…[ƒ|[ƒg‚ÌˆÊ’uiƒXƒNƒŠ[ƒ“À•Wj
+		ImVec2 m_viewportPos = { 0, 0 };  // ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆã®ä½ç½®ï¼ˆã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ï¼‰
 		bool m_needsResize = false;
 		uint32_t m_pendingWidth = 0;
 		uint32_t m_pendingHeight = 0;
@@ -43,10 +43,10 @@ namespace Editor::UI
 		bool m_isHovered = false;
 		bool m_cameraControlRequested = false;
 
-		// ƒJƒƒ‰‘€ìŠÖ˜A
+		// ã‚«ãƒ¡ãƒ©æ“ä½œé–¢é€£
 		float m_cameraSensitivity = 0.15f;
 
-		// Gizmoƒhƒ‰ƒbƒOŠÖ˜A
+		// Gizmoãƒ‰ãƒ©ãƒƒã‚°é–¢é€£
 		bool m_isDraggingGizmo = false;
 		GizmoAxis m_draggedAxis = GizmoAxis::None;
 		Math::Vector3 m_dragStartObjectPosition;
@@ -56,16 +56,17 @@ namespace Editor::UI
 		void endCameraControl();
 		//void updateCameraControl();
 
-		// ƒIƒuƒWƒFƒNƒg‘I‘ğ
+		// ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆé¸æŠ
 		void handleObjectSelection();
 
-		// ƒ}ƒEƒX“ü—Íˆ—
+		// ãƒã‚¦ã‚¹å…¥åŠ›å‡¦ç†
 		void handleMouseInput();
 		void getRayFromMouse(Math::Vector3& outOrigin, Math::Vector3& outDirection);
 
-		// Gizmo‘€ì
+		// Gizmoæ“ä½œ
 		void startGizmoDrag(GizmoAxis axis, const Math::Vector3& rayOrigin, const Math::Vector3& rayDirection);
 		void updateGizmoDrag();
 		void endGizmoDrag();
 	};
 }
+

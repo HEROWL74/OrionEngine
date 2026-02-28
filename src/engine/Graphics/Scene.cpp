@@ -1,4 +1,4 @@
-#include "Scene.hpp"
+﻿#include "Scene.hpp"
 #include "../Physics/PhysicsSystem.hpp"
 
 namespace Engine::Graphics
@@ -32,7 +32,7 @@ namespace Engine::Graphics
 		std::string objectName = gameObject->getName();
 		Utils::log_info(std::format("Scene::destroyGameObject() called for '{}'", objectName));
 
-		// 削除対象が選択中のオブジェクトなら選択解除
+		// 蜑企勁蟇ｾ雎｡縺碁∈謚樔ｸｭ縺ｮ繧ｪ繝悶ず繧ｧ繧ｯ繝医↑繧蛾∈謚櫁ｧ｣髯､
 		if (m_selectedObject == gameObject)
 		{
 			Utils::log_info("Clearing selection (object being deleted)");
@@ -51,7 +51,7 @@ namespace Engine::Graphics
 		Utils::log_info("Scene::clear() called");
 		Utils::log_info(std::format("  Current m_gameObjects.size() = {}", m_gameObjects.size()));
 
-		// GPU同期
+		// GPU蜷梧悄
 		if (m_device)
 		{
 			Utils::log_info("Waiting for GPU before clearing scene...");
@@ -59,12 +59,12 @@ namespace Engine::Graphics
 			Utils::log_info("GPU synchronized");
 		}
 
-		// Physics から完全解除
+		// Physics 縺九ｉ螳悟・隗｣髯､
 		Physics::PhysicsSystem::get().clear();
 
 		m_selectedObject = nullptr;
 
-		// GameObject を全破棄
+		// GameObject 繧貞・遐ｴ譽・
 		Utils::log_info(std::format("Destroying {} GameObjects", m_gameObjects.size()));
 		for (auto& obj : m_gameObjects)
 		{
@@ -124,7 +124,7 @@ namespace Engine::Graphics
 
 	void Scene::update(float deltaTime)
 	{
-		// 通常の更新（破棄予定のオブジェクトはスキップ）
+		// 騾壼ｸｸ縺ｮ譖ｴ譁ｰ・育ｴ譽・ｺ亥ｮ壹・繧ｪ繝悶ず繧ｧ繧ｯ繝医・繧ｹ繧ｭ繝・・・・
 		for (auto& gameObject : m_gameObjects)
 		{
 			if (gameObject->isActive() && !gameObject->isDestroyed())
@@ -190,7 +190,7 @@ namespace Engine::Graphics
 
 		Utils::log_info(std::format("=== Processing {} pending deletions ===", m_pendingDestroy.size()));
 
-		// ★ GPU同期（最も重要！）
+		// 笘・GPU蜷梧悄・域怙繧る㍾隕・ｼ・ｼ・
 		if (m_device)
 		{
 			Utils::log_info("Waiting for GPU before deleting objects...");
@@ -198,17 +198,17 @@ namespace Engine::Graphics
 			Utils::log_info("GPU synchronized - safe to delete resources");
 		}
 
-		// 削除実行
+		// 蜑企勁螳溯｡・
 		size_t deletedCount = 0;
 		for (auto* gameObject : m_pendingDestroy)
 		{
-			// 念のため選択チェック
+			// 蠢ｵ縺ｮ縺溘ａ驕ｸ謚槭メ繧ｧ繝・け
 			if (m_selectedObject == gameObject)
 			{
 				m_selectedObject = nullptr;
 			}
 
-			// リストから検索
+			// 繝ｪ繧ｹ繝医°繧画､懃ｴ｢
 			auto it = std::find_if(m_gameObjects.begin(), m_gameObjects.end(),
 				[gameObject](const auto& obj) { return obj.get() == gameObject; });
 
@@ -235,7 +235,7 @@ namespace Engine::Graphics
 
 	void Scene::setSelectedObject(Core::GameObject* object)
 	{
-		// 破棄済みは選択不可
+		// 遐ｴ譽・ｸ医∩縺ｯ驕ｸ謚樔ｸ榊庄
 		if (object && object->isDestroyed())
 		{
 			Utils::log_warning("Attempted to select destroyed object");
@@ -256,7 +256,7 @@ namespace Engine::Graphics
 
 	Core::GameObject* Scene::getSelectedObject() const
 	{
-		// 念のため安全チェック
+		// 蠢ｵ縺ｮ縺溘ａ螳牙・繝√ぉ繝・け
 		if (m_selectedObject && m_selectedObject->isDestroyed())
 		{
 			return nullptr;
@@ -282,3 +282,4 @@ namespace Engine::Graphics
 		m_selectedObject = nullptr;
 	}
 }
+

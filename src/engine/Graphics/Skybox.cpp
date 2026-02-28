@@ -1,4 +1,4 @@
-#include "Skybox.hpp"
+﻿#include "Skybox.hpp"
 #include <d3dcompiler.h>
 #include <DirectXTex.h>
 #include <format>
@@ -8,9 +8,9 @@ namespace Engine::Graphics
 {
 	namespace 
 	{
-		struct SkyboxVertex { float x, y, z; }; // 位置だけ
+		struct SkyboxVertex { float x, y, z; }; // 菴咲ｽｮ縺縺・
 		struct CameraCB {
-			Math::Matrix4 viewNoTrans;  // 平行移動を消したView
+			Math::Matrix4 viewNoTrans;  // 蟷ｳ陦檎ｧｻ蜍輔ｒ豸医＠縺欸iew
 			Math::Matrix4 proj;
 		};
 		static_assert(sizeof(CameraCB) % 256 == 0 || sizeof(CameraCB) < 256, "CB must be 256-aligned-ish");
@@ -24,23 +24,23 @@ namespace Engine::Graphics
 		m_device = device;
 		m_shaderManager = shaderManager;
 
-		// キューブマップテクスチャの読み込み
+		// 繧ｭ繝･繝ｼ繝悶・繝・・繝・け繧ｹ繝√Ε縺ｮ隱ｭ縺ｿ霎ｼ縺ｿ
 		auto loadResult = loadCubeTexture(L"engine-assets/skybox/cubemap.dds");
 		if (!loadResult) return loadResult;  
 
-		// ルートシグネチャの作成
+		// 繝ｫ繝ｼ繝医す繧ｰ繝阪メ繝｣縺ｮ菴懈・
 		auto rootSigResult = createRootSignature();
 		if (!rootSigResult) return rootSigResult; 
 
-		// パイプラインステートの作成
+		// 繝代う繝励Λ繧､繝ｳ繧ｹ繝・・繝医・菴懈・
 		auto psoResult = createPipelineState(); 
 		if (!psoResult) return psoResult;
 
-		// ジオメトリの作成
+		// 繧ｸ繧ｪ繝｡繝医Μ縺ｮ菴懈・
 		auto geomResult = createGeometry();
 		if (!geomResult) return geomResult;
 
-		// カメラ定数バッファの作成
+		// 繧ｫ繝｡繝ｩ螳壽焚繝舌ャ繝輔ぃ縺ｮ菴懈・
 		auto cbResult = createCameraCB();
 		if (!cbResult) return cbResult;
 
@@ -76,31 +76,31 @@ namespace Engine::Graphics
 			return;
 		}
 
-		// カメラ定数バッファを更新
+		// 繧ｫ繝｡繝ｩ螳壽焚繝舌ャ繝輔ぃ繧呈峩譁ｰ
 		updateCameraCB(camera);
 
 		ID3D12DescriptorHeap* heaps[] = { m_device->getSrvHeap() };
 		cmd->SetDescriptorHeaps(_countof(heaps), heaps);
 
-		// ルートシグネチャとパイプラインステートを設定
+		// 繝ｫ繝ｼ繝医す繧ｰ繝阪メ繝｣縺ｨ繝代う繝励Λ繧､繝ｳ繧ｹ繝・・繝医ｒ險ｭ螳・
 		cmd->SetGraphicsRootSignature(m_rootSig.Get());
 		cmd->SetPipelineState(m_pso.Get());
 
-		// プリミティブトポロジーを設定
+		// 繝励Μ繝溘ユ繧｣繝悶ヨ繝昴Ο繧ｸ繝ｼ繧定ｨｭ螳・
 		cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		// 頂点バッファとインデックスバッファを設定
+		// 鬆らせ繝舌ャ繝輔ぃ縺ｨ繧､繝ｳ繝・ャ繧ｯ繧ｹ繝舌ャ繝輔ぃ繧定ｨｭ螳・
 		cmd->IASetVertexBuffers(0, 1, &m_vbv);
 		cmd->IASetIndexBuffer(&m_ibv);
 
-		// ルートパラメータを設定
-		// 0: カメラ定数バッファ
+		// 繝ｫ繝ｼ繝医ヱ繝ｩ繝｡繝ｼ繧ｿ繧定ｨｭ螳・
+		// 0: 繧ｫ繝｡繝ｩ螳壽焚繝舌ャ繝輔ぃ
 		cmd->SetGraphicsRootConstantBufferView(0, m_cameraCB->GetGPUVirtualAddress());
 
-		// 1: キューブマップテクスチャ（ディスクリプタテーブル）
+		// 1: 繧ｭ繝･繝ｼ繝悶・繝・・繝・け繧ｹ繝√Ε・医ョ繧｣繧ｹ繧ｯ繝ｪ繝励ち繝・・繝悶Ν・・
 		cmd->SetGraphicsRootDescriptorTable(1, m_cubeSrv);
 
-		// 描画コマンドを発行
+		// 謠冗判繧ｳ繝槭Φ繝峨ｒ逋ｺ陦・
 		cmd->DrawIndexedInstanced(m_indexCount, 1, 0, 0, 0);
 	}
 
@@ -110,13 +110,13 @@ namespace Engine::Graphics
 
 		auto dev = m_device->getDevice();
 		auto cmdQueue = m_device->getGraphicsQueue();
-		// DDSファイルからキューブマップを読み込み
+		// DDS繝輔ぃ繧､繝ｫ縺九ｉ繧ｭ繝･繝ｼ繝悶・繝・・繧定ｪｭ縺ｿ霎ｼ縺ｿ
 		TexMetadata metadara{};
 		ScratchImage image;
 		CHECK_HR(LoadFromDDSFile(filepath.c_str(), DDS_FLAGS_NONE, &metadara, image),
 			Utils::ErrorType::FileI0, "Failed to load cube texture from file");
 
-		// デバッグ情報を出力
+		// 繝・ヰ繝・げ諠・ｱ繧貞・蜉・
 		Utils::log_info(std::format("DDS Texture Info:"));
 		Utils::log_info(std::format("  Width: {}", metadara.width));
 		Utils::log_info(std::format("  Height: {}", metadara.height));
@@ -127,11 +127,11 @@ namespace Engine::Graphics
 		Utils::log_info(std::format("  Format: {}", static_cast<int>(metadara.format)));
 		Utils::log_info(std::format("  ImageCount: {}", image.GetImageCount()));
 
-		// キューブマップでない場合はエラー
+		// 繧ｭ繝･繝ｼ繝悶・繝・・縺ｧ縺ｪ縺・ｴ蜷医・繧ｨ繝ｩ繝ｼ
 		CHECK_CONDITION(metadara.IsCubemap(), Utils::ErrorType::Unknown,
 			"Texture is not a cubemap format");
 
-		// テクスチャリソースの作成
+		// 繝・け繧ｹ繝√Ε繝ｪ繧ｽ繝ｼ繧ｹ縺ｮ菴懈・
 		D3D12_RESOURCE_DESC texDesc = {};
 		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		texDesc.Width = metadara.width;
@@ -156,13 +156,13 @@ namespace Engine::Graphics
 		), Utils::ErrorType::ResourceCreation, "Failed to create cube texture resource");
 
 
-		// アップロード用の中間バッファのサイズを計算
+		// 繧｢繝・・繝ｭ繝ｼ繝臥畑縺ｮ荳ｭ髢薙ヰ繝・ヵ繧｡縺ｮ繧ｵ繧､繧ｺ繧定ｨ育ｮ・
 		UINT64 uploadBufferSize = GetRequiredIntermediateSize(
 			m_cubeTexture.Get(),0,
 			static_cast<UINT>(metadara.arraySize * metadara.mipLevels)
 		);
 
-		// アップロードバッファの作成
+		// 繧｢繝・・繝ｭ繝ｼ繝峨ヰ繝・ヵ繧｡縺ｮ菴懈・
 		ComPtr<ID3D12Resource> uploadBuffer;
 		auto uploadHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		auto uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
@@ -176,7 +176,7 @@ namespace Engine::Graphics
 			IID_PPV_ARGS(&uploadBuffer)
 		), Utils::ErrorType::ResourceCreation, "Failed to create upload buffer");
 
-		// サブリソースデータの準備
+		// 繧ｵ繝悶Μ繧ｽ繝ｼ繧ｹ繝・・繧ｿ縺ｮ貅門ｙ
 		std::vector<D3D12_SUBRESOURCE_DATA> subresources;
 		for (size_t arrayIndex = 0; arrayIndex < metadara.arraySize; ++arrayIndex)
 		{
@@ -197,7 +197,7 @@ namespace Engine::Graphics
 				subresources.push_back(subresource);
 			}
 		}
-		// コマンドアロケータとコマンドリストの作成
+		// 繧ｳ繝槭Φ繝峨い繝ｭ繧ｱ繝ｼ繧ｿ縺ｨ繧ｳ繝槭Φ繝峨Μ繧ｹ繝医・菴懈・
 		ComPtr<ID3D12CommandAllocator> ca;
 		ComPtr<ID3D12GraphicsCommandList> cmdList;
 
@@ -213,7 +213,7 @@ namespace Engine::Graphics
 			nullptr,
 			IID_PPV_ARGS(&cmdList)), Utils::ErrorType::ResourceCreation, "Failed to create skybox command list");
 
-		// サブリソースデータをアップロード
+		// 繧ｵ繝悶Μ繧ｽ繝ｼ繧ｹ繝・・繧ｿ繧偵い繝・・繝ｭ繝ｼ繝・
 		UpdateSubresources(
 			cmdList.Get(),
 			m_cubeTexture.Get(),
@@ -224,7 +224,7 @@ namespace Engine::Graphics
 			subresources.data()
 		);
 
-		//　リソースバリアでシェーダーリソースとして使用可能にする
+		//縲繝ｪ繧ｽ繝ｼ繧ｹ繝舌Μ繧｢縺ｧ繧ｷ繧ｧ繝ｼ繝繝ｼ繝ｪ繧ｽ繝ｼ繧ｹ縺ｨ縺励※菴ｿ逕ｨ蜿ｯ閭ｽ縺ｫ縺吶ｋ
 		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 			m_cubeTexture.Get(),
 			D3D12_RESOURCE_STATE_COPY_DEST,
@@ -232,7 +232,7 @@ namespace Engine::Graphics
 		);
 		cmdList->ResourceBarrier(1, &barrier);
 
-		//コマンドリストをクローズして実行
+		//繧ｳ繝槭Φ繝峨Μ繧ｹ繝医ｒ繧ｯ繝ｭ繝ｼ繧ｺ縺励※螳溯｡・
 		cmdList->Close();
 		ID3D12CommandList* cmdLists[] = { cmdList.Get() };
 
@@ -270,7 +270,7 @@ namespace Engine::Graphics
 
 		CD3DX12_ROOT_PARAMETER1 rootParams[2] = {};
 
-		// カメラ用の定数バッファ
+		// 繧ｫ繝｡繝ｩ逕ｨ縺ｮ螳壽焚繝舌ャ繝輔ぃ
 		rootParams[0].InitAsConstantBufferView(
 			0,
 			0,
@@ -397,36 +397,36 @@ namespace Engine::Graphics
 
 	Utils::VoidResult Skybox::createGeometry()
 	{
-		// 立方体の8頂点を定義
-		const float scale = 100.0f;  // スケールを追加
+		// 遶区婿菴薙・8鬆らせ繧貞ｮ夂ｾｩ
+		const float scale = 100.0f;  // 繧ｹ繧ｱ繝ｼ繝ｫ繧定ｿｽ蜉
 		SkyboxVertex vertices[] =
 		{
-			//前面
+			//蜑埼擇
 			{-scale, scale, -scale},
 			{ scale, scale, -scale},
 			{ scale,-scale, -scale},
 			{-scale,-scale, -scale},
 
-			//背面
+			//閭碁擇
 			{-scale, scale, scale},
 			{ scale, scale, scale},
 			{ scale,-scale, scale},
 			{-scale,-scale, scale}
 		};
 
-		// インデックスデータ
+		// 繧､繝ｳ繝・ャ繧ｯ繧ｹ繝・・繧ｿ
 		UINT16 indices[] = {
-			// 前面
+			// 蜑埼擇
 			0, 1, 2,  0, 2, 3,
-			// 右面
+			// 蜿ｳ髱｢
 			1, 5, 6,  1, 6, 2,
-			// 背面
+			// 閭碁擇
 			5, 4, 7,  5, 7, 6,
-			// 左面
+			// 蟾ｦ髱｢
 			4, 0, 3,  4, 3, 7,
-			// 上面
+			// 荳企擇
 			4, 5, 1,  4, 1, 0,
-			// 下面
+			// 荳矩擇
 			3, 2, 6,  3, 6, 7
 		};
 
@@ -437,7 +437,7 @@ namespace Engine::Graphics
 		const UINT vertexBufferSize = sizeof(vertices);
 		const UINT indexBufferSize = sizeof(indices);
 
-		// 頂点バッファの作成
+		// 鬆らせ繝舌ャ繝輔ぃ縺ｮ菴懈・
 		auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		auto vbDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
 
@@ -450,7 +450,7 @@ namespace Engine::Graphics
 			IID_PPV_ARGS(&m_vb)
 		), Utils::ErrorType::ResourceCreation, "Failed to create skybox vertex buffer");
 
-		// 頂点データをコピー
+		// 鬆らせ繝・・繧ｿ繧偵さ繝斐・
 		void* pVertexDataBegin = nullptr;
 		D3D12_RANGE readRange(0, 0);
 		m_vb->Map(0, &readRange, &pVertexDataBegin);
@@ -473,14 +473,14 @@ namespace Engine::Graphics
 			IID_PPV_ARGS(&m_ib)
 		), Utils::ErrorType::ResourceCreation, "Failed to create skybox index buffer");
 
-		// インデックスデータコピー
+		// 繧､繝ｳ繝・ャ繧ｯ繧ｹ繝・・繧ｿ繧ｳ繝斐・
 		void* pIndexDataBegin = nullptr;
 		m_ib->Map(0, &readRange, &pIndexDataBegin);
 
 		memcpy(pIndexDataBegin, indices, indexBufferSize);
 		m_ib->Unmap(0, nullptr);
 
-		// インデックスバッファビューの設定
+		// 繧､繝ｳ繝・ャ繧ｯ繧ｹ繝舌ャ繝輔ぃ繝薙Η繝ｼ縺ｮ險ｭ螳・
 		m_ibv.BufferLocation = m_ib->GetGPUVirtualAddress();
 		m_ibv.Format = DXGI_FORMAT_R16_UINT;
 		m_ibv.SizeInBytes = indexBufferSize;
@@ -506,7 +506,7 @@ namespace Engine::Graphics
 			IID_PPV_ARGS(&m_cameraCB)
 		), Utils::ErrorType::ResourceCreation, "Failed to create camera constant buffer");
 
-		// 最初にマップして、そのままにする
+		// 譛蛻昴↓繝槭ャ繝励＠縺ｦ縲√◎縺ｮ縺ｾ縺ｾ縺ｫ縺吶ｋ
 		D3D12_RANGE readRange(0, 0);
 		CHECK_HR(m_cameraCB->Map(0, &readRange, &m_cameraCbMapped),
 			Utils::ErrorType::ResourceCreation, "Failed to map camera constant buffer");
@@ -534,8 +534,9 @@ namespace Engine::Graphics
 		cbData.viewNoTrans = viewNoTrans;
 		cbData.proj = proj;
 
-		// すでにマップされているポインタを使用
+		// 縺吶〒縺ｫ繝槭ャ繝励＆繧後※縺・ｋ繝昴う繝ｳ繧ｿ繧剃ｽｿ逕ｨ
 		memcpy(m_cameraCbMapped, &cbData, sizeof(CameraCB));
 	}
 	
 }
+

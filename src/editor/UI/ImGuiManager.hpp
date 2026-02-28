@@ -259,3 +259,4 @@ namespace Editor::UI
 		// void drawRenderComponentInspector(Graphics::RenderComponent* component);
 	};
 }
+

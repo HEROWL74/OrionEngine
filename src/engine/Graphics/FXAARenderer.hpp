@@ -1,4 +1,4 @@
-// src/Graphics/FXAARenderer.hpp
+﻿// src/Graphics/FXAARenderer.hpp
 #pragma once
 #include <d3d12.h>
 #include <wrl.h>
@@ -62,3 +62,4 @@ namespace Engine::Graphics
 		void updateCBs();
 	};
 }
+

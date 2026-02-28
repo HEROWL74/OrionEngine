@@ -1,4 +1,4 @@
-#define ORION_RUNTIME_EXPORTS
+﻿#define ORION_RUNTIME_EXPORTS
 #include "IGameApp.hpp"
 #include "GameApp.hpp"
 
@@ -43,3 +43,4 @@ extern "C"
         delete static_cast<Runtime::GameApp*>(app);
     }
 }
+

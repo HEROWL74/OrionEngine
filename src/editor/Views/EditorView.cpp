@@ -1,4 +1,4 @@
-// EditorView.cpp
+ï»¿// EditorView.cpp
 #include "EditorView.hpp"
 #include <directx/d3dx12.h>
 
@@ -52,7 +52,7 @@ namespace Editor::UI
 				Utils::log_warning("Failed to initialize grid - grid will not be rendered");
 			}
 
-			// Gizmo‚Ì‰Šú‰»‚ğ’Ç‰Á
+			// Gizmoã®åˆæœŸåŒ–ã‚’è¿½åŠ 
 			m_gizmo = std::make_unique<Gizmo>();
 			auto gizmoResult = m_gizmo->initialize(device, shaderManager);
 			if (!gizmoResult)
@@ -62,7 +62,7 @@ namespace Editor::UI
 			}
 			else
 			{
-				// ƒfƒtƒHƒ‹ƒg‚ÅTranslation Gizmo‚ğİ’è
+				// ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§Translation Gizmoã‚’è¨­å®š
 				m_gizmo->setType(GizmoType::Translation);
 			}
 		}
@@ -81,19 +81,19 @@ namespace Editor::UI
 			return;
 		}
 
-		// ƒŒƒ“ƒ_[ƒ^[ƒQƒbƒg‚É‘JˆÚ
+		// ãƒ¬ãƒ³ãƒ€ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã«é·ç§»
 		m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_renderTarget->getRTV();
 		D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_renderTarget->getDSV();
 		commandList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
-		// ƒNƒŠƒA
+		// ã‚¯ãƒªã‚¢
 		float clearColor[4] = { 0.2f, 0.3f, 0.4f, 1.0f };
 		commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 		commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-		// ƒrƒ…[ƒ|[ƒg‚ÆƒVƒU[‹éŒ`İ’è
+		// ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆã¨ã‚·ã‚¶ãƒ¼çŸ©å½¢è¨­å®š
 		D3D12_VIEWPORT viewport{};
 		viewport.TopLeftX = 0.0f;
 		viewport.TopLeftY = 0.0f;
@@ -111,19 +111,19 @@ namespace Editor::UI
 		commandList->RSSetViewports(1, &viewport);
 		commandList->RSSetScissorRects(1, &scissorRect);
 
-		// Skybox•`‰æ
+		// Skyboxæç”»
 		if (m_skybox)
 		{
 			m_skybox->render(commandList, camera);
 		}
 
-		// ƒOƒŠƒbƒh•`‰æ
+		// ã‚°ãƒªãƒƒãƒ‰æç”»
 		if (m_showGrid)
 		{
 			renderGrid(commandList, camera);
 		}
 
-		// ƒV[ƒ“‚ÌGameObject•`‰æ
+		// ã‚·ãƒ¼ãƒ³ã®GameObjectæç”»
 		Utils::RenderContext context;
 		context.commandList = commandList;
 		context.camera = &camera;
@@ -167,7 +167,7 @@ namespace Editor::UI
 
 				bool shouldRender = text->isVisible();
 
-				// ƒfƒoƒbƒOî•ñ
+				// ãƒ‡ãƒãƒƒã‚°æƒ…å ±
 				Utils::log_info(std::format("UIText '{}' - Visible: {}, Enabled: {}, GameObject: {}",
 					text->getName(),
 					text->isVisible(),
@@ -191,16 +191,16 @@ namespace Editor::UI
 			Utils::log_info("========================================\n");
 		}
 
-		// Gizmo‚È‚Ç‚ÌƒGƒfƒBƒ^—v‘f‚ğ•`‰æ
+		// Gizmoãªã©ã®ã‚¨ãƒ‡ã‚£ã‚¿è¦ç´ ã‚’æç”»
 		renderEditorElements(commandList, camera, frameIndex);
 
-		// FXAA“K—p
+		// FXAAé©ç”¨
 		if (m_enableFXAA && m_fxaaRenderer && m_fxaaOutputTarget)
 		{
-			// ƒ\[ƒXƒeƒNƒXƒ`ƒƒ‚ğƒVƒF[ƒ_[ƒŠƒ\[ƒX‚É‘JˆÚ
+			// ã‚½ãƒ¼ã‚¹ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ãƒªã‚½ãƒ¼ã‚¹ã«é·ç§»
 			m_renderTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-			// FXAA‚ğ“K—p‚µ‚Äo—Íƒ^[ƒQƒbƒg‚É•`‰æ
+			// FXAAã‚’é©ç”¨ã—ã¦å‡ºåŠ›ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã«æç”»
 			m_fxaaRenderer->apply(
 				commandList,
 				m_renderTarget->getColorResource(),
@@ -208,7 +208,7 @@ namespace Editor::UI
 				m_fxaaOutputTarget.get()
 			);
 
-			// ÅIo—Í‚ğƒVƒF[ƒ_[ƒŠƒ\[ƒX‚É‘JˆÚ
+			// æœ€çµ‚å‡ºåŠ›ã‚’ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ãƒªã‚½ãƒ¼ã‚¹ã«é·ç§»
 			m_fxaaOutputTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		}
 		else
@@ -224,13 +224,13 @@ namespace Editor::UI
 			return;
 		}
 
-		// Gizmo•`‰æ
+		// Gizmoæç”»
 		if (m_showGizmos && m_selectedObject && m_gizmo)
 		{
 			m_gizmo->render(commandList, camera, m_selectedObject);
 		}
 
-		// ‘I‘ğƒAƒEƒgƒ‰ƒCƒ“
+		// é¸æŠã‚¢ã‚¦ãƒˆãƒ©ã‚¤ãƒ³
 		if (m_showGizmos && m_selectedObject)
 		{
 			renderSelectionOutline(commandList, camera, m_selectedObject);
@@ -244,7 +244,7 @@ namespace Editor::UI
 			return;
 		}
 
-		// ’Êí‚Ìƒrƒ…[s—ñ‚ğg—p(•½sˆÚ“®‚ğŠÜ‚Ş)
+		// é€šå¸¸ã®ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ã‚’ä½¿ç”¨(å¹³è¡Œç§»å‹•ã‚’å«ã‚€)
 		if (m_gridCameraMapped)
 		{
 			GridCameraConstants constants;
@@ -318,15 +318,15 @@ namespace Editor::UI
 			return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown, "Device or ShaderManager is null"));
 		}
 
-		// ƒWƒIƒƒgƒŠì¬
+		// ã‚¸ã‚ªãƒ¡ãƒˆãƒªä½œæˆ
 		auto geomResult = createGridGeometry();
 		if (!geomResult) return geomResult;
 
-		// ƒ‹[ƒgƒVƒOƒlƒ`ƒƒì¬
+		// ãƒ«ãƒ¼ãƒˆã‚·ã‚°ãƒãƒãƒ£ä½œæˆ
 		auto rootSigResult = createGridRootSignature();
 		if (!rootSigResult) return rootSigResult;
 
-		// ƒpƒCƒvƒ‰ƒCƒ“ƒXƒe[ƒgì¬
+		// ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³ã‚¹ãƒ†ãƒ¼ãƒˆä½œæˆ
 		auto psoResult = createGridPipelineState(shaderManager);
 		if (!psoResult) return psoResult;
 
@@ -339,30 +339,30 @@ namespace Editor::UI
 	{
 		auto dev = m_device->getDevice();
 
-		// ƒOƒŠƒbƒh‚Ìİ’è
+		// ã‚°ãƒªãƒƒãƒ‰ã®è¨­å®š
 		const float gridSize = 50.0f;
 		const float gridStep = 1.0f;
 		const int gridLines = static_cast<int>(gridSize / gridStep);
 
 		std::vector<GridVertex> vertices;
 
-		// X²•ûŒü‚Ìü
+		// Xè»¸æ–¹å‘ã®ç·š
 		for (int i = -gridLines; i <= gridLines; ++i)
 		{
 			float pos = i * gridStep;
 			Math::Vector4 color = (i == 0) ?
-				Math::Vector4(0.0f, 0.0f, 1.0f, 1.0f) // Z²‚ÍÂ
+				Math::Vector4(0.0f, 0.0f, 1.0f, 1.0f) // Zè»¸ã¯é’
 				: Math::Vector4(0.3f, 0.3f, 0.3f, 1.0f);
 			vertices.push_back({ Math::Vector3(-gridSize, 0.0f, pos), color });
 			vertices.push_back({ Math::Vector3(gridSize, 0.0f, pos), color });
 		}
 
-		// Z²•ûŒü‚Ìü
+		// Zè»¸æ–¹å‘ã®ç·š
 		for (int i = -gridLines; i <= gridLines; ++i)
 		{
 			float pos = i * gridStep;
 			Math::Vector4 color = (i == 0) ?
-				Math::Vector4(1.0f, 0.0f, 0.0f, 1.0f) // X²‚ÍÔ
+				Math::Vector4(1.0f, 0.0f, 0.0f, 1.0f) // Xè»¸ã¯èµ¤
 				: Math::Vector4(0.3f, 0.3f, 0.3f, 1.0f);
 			vertices.push_back({ Math::Vector3(pos, 0.0f, -gridSize), color });
 			vertices.push_back({ Math::Vector3(pos, 0.0f, gridSize), color });
@@ -371,7 +371,7 @@ namespace Editor::UI
 		m_gridVertexCount = static_cast<UINT>(vertices.size());
 		const UINT vertexBufferSize = static_cast<UINT>(sizeof(GridVertex) * vertices.size());
 
-		// ’¸“_ƒoƒbƒtƒ@ì¬
+		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ä½œæˆ
 		auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
 
@@ -384,19 +384,19 @@ namespace Editor::UI
 			IID_PPV_ARGS(&m_gridVertexBuffer)
 		), Utils::ErrorType::ResourceCreation, "Failed to create grid vertex buffer");
 
-		// ƒf[ƒ^‚ğƒRƒs[
+		// ãƒ‡ãƒ¼ã‚¿ã‚’ã‚³ãƒ”ãƒ¼
 		void* pData = nullptr;
 		D3D12_RANGE readRange{ 0, 0 };
 		m_gridVertexBuffer->Map(0, &readRange, &pData);
 		memcpy(pData, vertices.data(), vertexBufferSize);
 		m_gridVertexBuffer->Unmap(0, nullptr);
 
-		// ’¸“_ƒoƒbƒtƒ@ƒrƒ…[İ’è
+		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ãƒ“ãƒ¥ãƒ¼è¨­å®š
 		m_gridVertexBufferView.BufferLocation = m_gridVertexBuffer->GetGPUVirtualAddress();
 		m_gridVertexBufferView.StrideInBytes = sizeof(GridVertex);
 		m_gridVertexBufferView.SizeInBytes = vertexBufferSize;
 
-		// ƒJƒƒ‰’è”ƒoƒbƒtƒ@ì¬
+		// ã‚«ãƒ¡ãƒ©å®šæ•°ãƒãƒƒãƒ•ã‚¡ä½œæˆ
 		const UINT cbSize = (sizeof(GridCameraConstants) + 255) & ~255;
 		auto cbDesc = CD3DX12_RESOURCE_DESC::Buffer(cbSize);
 
@@ -409,7 +409,7 @@ namespace Editor::UI
 			IID_PPV_ARGS(&m_gridCameraBuffer)
 		), Utils::ErrorType::ResourceCreation, "Failed to create grid camera buffer");
 
-		// ƒJƒƒ‰ƒoƒbƒtƒ@‚ğƒ}ƒbƒv‚µ‚½‚Ü‚Ü‚É‚·‚é
+		// ã‚«ãƒ¡ãƒ©ãƒãƒƒãƒ•ã‚¡ã‚’ãƒãƒƒãƒ—ã—ãŸã¾ã¾ã«ã™ã‚‹
 		CHECK_HR(m_gridCameraBuffer->Map(0, &readRange, &m_gridCameraMapped),
 			Utils::ErrorType::ResourceCreation, "Failed to map grid camera buffer");
 
@@ -420,7 +420,7 @@ namespace Editor::UI
 	{
 		auto dev = m_device->getDevice();
 
-		// ƒ‹[ƒgƒpƒ‰ƒ[ƒ^: CB
+		// ãƒ«ãƒ¼ãƒˆãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿: CB
 		CD3DX12_ROOT_PARAMETER1 rootParams[1] = {};
 		rootParams[0].InitAsConstantBufferView(
 			0,
@@ -429,7 +429,7 @@ namespace Editor::UI
 			D3D12_SHADER_VISIBILITY_VERTEX
 		);
 
-		// ƒ‹[ƒgƒVƒOƒlƒ`ƒƒ
+		// ãƒ«ãƒ¼ãƒˆã‚·ã‚°ãƒãƒãƒ£
 		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDesc{};
 		rootSigDesc.Init_1_1(
 			_countof(rootParams),
@@ -439,7 +439,7 @@ namespace Editor::UI
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
 		);
 
-		// ƒVƒŠƒAƒ‰ƒCƒY
+		// ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚º
 		ComPtr<ID3DBlob> sig;
 		ComPtr<ID3DBlob> err;
 		CHECK_HR(D3DX12SerializeVersionedRootSignature(
@@ -469,7 +469,7 @@ namespace Editor::UI
 				"ShaderManager is required for grid initialization"));
 		}
 
-		// ƒVƒF[ƒ_[“Ç‚İ‚İ
+		// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼èª­ã¿è¾¼ã¿
 		Graphics::ShaderCompileDesc vsDesc;
 		vsDesc.filePath = "engine-assets/shaders/GridVS.hlsl";
 		vsDesc.entryPoint = "main";
@@ -496,7 +496,7 @@ namespace Editor::UI
 				"Failed to load grid pixel shader"));
 		}
 
-		// “ü—ÍƒŒƒCƒAƒEƒg
+		// å…¥åŠ›ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆ
 		D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 		{
 			{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
@@ -505,7 +505,7 @@ namespace Editor::UI
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		};
 
-		// ƒpƒCƒvƒ‰ƒCƒ“ƒXƒe[ƒgİ’è
+		// ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³ã‚¹ãƒ†ãƒ¼ãƒˆè¨­å®š
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
 		psoDesc.pRootSignature = m_gridRootSignature.Get();
 		psoDesc.VS = { vertexShaderResult->getBytecode(), vertexShaderResult->getBytecodeSize() };
@@ -513,11 +513,11 @@ namespace Editor::UI
 		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		psoDesc.SampleMask = UINT_MAX;
 
-		// ƒ‰ƒXƒ^ƒ‰ƒCƒUİ’è
+		// ãƒ©ã‚¹ã‚¿ãƒ©ã‚¤ã‚¶è¨­å®š
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 
-		// ƒfƒvƒXƒXƒeƒ“ƒVƒ‹İ’è
+		// ãƒ‡ãƒ—ã‚¹ã‚¹ãƒ†ãƒ³ã‚·ãƒ«è¨­å®š
 		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 		psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 		psoDesc.DepthStencilState.DepthEnable = TRUE;
@@ -539,3 +539,4 @@ namespace Editor::UI
 		return {};
 	}
 }
+

@@ -1,4 +1,4 @@
-//src/Scripting/LuaScriptComponent.cpp
+ï»¿//src/Scripting/LuaScriptComponent.cpp
 
 #include "LuaScriptComponent.hpp"
 #include "../Utils/Common.hpp"
@@ -21,17 +21,17 @@ namespace Engine::Scripting {
 
     void LuaScriptComponent::invalidateCachedFunctions()
     {
-        // Š®‘S‚É–³Œø‰»‚µALuaQÆ‚ğƒNƒŠƒA
+        // å®Œå…¨ã«ç„¡åŠ¹åŒ–ã—ã€Luaå‚ç…§ã‚’ã‚¯ãƒªã‚¢
         Utils::log_info(std::format(
             "Invalidating LuaScriptComponent: {}", m_scriptPath
         ));
 
-        // ‚·‚×‚Ä‚ÌLuaQÆ‚ğnil‚Éİ’è
+        // ã™ã¹ã¦ã®Luaå‚ç…§ã‚’nilã«è¨­å®š
         m_scriptTable = sol::lua_nil;
         m_onStart = sol::lua_nil;
         m_onUpdate = sol::lua_nil;
 
-        // ƒtƒ‰ƒO‚ğƒŠƒZƒbƒg
+        // ãƒ•ãƒ©ã‚°ã‚’ãƒªã‚»ãƒƒãƒˆ
         m_needsRefresh = true;
         m_luaStarted = false;
 
@@ -135,7 +135,7 @@ namespace Engine::Scripting {
         if (!obj || obj->isDestroyed())
             return;
 
-        // ƒzƒbƒgƒŠƒ[ƒhŒo—R‚Å invalidate ‚³‚ê‚½‚Ì‚İÄ‹N“®‚·‚é
+        // ãƒ›ãƒƒãƒˆãƒªãƒ­ãƒ¼ãƒ‰çµŒç”±ã§ invalidate ã•ã‚ŒãŸæ™‚ã®ã¿å†èµ·å‹•ã™ã‚‹
         if (m_needsRefresh)
         {
             m_luaStarted = false;
@@ -157,7 +157,7 @@ namespace Engine::Scripting {
             auto* resolved = resolveGameObject(currentObj->getId());
             if (!resolved)
             {
-                // Ã‚©‚É¸”si–ˆƒtƒŒ[ƒ€o—Í‚µ‚È‚¢j
+                // é™ã‹ã«å¤±æ•—ï¼ˆæ¯ãƒ•ãƒ¬ãƒ¼ãƒ å‡ºåŠ›ã—ãªã„ï¼‰
                 return;
             }
 
@@ -185,3 +185,4 @@ namespace Engine::Scripting {
         }
     }
 }
+

@@ -1,4 +1,4 @@
-// src/engine/UI/UIComponent.hpp
+﻿// src/engine/UI/UIComponent.hpp
 #pragma once
 #include "../Graphics/Device.hpp"
 #include "../Graphics/ShaderManager.hpp"
@@ -7,7 +7,7 @@
 
 namespace Engine::EngineUI
 {
-    // UIアンカー(将来の2Dモード用に保持)
+    // UI繧｢繝ｳ繧ｫ繝ｼ(蟆・擂縺ｮ2D繝｢繝ｼ繝臥畑縺ｫ菫晄戟)
     enum class UIAnchor
     {
         TopLeft,
@@ -21,15 +21,15 @@ namespace Engine::EngineUI
         BottomRight
     };
 
-    // UIのレンダリングモード
+    // UI縺ｮ繝ｬ繝ｳ繝繝ｪ繝ｳ繧ｰ繝｢繝ｼ繝・
     enum class UIRenderMode
     {
-        ScreenSpace,    // 2D画面空間(未実装)
-        WorldSpace      // 3D空間(現在の実装)
+        ScreenSpace,    // 2D逕ｻ髱｢遨ｺ髢・譛ｪ螳溯｣・
+        WorldSpace      // 3D遨ｺ髢・迴ｾ蝨ｨ縺ｮ螳溯｣・
     };
 
     // ======================================
-    // UIComponentベースクラス - Componentを継承
+    // UIComponent繝吶・繧ｹ繧ｯ繝ｩ繧ｹ - Component繧堤ｶ呎価
     // ======================================
     class UIComponent : public Core::Component
     {
@@ -64,24 +64,24 @@ namespace Engine::EngineUI
         bool m_isVisible = true;
         UIAnchor m_anchor = UIAnchor::TopLeft;
         Math::Vector2 m_screenPosition = Math::Vector2::zero();
-        UIRenderMode m_renderMode = UIRenderMode::WorldSpace; // デフォルトは3D
+        UIRenderMode m_renderMode = UIRenderMode::WorldSpace; // 繝・ヵ繧ｩ繝ｫ繝医・3D
     };
 
     // ======================================
-    // UITextクラス - UIComponentを継承
+    // UIText繧ｯ繝ｩ繧ｹ - UIComponent繧堤ｶ呎価
     // ======================================
     class UIText : public UIComponent
     {
     public:
         UIText() : UIComponent()
         {
-            // UIの表示状態を明示的に設定
+            // UI縺ｮ陦ｨ遉ｺ迥ｶ諷九ｒ譏守､ｺ逧・↓險ｭ螳・
             m_isVisible = true;
         }
 
         ~UIText() override = default;
 
-        // 基本設定
+        // 蝓ｺ譛ｬ險ｭ螳・
         void setName(const std::string& name) { m_name = name; }
         const std::string& getName() const { return m_name; }
 
@@ -102,7 +102,7 @@ namespace Engine::EngineUI
                 m_position = position;
                 m_dirty = true;
 
-                // GameObjectのTransformも更新
+                // GameObject縺ｮTransform繧よ峩譁ｰ
                 syncToGameObjectTransform();
             }
         }
@@ -115,7 +115,7 @@ namespace Engine::EngineUI
                 m_rotation = rotation;
                 m_dirty = true;
 
-                // GameObjectのTransformも更新
+                // GameObject縺ｮTransform繧よ峩譁ｰ
                 syncToGameObjectTransform();
             }
         }
@@ -128,13 +128,13 @@ namespace Engine::EngineUI
                 m_scale = scale;
                 m_dirty = true;
 
-                // GameObjectのTransformも更新
+                // GameObject縺ｮTransform繧よ峩譁ｰ
                 syncToGameObjectTransform();
             }
         }
         const Math::Vector3& getScale() const { return m_scale; }
 
-        // テキストスタイル
+        // 繝・く繧ｹ繝医せ繧ｿ繧､繝ｫ
         void setFontSize(float size)
         {
             if (m_fontSize != size)
@@ -151,7 +151,7 @@ namespace Engine::EngineUI
         void setAlpha(float alpha) { m_alpha = alpha; }
         float getAlpha() const { return m_alpha; }
 
-        // ワールド変換行列を取得(キャッシュ付き)
+        // 繝ｯ繝ｼ繝ｫ繝牙､画鋤陦悟・繧貞叙蠕・繧ｭ繝｣繝・す繝･莉倥″)
         Math::Matrix4 getWorldMatrix() const
         {
             if (m_dirty)
@@ -162,7 +162,7 @@ namespace Engine::EngineUI
             return m_cachedWorldMatrix;
         }
 
-        // Dirty フラグ
+        // Dirty 繝輔Λ繧ｰ
         bool isDirty() const { return m_dirty; }
         void markDirty() { m_dirty = true; }
 
@@ -188,7 +188,7 @@ namespace Engine::EngineUI
 
         void syncFromGameObjectTransform()
         {
-            if (m_syncInProgress) return;  // 無限ループ防止
+            if (m_syncInProgress) return;  // 辟｡髯舌Ν繝ｼ繝鈴亟豁｢
 
             auto* gameObject = getGameObject();
             if (!gameObject) return;
@@ -208,25 +208,25 @@ namespace Engine::EngineUI
         std::string m_name = "UIText";
         std::string m_text = "New Text";
 
-        // 3D Transform - GameObjectのTransformと同期
+        // 3D Transform - GameObject縺ｮTransform縺ｨ蜷梧悄
         Math::Vector3 m_position = Math::Vector3(0.0f, 0.0f, 0.0f);
         Math::Vector3 m_rotation = Math::Vector3(0.0f, 0.0f, 0.0f);
         Math::Vector3 m_scale = Math::Vector3(0.01f, 0.01f, 0.01f);
 
-        // スタイル
+        // 繧ｹ繧ｿ繧､繝ｫ
         float m_fontSize = 32.0f;
         Math::Vector3 m_color = Math::Vector3(1.0f, 1.0f, 1.0f);
         float m_alpha = 1.0f;
 
-        // キャッシュ
+        // 繧ｭ繝｣繝・す繝･
         mutable Math::Matrix4 m_cachedWorldMatrix = Math::Matrix4::identity();
         mutable bool m_dirty = true;
 
-        bool m_syncInProgress = false;  // 同期中フラグ
+        bool m_syncInProgress = false;  // 蜷梧悄荳ｭ繝輔Λ繧ｰ
 
         void syncToGameObjectTransform()
         {
-            if (m_syncInProgress) return;  // 無限ループ防止
+            if (m_syncInProgress) return;  // 辟｡髯舌Ν繝ｼ繝鈴亟豁｢
 
             auto* gameObject = getGameObject();
             if (!gameObject) return;
@@ -254,3 +254,4 @@ namespace Engine::EngineUI
         }
     };
 }
+

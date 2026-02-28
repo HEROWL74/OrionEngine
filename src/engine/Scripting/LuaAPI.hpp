@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <cstdint>
 
 namespace Engine {
@@ -9,3 +9,4 @@ namespace Engine {
 
     }
 }
+

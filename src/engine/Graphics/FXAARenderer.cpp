@@ -1,4 +1,4 @@
-#include "FXAARenderer.hpp"
+ï»¿#include "FXAARenderer.hpp"
 #include <directx/d3dx12.h>
 #include <format>
 
@@ -50,7 +50,7 @@ namespace Engine::Graphics
 
 		Utils::log_info("FXAA apply called");
 
-		// o—Íƒ^[ƒQƒbƒg‚É‘JˆÚ
+		// å‡ºåŠ›ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã«é·ç§»
 		outputTarget->transitionTo(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		D3D12_CPU_DESCRIPTOR_HANDLE rtv = outputTarget->getRTV();
@@ -69,7 +69,7 @@ namespace Engine::Graphics
 		commandList->RSSetViewports(1, &viewport);
 		commandList->RSSetScissorRects(1, &scissor);
 
-		// FXAA“K—p
+		// FXAAé©ç”¨
 		commandList->SetPipelineState(m_pipelineState.Get());
 		commandList->SetGraphicsRootSignature(m_rootSignature.Get());
 
@@ -215,3 +215,4 @@ namespace Engine::Graphics
 		}
 	}
 }
+

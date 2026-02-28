@@ -1,11 +1,11 @@
-//src/engine/Input/InputSystem.hpp
+ï»¿//src/engine/Input/InputSystem.hpp
 #pragma once
 #include "InputManager.hpp"
 #include <memory>
 
 namespace Engine::Input
 {
-	// Lua‚©‚çŠÈ’P‚ÉƒL[“ü—Í‚ğæ“¾‚·‚é‚½‚ß‚ÌƒNƒ‰ƒX
+	// Luaã‹ã‚‰ç°¡å˜ã«ã‚­ãƒ¼å…¥åŠ›ã‚’å–å¾—ã™ã‚‹ãŸã‚ã®ã‚¯ãƒ©ã‚¹
 	class InputSystem
 	{
 	public:
@@ -100,3 +100,4 @@ namespace Engine::Input
 		InputManager* m_inputManager = nullptr;
 	};
 }
+

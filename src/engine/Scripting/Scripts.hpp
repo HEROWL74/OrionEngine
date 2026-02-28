@@ -1,11 +1,12 @@
-#pragma once
+ï»¿#pragma once
 
-//Šî–{ƒXƒNƒŠƒvƒgŠÖ˜A
+//åŸºæœ¬ã‚¹ã‚¯ãƒªãƒ—ãƒˆé–¢é€£
 #include "CppScriptComponent.hpp"
 
-//TODO: ¡Œã‹¤’ÊAPI‚ğ‰º‚É’Ç‰Á
+//TODO: ä»Šå¾Œå…±é€šAPIã‚’ä¸‹ã«è¿½åŠ 
 
 namespace Script
 {
 	using Cpp = Engine::Scripting::CppScriptComponent;
 }
+

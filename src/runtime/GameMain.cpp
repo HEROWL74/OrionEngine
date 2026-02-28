@@ -1,25 +1,25 @@
-// src/runtime/GameMain.cpp
-// OrionGame.exe ‚ÌƒGƒ“ƒgƒŠƒ|ƒCƒ“ƒgiƒ‰ƒ“ƒ`ƒƒ[j
+ï»¿// src/runtime/GameMain.cpp
+// OrionGame.exe ã®ã‚¨ãƒ³ãƒˆãƒªãƒã‚¤ãƒ³ãƒˆï¼ˆãƒ©ãƒ³ãƒãƒ£ãƒ¼ï¼‰
 
-// Às‚Ì—¬‚ê:
-//   1. exe ‚Æ“¯‚¶ƒtƒHƒ‹ƒ_‚Ì OrionRuntime.dll ‚ğ LoadLibrary
-//   2. GameAppCreate / Initialize / Run / Destroy ‚ğŒÄ‚Ô
-//   3. FreeLibrary ‚µ‚ÄI—¹
+// å®Ÿè¡Œæ™‚ã®æµã‚Œ:
+//   1. exe ã¨åŒã˜ãƒ•ã‚©ãƒ«ãƒ€ã® OrionRuntime.dll ã‚’ LoadLibrary
+//   2. GameAppCreate / Initialize / Run / Destroy ã‚’å‘¼ã¶
+//   3. FreeLibrary ã—ã¦çµ‚äº†
 
 #include <Windows.h>
 #include <filesystem>
 #include <string>
 
 // =========================================================
-// DLL ‚©‚çæ“¾‚·‚éŠÖ”ƒ|ƒCƒ“ƒ^Œ^
-// IGameApp.hpp ‚Æ“¯‚¶ƒVƒOƒlƒ`ƒƒiƒwƒbƒ_‚ğ include ‚µ‚È‚¢‚½‚ßè‘‚«j
+// DLL ã‹ã‚‰å–å¾—ã™ã‚‹é–¢æ•°ãƒã‚¤ãƒ³ã‚¿å‹
+// IGameApp.hpp ã¨åŒã˜ã‚·ã‚°ãƒãƒãƒ£ï¼ˆãƒ˜ãƒƒãƒ€ã‚’ include ã—ãªã„ãŸã‚æ‰‹æ›¸ãï¼‰
 // =========================================================
 using FnGameAppCreate = void* (*)();
 using FnGameAppInitialize = int   (*)(void*, HINSTANCE, int);
 using FnGameAppRun = int   (*)(void*);
 using FnGameAppDestroy = void  (*)(void*);
 
-// exe ‚Æ“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚Ì OrionRuntime.dll ‚Ìƒtƒ‹ƒpƒX‚ğ•Ô‚·
+// exe ã¨åŒã˜ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã® OrionRuntime.dll ã®ãƒ•ãƒ«ãƒ‘ã‚¹ã‚’è¿”ã™
 static std::wstring GetRuntimeDllPath()
 {
     wchar_t exePath[MAX_PATH]{};
@@ -33,7 +33,7 @@ int WINAPI WinMain(
     _In_     LPSTR,
     _In_     int nCmdShow)
 {
-    // ---- OrionRuntime.dll ‚ğƒ[ƒh ----
+    // ---- OrionRuntime.dll ã‚’ãƒ­ãƒ¼ãƒ‰ ----
     const std::wstring dllPath = GetRuntimeDllPath();
     HMODULE hRuntime = LoadLibraryW(dllPath.c_str());
 
@@ -49,7 +49,7 @@ int WINAPI WinMain(
         return -1;
     }
 
-    // ---- 2. ŠÖ”ƒ|ƒCƒ“ƒ^‚ğæ“¾ ----
+    // ---- 2. é–¢æ•°ãƒã‚¤ãƒ³ã‚¿ã‚’å–å¾— ----
     const auto fnCreate = reinterpret_cast<FnGameAppCreate>    (GetProcAddress(hRuntime, "GameAppCreate"));
     const auto fnInitialize = reinterpret_cast<FnGameAppInitialize>(GetProcAddress(hRuntime, "GameAppInitialize"));
     const auto fnRun = reinterpret_cast<FnGameAppRun>       (GetProcAddress(hRuntime, "GameAppRun"));
@@ -65,7 +65,7 @@ int WINAPI WinMain(
         return -1;
     }
 
-    // ---- GameApp ‚ğ¶¬E‰Šú‰»EÀs ----
+    // ---- GameApp ã‚’ç”Ÿæˆãƒ»åˆæœŸåŒ–ãƒ»å®Ÿè¡Œ ----
     void* app = fnCreate();
     if (!app)
     {
@@ -80,18 +80,19 @@ int WINAPI WinMain(
 
     if (fnInitialize(app, hInstance, nCmdShow) == 0)
     {
-        // ‰Šú‰»¬Œ÷ -> ƒƒCƒ“ƒ‹[ƒviƒuƒƒbƒLƒ“ƒOj
+        // åˆæœŸåŒ–æˆåŠŸ -> ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—ï¼ˆãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°ï¼‰
         exitCode = fnRun(app);
     }
     else
     {
-        // ¸”s‚ÌƒGƒ‰[ƒ_ƒCƒAƒƒO‚Í DLL ‘¤ (GameAppExports.cpp) ‚Å•\¦Ï‚İ
+        // å¤±æ•—æ™‚ã®ã‚¨ãƒ©ãƒ¼ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã¯ DLL å´ (GameAppExports.cpp) ã§è¡¨ç¤ºæ¸ˆã¿
         exitCode = -1;
     }
 
-    // ---- ƒNƒŠ[ƒ“ƒAƒbƒv ----
+    // ---- ã‚¯ãƒªãƒ¼ãƒ³ã‚¢ãƒƒãƒ— ----
     fnDestroy(app);
     FreeLibrary(hRuntime);
 
     return exitCode;
 }
+

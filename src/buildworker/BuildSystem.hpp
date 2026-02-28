@@ -1,4 +1,4 @@
-// src/editor/buildworker/BuildSystem.hpp
+ï»¿// src/editor/buildworker/BuildSystem.hpp
 #pragma once
 
 #include <string>
@@ -30,17 +30,17 @@ namespace Editor::Build
         std::string outputPath;
     };
 
-    // ƒrƒ‹ƒh\¬î•ñ
+    // ãƒ“ãƒ«ãƒ‰æ§‹æˆæƒ…å ±
     //
-    // ÀÛ‚ÌƒfƒBƒŒƒNƒgƒŠ\‘¢:
+    // å®Ÿéš›ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªæ§‹é€ :
     //
     // VS Multi-Config (x64-release-local):
     //   build/x64-release-local/
     //     editor/                        <- editorRootDir
-    //       player/                      <- playerDir (ƒrƒ‹ƒhÏ‚İexe+DLLƒLƒƒƒbƒVƒ…)
+    //       player/                      <- playerDir (ãƒ“ãƒ«ãƒ‰æ¸ˆã¿exe+DLLã‚­ãƒ£ãƒƒã‚·ãƒ¥)
     //       engine-assets/
     //       project-templates/
-    //       logs/                        <- ƒrƒ‹ƒhƒƒOo—Íæ
+    //       logs/                        <- ãƒ“ãƒ«ãƒ‰ãƒ­ã‚°å‡ºåŠ›å…ˆ
     //         build_20260224_223012.txt
     //       Release/
     //         OrionEditor.exe
@@ -59,7 +59,7 @@ namespace Editor::Build
     //     runtime/
     //       OrionGame.exe
     //
-    // CMakeCache.txt ‚Ö‚ÌˆË‘¶‚ğŠ®‘S‚É”rœÏ‚İB
+    // CMakeCache.txt ã¸ã®ä¾å­˜ã‚’å®Œå…¨ã«æ’é™¤æ¸ˆã¿ã€‚
     struct BuildConfig
     {
         std::string presetName;
@@ -77,7 +77,7 @@ namespace Editor::Build
 
         void setProgressCallback(ProgressCallback callback);
 
-        // forceRebuild=true: player/‚ª‚ ‚Á‚Ä‚à cmake --build ‚ğ‹­§Às‚µ‚ÄXV‚·‚é
+        // forceRebuild=true: player/ãŒã‚ã£ã¦ã‚‚ cmake --build ã‚’å¼·åˆ¶å®Ÿè¡Œã—ã¦æ›´æ–°ã™ã‚‹
         bool build(bool forceRebuild = false);
         bool cancel();
         const BuildResult& getResult() const { return m_currentResult; }
@@ -98,14 +98,14 @@ namespace Editor::Build
         bool RunCommandWithOutput(const std::string& command,
             std::function<void(const std::string&)> onOutput);
 
-        // ƒpƒX‰ğŒˆ (CMakeCache.txt ‚ÉˆêØˆË‘¶‚µ‚È‚¢)
+        // ãƒ‘ã‚¹è§£æ±º (CMakeCache.txt ã«ä¸€åˆ‡ä¾å­˜ã—ãªã„)
         std::filesystem::path getEditorRootDir()  const;
         std::filesystem::path getPlayerDir()      const;
         std::filesystem::path getRuntimeExeDir()  const;
         std::filesystem::path getDistOutputDir()  const;
         std::filesystem::path getLogDir()         const;
 
-        // ƒƒOƒtƒ@ƒCƒ‹ŠÇ—
+        // ãƒ­ã‚°ãƒ•ã‚¡ã‚¤ãƒ«ç®¡ç†
         void openLogFile();
         void closeLogFile();
         void writeLog(const std::string& level, const std::string& message);
@@ -116,17 +116,18 @@ namespace Editor::Build
         bool             m_cancelled = false;
         BuildConfig      m_currentConfig{};
 
-        // build() ŠJn‚ÉŠm’è‚µ‚ÄƒLƒƒƒbƒVƒ…
+        // build() é–‹å§‹æ™‚ã«ç¢ºå®šã—ã¦ã‚­ãƒ£ãƒƒã‚·ãƒ¥
         std::filesystem::path m_cachedEditorRootDir;
         std::filesystem::path m_cachedBuildDir;
         std::filesystem::path m_cachedSourceRootDir;
         std::string           m_cachedProjectName;
 
-        // ƒƒOƒtƒ@ƒCƒ‹
-        // ƒrƒ‹ƒhƒXƒŒƒbƒh‚Æ UIƒXƒŒƒbƒh‚©‚ç“¯ƒAƒNƒZƒX‚³‚ê‚é‰Â”\«‚ª‚ ‚é‚½‚ß mutex ‚Å•ÛŒì
+        // ãƒ­ã‚°ãƒ•ã‚¡ã‚¤ãƒ«
+        // ãƒ“ãƒ«ãƒ‰ã‚¹ãƒ¬ãƒƒãƒ‰ã¨ UIã‚¹ãƒ¬ãƒƒãƒ‰ã‹ã‚‰åŒæ™‚ã‚¢ã‚¯ã‚»ã‚¹ã•ã‚Œã‚‹å¯èƒ½æ€§ãŒã‚ã‚‹ãŸã‚ mutex ã§ä¿è­·
         std::ofstream m_logFile;
         std::mutex    m_logMutex;
         std::filesystem::path m_logFilePath;
     };
 
 } // namespace Editor::Build
+

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Device.hpp"
 
 namespace Engine::Graphics
@@ -38,3 +38,4 @@ namespace Engine::Graphics
 		DXGI_FORMAT m_format = DXGI_FORMAT_UNKNOWN;
 	};
 }
+

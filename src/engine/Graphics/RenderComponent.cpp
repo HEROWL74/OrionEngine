@@ -249,3 +249,4 @@ namespace Engine::Graphics
 		return {};
 	}
 }
+

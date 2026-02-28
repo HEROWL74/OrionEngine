@@ -1,9 +1,10 @@
-#pragma once
+ï»¿#pragma once
 #include "Scene.hpp"
 
 namespace Engine::Graphics
 {
-    // Œ»İƒAƒNƒeƒBƒu‚ÈSceneiEditor / Runtime ‹¤’Êj
+    // ç¾åœ¨ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªSceneï¼ˆEditor / Runtime å…±é€šï¼‰
     Scene* getActiveScene();
     void setActiveScene(Scene* scene);
 }
+

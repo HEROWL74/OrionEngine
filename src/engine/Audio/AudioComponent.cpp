@@ -1,4 +1,4 @@
-#define MINIAUDIO_IMPLEMENTATION
+ï»¿#define MINIAUDIO_IMPLEMENTATION
 #include "AudioComponent.hpp"
 #include "../Core/ProjectSettings.hpp"
 #include <algorithm>
@@ -28,13 +28,13 @@ namespace Engine::Audio
 
 	Utils::VoidResult AudioComponent::loadAudio(const std::string& filePath)
 	{
-		// Šù‘¶‚ÌƒI[ƒfƒBƒI‚ğƒNƒŠ[ƒ“ƒAƒbƒv
+		// æ—¢å­˜ã®ã‚ªãƒ¼ãƒ‡ã‚£ã‚ªã‚’ã‚¯ãƒªãƒ¼ãƒ³ã‚¢ãƒƒãƒ—
 		cleanup();
 
-		// ƒpƒX‰ğŒˆ
+		// ãƒ‘ã‚¹è§£æ±º
 		std::string resolvedPath = filePath;
 
-		// Assets ‚Ån‚Ü‚Á‚Ä‚¢‚È‚¢A‚©‚Â‘¶İ‚µ‚È‚¢ê‡‚Í‰ğŒˆ‚ğ‚İ‚é
+		// Assets ã§å§‹ã¾ã£ã¦ã„ãªã„ã€ã‹ã¤å­˜åœ¨ã—ãªã„å ´åˆã¯è§£æ±ºã‚’è©¦ã¿ã‚‹
 		if (!std::filesystem::exists(filePath))
 		{
 			auto& settings = Engine::Core::ProjectSettings::get();
@@ -42,13 +42,13 @@ namespace Engine::Audio
 
 			if (!projectRoot.empty())
 			{
-				// Assets/ ‚©‚çn‚Ü‚Á‚Ä‚¢‚È‚¢ê‡
+				// Assets/ ã‹ã‚‰å§‹ã¾ã£ã¦ã„ãªã„å ´åˆ
 				std::string normalized = filePath;
 				std::replace(normalized.begin(), normalized.end(), '\\', '/');
 
 				if (normalized.rfind("Assets/", 0) != 0)
 				{
-					// Assets/ ‚ğ’Ç‰Á‚µ‚Äs
+					// Assets/ ã‚’è¿½åŠ ã—ã¦è©¦è¡Œ
 					auto candidatePath = projectRoot / "Assets" / normalized;
 					if (std::filesystem::exists(candidatePath))
 					{
@@ -58,7 +58,7 @@ namespace Engine::Audio
 				}
 				else
 				{
-					// Šù‚É Assets/ ‚Ån‚Ü‚Á‚Ä‚¢‚éê‡‚Í’¼Ús
+					// æ—¢ã« Assets/ ã§å§‹ã¾ã£ã¦ã„ã‚‹å ´åˆã¯ç›´æ¥è©¦è¡Œ
 					auto candidatePath = projectRoot / normalized;
 					if (std::filesystem::exists(candidatePath))
 					{
@@ -68,7 +68,7 @@ namespace Engine::Audio
 				}
 			}
 
-			// ƒtƒH[ƒ‹ƒoƒbƒN
+			// ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯
 			if (!std::filesystem::exists(resolvedPath))
 			{
 				std::vector<std::string> candidates = {
@@ -88,7 +88,7 @@ namespace Engine::Audio
 			}
 		}
 
-		// ƒfƒR[ƒ_[‚ğ‰Šú‰»
+		// ãƒ‡ã‚³ãƒ¼ãƒ€ãƒ¼ã‚’åˆæœŸåŒ–
 		ma_result result = ma_decoder_init_file(resolvedPath.c_str(), nullptr, &m_decoder);
 		if (result != MA_SUCCESS)
 		{
@@ -98,7 +98,7 @@ namespace Engine::Audio
 			));
 		}
 
-		// ƒfƒoƒCƒXİ’è
+		// ãƒ‡ãƒã‚¤ã‚¹è¨­å®š
 		m_deviceConfig = ma_device_config_init(ma_device_type_playback);
 		m_deviceConfig.playback.format = m_decoder.outputFormat;
 		m_deviceConfig.playback.channels = m_decoder.outputChannels;
@@ -106,7 +106,7 @@ namespace Engine::Audio
 		m_deviceConfig.dataCallback = dataCallback;
 		m_deviceConfig.pUserData = this;
 
-		// ƒfƒoƒCƒX‚ğ‰Šú‰»
+		// ãƒ‡ãƒã‚¤ã‚¹ã‚’åˆæœŸåŒ–
 		result = ma_device_init(nullptr, &m_deviceConfig, &m_device);
 		if (result != MA_SUCCESS)
 		{
@@ -149,7 +149,7 @@ namespace Engine::Audio
 			return;
 		}
 
-		// ƒfƒoƒCƒX‚ªŠJn‚³‚ê‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN‚µ‚Ä‚©‚ç’â~
+		// ãƒ‡ãƒã‚¤ã‚¹ãŒé–‹å§‹ã•ã‚Œã¦ã„ã‚‹ã‹ãƒã‚§ãƒƒã‚¯ã—ã¦ã‹ã‚‰åœæ­¢
 		if (ma_device_is_started(&m_device) == MA_TRUE)
 		{
 			ma_device_stop(&m_device);
@@ -210,7 +210,7 @@ namespace Engine::Audio
 			initialize();
 		}
 
-		// ƒtƒ@ƒCƒ‹ƒpƒX‚ªİ’è‚³‚ê‚Ä‚¢‚éê‡‚Í©“®“I‚Éƒ[ƒh
+		// ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ãŒè¨­å®šã•ã‚Œã¦ã„ã‚‹å ´åˆã¯è‡ªå‹•çš„ã«ãƒ­ãƒ¼ãƒ‰
 		if (!m_filepath.empty() && !m_audioLoaded)
 		{
 			auto result = loadAudio(m_filepath);
@@ -223,7 +223,7 @@ namespace Engine::Audio
 
 	void AudioComponent::update(float deltaTime)
 	{
-		// ƒR[ƒ‹ƒoƒbƒN‚©‚ç‚Ì’â~—v‹‚ğˆ—
+		// ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ã‹ã‚‰ã®åœæ­¢è¦æ±‚ã‚’å‡¦ç†
 		if (m_shouldStop)
 		{
 			m_shouldStop = false;
@@ -253,15 +253,15 @@ namespace Engine::Audio
 		ma_uint64 framesRead = 0;
 		ma_decoder_read_pcm_frames(pDecoder, pOutput, frameCount, &framesRead);
 
-		// ƒ‹[ƒvˆ—
+		// ãƒ«ãƒ¼ãƒ—å‡¦ç†
 		if (framesRead < frameCount)
 		{
 			if (audioComponent->m_loop)
 			{
-				// Å‰‚É–ß‚é
+				// æœ€åˆã«æˆ»ã‚‹
 				ma_decoder_seek_to_pcm_frame(pDecoder, 0);
 
-				// c‚è‚ÌƒtƒŒ[ƒ€‚ğ“Ç‚İ‚Ş
+				// æ®‹ã‚Šã®ãƒ•ãƒ¬ãƒ¼ãƒ ã‚’èª­ã¿è¾¼ã‚€
 				ma_uint64 remainingFrames = frameCount - framesRead;
 				void* pOutputOffset = (ma_uint8*)pOutput + (framesRead * ma_get_bytes_per_frame(pDevice->playback.format, pDevice->playback.channels));
 
@@ -283,7 +283,7 @@ namespace Engine::Audio
 			{
 				ma_device_stop(&m_device);
 
-				// ƒfƒoƒCƒX‚ªŠ®‘S‚É’â~‚·‚é‚Ü‚Å­‚µ‘Ò‚Â
+				// ãƒ‡ãƒã‚¤ã‚¹ãŒå®Œå…¨ã«åœæ­¢ã™ã‚‹ã¾ã§å°‘ã—å¾…ã¤
 				std::this_thread::sleep_for(std::chrono::milliseconds(50));
 			}
 
@@ -295,3 +295,4 @@ namespace Engine::Audio
 		}
 	}
 }
+

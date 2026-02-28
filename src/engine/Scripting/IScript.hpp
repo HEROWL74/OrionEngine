@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <string>
 
 namespace Engine::Scripting
@@ -8,12 +8,13 @@ namespace Engine::Scripting
 	public:
 		virtual ~IScript() = default;
 
-		//‹¤’Êƒ‰ƒCƒtƒTƒCƒNƒ‹
+		//å…±é€šãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«
 		virtual void OnStart(){}
 		virtual void OnUpdate(float deltaTime){}
 		virtual void OnDestroy(){}
 
-		//ƒfƒoƒbƒO—p‚ÉƒXƒNƒŠƒvƒg–¼‚ğ•Ô‚·
+		//ãƒ‡ãƒãƒƒã‚°ç”¨ã«ã‚¹ã‚¯ãƒªãƒ—ãƒˆåã‚’è¿”ã™
 		virtual std::string GetName() const {return  "UnnamedScript";}
 	};
 }
+

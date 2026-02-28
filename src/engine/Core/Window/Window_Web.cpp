@@ -1,4 +1,4 @@
-// src/engine/Core/Window/Window_Web.cpp
+﻿// src/engine/Core/Window/Window_Web.cpp
 #include "Window_Web.hpp"
 
 #if defined(__EMSCRIPTEN__)
@@ -46,3 +46,4 @@ namespace Engine::Window
 }
 
 #endif
+

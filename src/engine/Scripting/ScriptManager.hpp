@@ -1,4 +1,4 @@
-//src/Scripting/ScriptManager.hpp
+ï»¿//src/Scripting/ScriptManager.hpp
 #pragma once
 
 #include <sol/sol.hpp>
@@ -48,7 +48,7 @@ namespace Engine::Scripting
 
         sol::table getScriptTable(const std::string& path) const
         {
-            // cacheKey Œ`®iAssets/scripts/foo.luaj‚É³‹K‰»‚µ‚Ä‚©‚çŒŸõ
+            // cacheKey å½¢å¼ï¼ˆAssets/scripts/foo.luaï¼‰ã«æ­£è¦åŒ–ã—ã¦ã‹ã‚‰æ¤œç´¢
             std::string key = path;
             std::replace(key.begin(), key.end(), '\\', '/');
             {
@@ -96,3 +96,4 @@ namespace Engine::Scripting
         std::function<void(sol::state&)> m_bindingCallback;
     };
 }
+

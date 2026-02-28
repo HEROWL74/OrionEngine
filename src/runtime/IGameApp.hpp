@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <Windows.h>
 
 #ifdef ORION_RUNTIME_EXPORTS
@@ -9,15 +9,16 @@
 
 extern "C"
 {
-    // GameApp ƒCƒ“ƒXƒ^ƒ“ƒX‚ð¶¬‚µ‚Ä•Ô‚·iŽ¸”sŽž‚Í nullptrj
+    // GameApp ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç”Ÿæˆã—ã¦è¿”ã™ï¼ˆå¤±æ•—æ™‚ã¯ nullptrï¼‰
     ORION_API void* GameAppCreate();
 
-    // ‰Šú‰»B–ß‚è’l 0=¬Œ÷A”ñ0=Ž¸”s
+    // åˆæœŸåŒ–ã€‚æˆ»ã‚Šå€¤ 0=æˆåŠŸã€éž0=å¤±æ•—
     ORION_API int   GameAppInitialize(void* app, HINSTANCE hInstance, int nCmdShow);
 
-    // ƒƒCƒ“ƒ‹[ƒvŽÀsiƒuƒƒbƒLƒ“ƒOjB–ß‚è’l=I—¹ƒR[ƒh
+    // ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—å®Ÿè¡Œï¼ˆãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°ï¼‰ã€‚æˆ»ã‚Šå€¤=çµ‚äº†ã‚³ãƒ¼ãƒ‰
     ORION_API int   GameAppRun(void* app);
 
-    // ƒCƒ“ƒXƒ^ƒ“ƒX‚ð”jŠü
+    // ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç ´æ£„
     ORION_API void  GameAppDestroy(void* app);
 }
+

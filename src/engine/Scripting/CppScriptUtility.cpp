@@ -1,4 +1,4 @@
-#include "CppScriptUtility.hpp"
+ï»¿#include "CppScriptUtility.hpp"
 #include <fstream>
 #include <Windows.h>
 #include <filesystem>
@@ -10,7 +10,7 @@ namespace Engine::Scripting
         std::ofstream file(path);
         if (!file.is_open()) return false;
 
-        // ƒtƒ@ƒCƒ‹–¼iŠg’£q‚È‚µj‚ğƒNƒ‰ƒX–¼‚É‚·‚é
+        // ãƒ•ã‚¡ã‚¤ãƒ«åï¼ˆæ‹¡å¼µå­ãªã—ï¼‰ã‚’ã‚¯ãƒ©ã‚¹åã«ã™ã‚‹
         std::filesystem::path p(path);
         std::string className = p.stem().string();
 
@@ -46,8 +46,9 @@ namespace Engine::Scripting
 
 	std::string CppScriptUtility::normalizePath(const std::string& name) {
 		std::filesystem::path p(name);
-		p.replace_extension(".cpp"); // ‹­§“I‚É’u‚«Š·‚¦‚é
+		p.replace_extension(".cpp"); // å¼·åˆ¶çš„ã«ç½®ãæ›ãˆã‚‹
 		return p.string();
 	}
 
 }
+

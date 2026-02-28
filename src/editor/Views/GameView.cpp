@@ -1,4 +1,4 @@
-#include "GameView.hpp"
+ï»¿#include "GameView.hpp"
 
 namespace Editor::UI
 {
@@ -39,7 +39,7 @@ namespace Editor::UI
         commandList->ClearRenderTargetView(rtv, clear, 0, nullptr);
         commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-        // Skybox•`‰æ
+        // Skyboxæç”»
         if (m_skybox)
             m_skybox->render(commandList, camera);
 
@@ -49,7 +49,7 @@ namespace Editor::UI
         context.viewType = Utils::RenderViewType::Game;
         context.frameIndex = frameIndex;
 
-        // 3DƒIƒuƒWƒFƒNƒg‚Ì•`‰æ
+        // 3Dã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®æç”»
         for (auto& obj : scene.getGameObjects())
         {
             if (!obj->isActive()) continue;
@@ -125,3 +125,4 @@ namespace Editor::UI
         return m_renderTarget.get();
     }
 }
+

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <memory>
 #include <d3d12.h>
 
@@ -48,3 +48,4 @@ namespace Editor::UI
 		bool m_initialized = false;
 	};
 }
+

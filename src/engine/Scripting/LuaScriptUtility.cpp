@@ -1,4 +1,4 @@
-//src/Scripting/LuaScriptUtility.cpp
+﻿//src/Scripting/LuaScriptUtility.cpp
 #include "LuaScriptUtility.hpp"
 #include <fstream>
 #include <Windows.h>
@@ -49,3 +49,4 @@ namespace Engine::Scripting
 		return p.string();
 	}
 }
+

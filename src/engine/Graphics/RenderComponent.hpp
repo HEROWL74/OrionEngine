@@ -77,3 +77,4 @@ namespace Engine::Graphics
 		[[nodiscard]] Utils::VoidResult initializeRenderer();
 	};
 }
+

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <cstdint>
 
 namespace Engine::Scripting {
@@ -9,3 +9,4 @@ namespace Engine::Scripting {
         bool isValid() const { return id != 0; }
     };
 }
+

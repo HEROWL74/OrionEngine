@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "ImGuiManager.hpp"
 #include "../Views/GameView.hpp"
 
@@ -24,3 +24,4 @@ namespace Editor::UI
 		uint32_t m_pendingHeight = 0;
 	};
 }
+

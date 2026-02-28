@@ -1,4 +1,4 @@
-// src/Graphics/SplashScreen.hpp
+﻿// src/Graphics/SplashScreen.hpp
 #pragma once
 
 #include <Windows.h>
@@ -96,3 +96,4 @@ namespace Engine::Graphics
         void updateConstants();
     };
 }
+

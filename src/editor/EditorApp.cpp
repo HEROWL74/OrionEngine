@@ -1,4 +1,4 @@
-// src/editor/EditorApp.cpp
+ï»¿// src/editor/EditorApp.cpp
 #include "EditorApp.hpp"
 #include <format>
 #include <filesystem>
@@ -12,14 +12,14 @@ namespace Editor
         Utils::log_info("Initializing Game Engine...");
 
         // ============================================================
-        // ProjectSettings ‚ğƒGƒfƒBƒ^—p‚Æ‚µ‚Ä“Ç‚İ‚Ş
-        // project-templates/3d/ProjectSettings.json ‚ğQÆ
+        // ProjectSettings ã‚’ã‚¨ãƒ‡ã‚£ã‚¿ç”¨ã¨ã—ã¦èª­ã¿è¾¼ã‚€
+        // project-templates/3d/ProjectSettings.json ã‚’å‚ç…§
         // ============================================================
         auto& settings = Engine::Core::ProjectSettings::get();
         settings.loadForEditor();
 
-        // ƒEƒBƒ“ƒhƒE‚Ìì¬
-        // ƒ^ƒCƒgƒ‹EƒTƒCƒYEƒtƒ‹ƒXƒNƒŠ[ƒ“‚Í ProjectSettings.json ‚Ì’l‚ğg—p
+        // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ä½œæˆ
+        // ã‚¿ã‚¤ãƒˆãƒ«ãƒ»ã‚µã‚¤ã‚ºãƒ»ãƒ•ãƒ«ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ã¯ ProjectSettings.json ã®å€¤ã‚’ä½¿ç”¨
         const auto& wincfg = settings.getWindowConfig();
         Core::WindowSettings windowSettings{
             .title = settings.getProjectNameW(),
@@ -192,12 +192,12 @@ namespace Editor
 
         // ============================================================
         // Scene Load
-        // ProjectSettings ‚©‚ç‰ğŒˆ‚µ‚½ DefaultScene ƒpƒX‚ğg—p
+        // ProjectSettings ã‹ã‚‰è§£æ±ºã—ãŸ DefaultScene ãƒ‘ã‚¹ã‚’ä½¿ç”¨
         // ============================================================
         auto& settings = Engine::Core::ProjectSettings::get();
         std::filesystem::path defaultScenePath = settings.getDefaultScenePath();
 
-        // ƒtƒH[ƒ‹ƒoƒbƒN: project-templates ‘¤‚É–³‚¯‚ê‚Î assets/ ‚ğ‚·
+        // ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯: project-templates å´ã«ç„¡ã‘ã‚Œã° assets/ ã‚’è©¦ã™
         if (!std::filesystem::exists(defaultScenePath))
         {
             std::filesystem::path fallback = "Assets/scenes/default.scene";
@@ -273,10 +273,10 @@ namespace Editor
 
         // ============================================================
         // ProjectWindow
-        // AssetRootPath = project-templates/3d/Assets ‚ğ“n‚·
+        // AssetRootPath = project-templates/3d/Assets ã‚’æ¸¡ã™
         // ============================================================
         std::string assetRootPath = settings.getAssetRootPath().string();
-        // ƒpƒX‹æØ‚è‚ğ“ˆêiWindows ‚Å‚à '/' ‚Åˆµ‚¤j
+        // ãƒ‘ã‚¹åŒºåˆ‡ã‚Šã‚’çµ±ä¸€ï¼ˆWindows ã§ã‚‚ '/' ã§æ‰±ã†ï¼‰
         std::replace(assetRootPath.begin(), assetRootPath.end(), '\\', '/');
 
         Utils::log_info("ProjectWindow asset root: " + assetRootPath);
@@ -287,7 +287,7 @@ namespace Editor
         m_projectWindow->setMaterialManager(&m_materialManager);
         m_projectWindow->setProjectPath(assetRootPath);
 
-        // ƒJƒƒ‰‰Šú‰»
+        // ã‚«ãƒ¡ãƒ©åˆæœŸåŒ–
         m_editorCamera.setPerspective(45.0f, static_cast<float>(clientWidth) / clientHeight, 0.1f, 100.0f);
         m_editorCamera.setPosition({ 8.0f, 8.0f, 8.0f });
         m_editorCamera.lookAt({ 0.0f, 0.0f, 0.0f });
@@ -300,7 +300,7 @@ namespace Editor
         m_cameraController->setMovementSpeed(5.0f);
         m_cameraController->setMouseSensitivity(0.1f);
 
-        // === UIƒEƒBƒ“ƒhƒEì¬ ===
+        // === UIã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ä½œæˆ ===
         m_debugWindow = std::make_unique<UI::DebugWindow>();
         m_hierarchyWindow = std::make_unique<UI::SceneHierarchyWindow>();
         m_inspectorWindow = std::make_unique<UI::InspectorWindow>();
@@ -1370,7 +1370,7 @@ namespace Editor
         auto cubeTexMat = m_materialManager.createMaterial("CubeWithTexture_Material");
         if (cubeTexMat)
         {
-            // ƒeƒNƒXƒ`ƒƒƒpƒX‚à AssetRoot Šî€‚Å‰ğŒˆ
+            // ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ‘ã‚¹ã‚‚ AssetRoot åŸºæº–ã§è§£æ±º
             auto& settings = Engine::Core::ProjectSettings::get();
             std::string texturePath = (settings.getAssetRootPath() / "textures/brick_BaseColor.jpg").string();
             std::replace(texturePath.begin(), texturePath.end(), '\\', '/');
@@ -1412,7 +1412,7 @@ namespace Editor
 
         m_scene.clearUITexts();
 
-        // ƒfƒtƒHƒ‹ƒgƒV[ƒ“ƒpƒX‚à ProjectSettings ‚©‚ç
+        // ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã‚·ãƒ¼ãƒ³ãƒ‘ã‚¹ã‚‚ ProjectSettings ã‹ã‚‰
         auto& settings = Engine::Core::ProjectSettings::get();
         m_currentScenePath = (settings.getAssetRootPath() / "scenes/untitled.scene").string();
         std::replace(m_currentScenePath.begin(), m_currentScenePath.end(), '\\', '/');
@@ -1498,3 +1498,4 @@ namespace Editor
     }
 
 }
+

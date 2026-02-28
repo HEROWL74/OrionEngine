@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <wrl.h>
 #include <memory>
@@ -118,3 +118,4 @@ namespace Editor::UI
 		float calculateGizmoScale(const Engine::Graphics::Camera& camera, const Math::Vector3& position);
 	};
 }
+
