@@ -19,7 +19,9 @@ namespace Editor
         auto initResult = app.initialize(hInstance, nCmdShow);
         if (!initResult)
         {
-            MessageBoxA(NULL, "App Initialization Failed!", "Orion Engine", MB_ICONERROR | MB_OK);
+            std::string errorDetail = initResult.error().what();
+
+            MessageBoxA(NULL, errorDetail.c_str(), "Orion Engine - Fatal Error", MB_ICONERROR | MB_OK);
 
             Engine::Utils::log_error(initResult.error());
             return -1;
