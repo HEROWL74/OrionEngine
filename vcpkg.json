@@ -1,9 +1,19 @@
 {
-  "name": "dx12gameengine",
+  "name": "orionengine",
   "version-string": "1.0.0",
   "dependencies": [
     "sol2",
+    "lua",
+    "directxtex",
     "nlohmann-json",
-    "lua"
+    "stb",
+    "miniaudio",
+    "directx-headers"
+  ],
+  "overrides": [
+    {
+      "name": "directx-headers",
+      "version-string": "1.615.0"
+    }
   ]
 }

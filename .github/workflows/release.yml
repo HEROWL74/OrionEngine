@@ -1,4 +1,4 @@
-name: Build and Release
+﻿name: Build and Release
 
 on:
   push:
@@ -9,64 +9,46 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  release:
     runs-on: windows-latest
 
     steps:
-      # ソース取得
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
 
-      # MSBuild セットアップ
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
 
-      # vcpkg セットアップ
-      - name: Setup vcpkg
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+
+      - name: Configure (Release)
+        run: cmake --preset x64-release-ci
+
+      - name: Build Editor
+        run: cmake --build --preset editor-release-ci
+
+      - name: Create Package
+        shell: cmd
         run: |
-          git clone https://github.com/microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
+          mkdir dist
+          copy build\x64-release-ci\editor\OrionEditor.exe dist\
+          copy build\x64-release-ci\editor\lua.dll dist\
+          copy build\x64-release-ci\editor\OrionRuntime.dll dist\
+          xcopy build\x64-release-ci\editor\engine-assets dist\engine-assets /E /I /Y
+          xcopy build\x64-release-ci\editor\player dist\player /E /I /Y
+          xcopy build\x64-release-ci\editor\project dist\project /E /I /Y
+          echo {"version": "${{ github.ref_name }}"} > dist\engine.json
 
-      # 依存ライブラリをインストール (manifest モード対応, 静的リンク)
-      - name: Install dependencies
-        run: .\vcpkg\vcpkg.exe install --triplet x64-windows-static
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path dist\* -DestinationPath OrionEngine-${{ github.ref_name }}.zip
 
-      # Release ビルド (manifest 有効化 + 静的リンク)
-      - name: Build with MSBuild
-        run: msbuild DX12GameEngine.sln `
-              /p:Configuration=Release `
-              /p:Platform=x64 `
-              /p:VcpkgEnableManifest=true `
-              /p:VcpkgTriplet=x64-windows-static `
-              /p:VcpkgRoot=${{ github.workspace }}\vcpkg
-
-      # exe + assets パッケージ
-      - name: Create package (runtime only)
-        run: |
-          mkdir package_runtime
-          copy x64\Release\DX12GameEngine.exe package_runtime\
-          xcopy assets package_runtime\assets /E /I /Y
-          copy imgui.ini package_runtime\
-          powershell Compress-Archive -Path package_runtime\* -DestinationPath DX12GameEngine.zip
-
-      # exe + assets + src パッケージ
-      - name: Create package (with source)
-        run: |
-          mkdir package_src
-          copy x64\Release\DX12GameEngine.exe package_src\
-          xcopy assets package_src\assets /E /I /Y
-          xcopy src package_src\src /E /I /Y
-          copy imgui.ini package_src\
-          powershell Compress-Archive -Path package_src\* -DestinationPath DX12GameEngine-with-src.zip
-
-      # GitHub Release にアップロード
-      - name: Upload to Release
+      - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            DX12GameEngine.zip
-            DX12GameEngine-with-src.zip
-          draft: false
-          prerelease: false
+          files: OrionEngine-${{ github.ref_name }}.zip
+          body: "Automatic Release build for version ${{ github.ref_name }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

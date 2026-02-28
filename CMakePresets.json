@@ -1,0 +1,101 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 26,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "x64-debug",
+      "displayName": "Windows x64 Debug (VS2026)",
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/x64-debug",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
+    },
+    {
+      "name": "x64-release-local",
+      "displayName": "Windows x64 Release (VS2026)",
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/x64-release-local",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
+    },
+    {
+      "name": "x64-release-ci",
+      "displayName": "Windows x64 Release CI",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/x64-release-ci",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL"
+      }
+    },
+    {
+      "name": "web-release",
+      "displayName": "Web Release (Emscripten)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/web-release",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "editor-debug",
+      "displayName": "Build Editor (Debug)",
+      "configurePreset": "x64-debug",
+      "configuration": "Debug",
+      "targets": [ "OrionEditor", "OrionBuildWorker" ]
+    },
+    {
+      "name": "runtime-debug",
+      "displayName": "Build Runtime (Debug)",
+      "configurePreset": "x64-debug",
+      "configuration": "Debug",
+      "targets": [ "OrionGame" ]
+    },
+    {
+      "name": "editor-release-local",
+      "displayName": "Build Editor (Release Local)",
+      "configurePreset": "x64-release-local",
+      "configuration": "Release",
+      "targets": [ "OrionEditor" ]
+    },
+    {
+      "name": "runtime-release-local",
+      "displayName": "Build Runtime (Release Local)",
+      "configurePreset": "x64-release-local",
+      "configuration": "Release",
+      "targets": [ "OrionGame" ]
+    },
+    {
+      "name": "editor-release-ci",
+      "displayName": "Build Editor (Release CI)",
+      "configurePreset": "x64-release-ci",
+      "targets": [ "OrionEditor" ]
+    },
+    {
+      "name": "runtime-release-ci",
+      "displayName": "Build Runtime (Release CI)",
+      "configurePreset": "x64-release-ci",
+      "targets": [ "OrionGame" ]
+    },
+    {
+      "name": "runtime-web-release",
+      "displayName": "Build Runtime (Web Release)",
+      "configurePreset": "web-release",
+      "targets": [ "OrionGame" ]
+    }
+  ]
+}

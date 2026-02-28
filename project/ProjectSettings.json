@@ -1,0 +1,13 @@
+{
+  "ProjectName": "__PROJECT_NAME__",
+  "EngineVersion": "__ENGINE_VERSION__",
+  "DefaultScene": "Assets/scenes/default.scene",
+  "AssetRoot": "Assets",
+  "ProjectType": "3D",
+  "Window": {
+    "Width": 1280,
+    "Height": 720,
+    "Fullscreen": false,
+    "VSync": true
+  }
+}

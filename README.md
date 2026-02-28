@@ -1,4 +1,6 @@
-# DirectX12 Game Engine Prototype
+# OrionEngine ==> Game Engine Prototype
+
+![Build and Release](https://github.com/HEROWL74/DX12GameEngine/actions/workflows/release.yml/badge.svg)
 
 ![Build and Release](https://github.com/HEROWL74/DX12GameEngine/actions/workflows/release.yml/badge.svg)
 
@@ -11,14 +13,14 @@ Microsoftのリファレンスページや、サンプルコードを見なが�
 
 - ゲームエンジンの構造（Scene, Entity, Component, Rendererなど）を理解する
 - UnityやUnreal Engineのような再利用性の高いフレームワークを目指す
-- 将来的には **簡易エディタ** や **スクリプト連携** も組み込む予定
+- 将来的には **教育用エンジン**として使えるようにすることを目指す
 
 ---
 
 
 
-## ✨ 現在の進捗 Lua統合&Playmode実装中
-![Luaでオブジェクトを操作]https://github.com/user-attachments/assets/7766e600-8dac-498b-8a63-e258524509a9
+## ✨ 現在の進捗 OrionEngine 第一作ミニゲーム完成
+https://github.com/HEROWL74/OrionEngine/releases/tag/GameVol.1
 
 
 -✅ 完成済み
@@ -33,20 +35,18 @@ Microsoftのリファレンスページや、サンプルコードを見なが�
 
 ## 🧱 構成（予定）
 
-- `src/Core/` : エンジン本体（Application、Timer、Logなど）
-- `src/Renderer/` : DirectX12ラッパー（Device、SwapChain、Commandなど）
-- `src/Game/` : 実際のゲームロジックやオブジェクト
-- `assets/` : テクスチャ・モデル・音声ファイル
-- `include/` : ヘッダーの一部を分離する予定
+- `src/engine/Core` : エンジン本体（Application、GameObject、Windowなど）
+- `src/engine/Graphics/` : DirectX12ラッパー（Device、SwapChain、Commandなど）
+- `src/engine/` : 実際のゲームロジックやオブジェクト
+- `engine-assets` : エンジン内蔵のシェーダーや画像格納フォルダ
+- `assets/` : 実際にユーザーが編集するフォルダ
 
 ---
 
 
 ## 🙌 このプロジェクトについて
 
-高校生として、将来スクウェア・エニックスのゲームエンジニアになるために、基礎から丁寧に制作中です。
-
----
+高校生として、将来ゲームエンジニアになるために、基礎から丁寧に制作中です。
 
 
 ## このプロジェクトのダウンロード方法

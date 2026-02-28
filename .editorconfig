@@ -1,0 +1,6 @@
+﻿[src/**/*.{cpp,hpp,h}]
+charset = utf-8-bom
+
+[engine-assets/**/*.{hlsl,hlsli}]
+charset = utf-8
+end_of_line = crlf
