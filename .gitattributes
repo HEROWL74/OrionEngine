@@ -59,12 +59,9 @@
 #*.RTF   diff=astextplain
 * text=auto
 
-*.cpp text eol=crlf
-*.hpp text eol=crlf
-*.h   text eol=crlf
-*.hlsl text eol=crlf
-*.hlsli text eol=crlf
-*.lua text eol=crlf
+src/**/*.cpp text eol=crlf
+src/**/*.hpp text eol=crlf
+src/**/*.h   text eol=crlf
 
 *.dds binary
 *.png binary
