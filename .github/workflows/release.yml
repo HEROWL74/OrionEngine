@@ -33,22 +33,16 @@ jobs:
         run: cmake --build --preset editor-release-ci
 
       # Construct distribution package
-      - name: Create OrionEngine package
+     - name: Create OrionEngine package
         shell: cmd
         run: |
           mkdir dist_package
-          
-          # Copy binaries and DLLs from build directory
           copy build\x64-release-ci\editor\OrionEditor.exe dist_package\
           copy build\x64-release-ci\editor\lua.dll dist_package\
-
-          # Copy required subdirectories
           xcopy build\x64-release-ci\editor\engine-assets dist_package\engine-assets /E /I /Y
           xcopy build\x64-release-ci\editor\project dist_package\project /E /I /Y
           xcopy build\x64-release-ci\editor\player dist_package\player /E /I /Y
-
-          # Generate metadata for OrionHub
-          echo { "name": "OrionEngine", "version": "${{ github.ref_name }}", "editorExecutable": "OrionEditor.exe" } > dist_package\engine.json
+          echo {"name": "OrionEngine", "version": "${{ github.ref_name }}", "editorExecutable": "OrionEditor.exe"} > dist_package\engine.json
 
       # Compress package using PowerShell
       - name: Zip package
