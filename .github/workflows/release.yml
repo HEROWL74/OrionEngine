@@ -34,6 +34,7 @@ jobs:
           mkdir dist_package
           copy build\x64-release-ci\editor\OrionEditor.exe dist_package\
           copy build\x64-release-ci\editor\lua.dll dist_package\
+          copy build\x64-release-ci\editor\OrionRuntime.dll dist_package\
           xcopy build\x64-release-ci\editor\engine-assets dist_package\engine-assets /E /I /Y
           xcopy build\x64-release-ci\editor\project dist_package\project /E /I /Y
           xcopy build\x64-release-ci\editor\project\Assets dist_package\project\Assets /E /I /Y
