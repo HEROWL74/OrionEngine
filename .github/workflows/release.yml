@@ -16,13 +16,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Setup vcpkg and install dependencies
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgJsonGlob: 'vcpkg.json'
-          runVcpkgInstall: true
-
       # Set up MSVC environment
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
