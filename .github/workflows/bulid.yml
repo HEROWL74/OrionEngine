@@ -19,19 +19,25 @@ jobs:
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
+      # Ninjaをセットアップ
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
 
-      # 2. vcpkgのキャッシュ
-      # 警告対策: vcpkgのバイナリキャッシュ場所を明示的に指定してキャッシュ効率を上げる
-      - name: Set vcpkg binary cache path
-        run: echo "VCPKG_DEFAULT_BINARY_CACHE=${{ github.workspace }}/vcpkg_cache" >> $GITHUB_ENV
+      # 2. vcpkgのキャッシュ準備
+      # 警告対策: キャッシュ対象ディレクトリを事前に作成し、バイナリキャッシュのパスを環境変数で指定する
+      - name: Prepare vcpkg directories
         shell: bash
+        run: |
+          mkdir -p "${{ github.workspace }}/vcpkg_installed"
+          mkdir -p "${{ github.workspace }}/vcpkg_cache"
+          echo "VCPKG_DEFAULT_BINARY_CACHE=${{ github.workspace }}/vcpkg_cache" >> $GITHUB_ENV
 
       - name: Restore vcpkg cache
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/vcpkg_cache
+          path: |
+            ${{ github.workspace }}/vcpkg_installed
+            ${{ github.workspace }}/vcpkg_cache
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: |
             vcpkg-${{ runner.os }}-
