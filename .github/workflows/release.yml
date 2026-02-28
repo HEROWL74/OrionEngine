@@ -16,24 +16,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Set up MSVC environment
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
-      # Setup Ninja build system
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
 
-      # Configure CMake with Release-CI preset
       - name: Configure (Release)
         run: cmake --preset x64-release-ci
 
-      # Build Editor target only
       - name: Build Editor
         run: cmake --build --preset editor-release-ci
 
-      # Construct distribution package
-     - name: Create OrionEngine package
+      - name: Create OrionEngine package
         shell: cmd
         run: |
           mkdir dist_package
@@ -44,13 +39,11 @@ jobs:
           xcopy build\x64-release-ci\editor\player dist_package\player /E /I /Y
           echo {"name": "OrionEngine", "version": "${{ github.ref_name }}", "editorExecutable": "OrionEditor.exe"} > dist_package\engine.json
 
-      # Compress package using PowerShell
       - name: Zip package
         shell: pwsh
         run: |
           Compress-Archive -Path dist_package\* -DestinationPath OrionEngine-${{ github.ref_name }}-win64.zip
 
-      # Create GitHub Release and upload artifact
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
