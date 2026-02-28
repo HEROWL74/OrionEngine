@@ -144,6 +144,27 @@ namespace Engine::Utils
         OutputDebugStringA(full_message.c_str());
     }
 
+    /**
+     * @brief 実行ファイル(EXE)のディレクトリを基準とした絶対パスを取得する
+     * @param relativePath engine-assets/... などの相対パス
+     * @return 変換された絶対パス
+     */
+    inline std::wstring get_absolute_path(const std::wstring& relativePath)
+    {
+        wchar_t exePath[MAX_PATH];
+        if (GetModuleFileNameW(NULL, exePath, MAX_PATH) == 0)
+        {
+            return relativePath; // 取得失敗時は入力値をそのまま返す
+        }
 
+        std::wstring path(exePath);
+        size_t lastSlash = path.find_last_of(L"\\/");
+        if (lastSlash == std::wstring::npos)
+        {
+            return relativePath;
+        }
+
+        return path.substr(0, lastSlash) + L"\\" + relativePath;
+    }
 }
 
