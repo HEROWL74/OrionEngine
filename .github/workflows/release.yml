@@ -9,12 +9,11 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  release:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -28,28 +27,25 @@ jobs:
       - name: Build Editor
         run: cmake --build --preset editor-release-ci
 
-      - name: Create OrionEngine package
+      - name: Create Package
         shell: cmd
         run: |
-          mkdir dist_package
-          copy build\x64-release-ci\editor\OrionEditor.exe dist_package\
-          copy build\x64-release-ci\editor\lua.dll dist_package\
-          copy build\x64-release-ci\editor\OrionRuntime.dll dist_package\
-          xcopy build\x64-release-ci\editor\engine-assets dist_package\engine-assets /E /I /Y
-          xcopy build\x64-release-ci\editor\project dist_package\project /E /I /Y
-          xcopy build\x64-release-ci\editor\project\Assets dist_package\project\Assets /E /I /Y
-          xcopy build\x64-release-ci\editor\player dist_package\player /E /I /Y
-          echo {"name": "OrionEngine", "version": "${{ github.ref_name }}", "editorExecutable": "OrionEditor.exe"} > dist_package\engine.json
+          mkdir dist
+          copy build\x64-release-ci\editor\OrionEditor.exe dist\
+          copy build\x64-release-ci\editor\lua.dll dist\
+          copy build\x64-release-ci\editor\OrionRuntime.dll dist\
+          xcopy build\x64-release-ci\editor\engine-assets dist\engine-assets /E /I /Y
+          xcopy build\x64-release-ci\editor\project dist\project /E /I /Y
+          echo {"version": "${{ github.ref_name }}"} > dist\engine.json
 
-      - name: Zip package
+      - name: Zip
         shell: pwsh
-        run: |
-          Compress-Archive -Path dist_package\* -DestinationPath OrionEngine-${{ github.ref_name }}-win64.zip
+        run: Compress-Archive -Path dist\* -DestinationPath OrionEngine-${{ github.ref_name }}.zip
 
-      - name: Upload to Release
+      - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
-          files: OrionEngine-${{ github.ref_name }}-win64.zip
-          body: "Release ${{ github.ref_name }} - Built via CI for OrionHub."
+          files: OrionEngine-${{ github.ref_name }}.zip
+          body: "Automatic Release build for version ${{ github.ref_name }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

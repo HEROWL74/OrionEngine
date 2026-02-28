@@ -149,7 +149,7 @@ namespace Engine::Graphics
 		auto dev = m_device->getDevice();
 
 		ShaderCompileDesc vsDesc;
-		vsDesc.filePath = "engine-assets/shaders/FXAA_VS.hlsl";
+		vsDesc.filePath = "engine-assets/shaders/FXAA_VS.cso";
 		vsDesc.entryPoint = "main";
 		vsDesc.type = ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -160,7 +160,7 @@ namespace Engine::Graphics
 		));
 
 		ShaderCompileDesc psDesc;
-		psDesc.filePath = "engine-assets/shaders/FXAA_PS.hlsl";
+		psDesc.filePath = "engine-assets/shaders/FXAA_PS.cso";
 		psDesc.entryPoint = "main";
 		psDesc.type = ShaderType::Pixel;
 		psDesc.enableDebug = true;

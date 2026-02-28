@@ -471,7 +471,7 @@ namespace Editor::UI
 
 		// シェーダー読み込み
 		Graphics::ShaderCompileDesc vsDesc;
-		vsDesc.filePath = "engine-assets/shaders/GridVS.hlsl";
+		vsDesc.filePath = "engine-assets/shaders/GridVS.cso";
 		vsDesc.entryPoint = "main";
 		vsDesc.type = Graphics::ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -484,7 +484,7 @@ namespace Editor::UI
 		}
 
 		Graphics::ShaderCompileDesc psDesc;
-		psDesc.filePath = "engine-assets/shaders/GridPS.hlsl";
+		psDesc.filePath = "engine-assets/shaders/GridPS.cso";
 		psDesc.entryPoint = "main";
 		psDesc.type = Graphics::ShaderType::Pixel;
 		psDesc.enableDebug = true;

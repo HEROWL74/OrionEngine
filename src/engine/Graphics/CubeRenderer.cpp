@@ -342,12 +342,10 @@ namespace Engine::Graphics
 
     Utils::VoidResult CubeRenderer::createShaders()
     {
-        // ShaderCompileDesc
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/BasicVertex.hlsl";
+        vsDesc.filePath = "engine-assets/shaders/BasicVertex.cso";
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
-        vsDesc.enableDebug = true;
 
         auto vertexShader = m_shaderManager->loadShader(vsDesc);
         if (!vertexShader)
@@ -356,10 +354,9 @@ namespace Engine::Graphics
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/BasicPixel.hlsl";
+        psDesc.filePath = "engine-assets/shaders/BasicPixel.cso";
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
-        psDesc.enableDebug = true;
 
         auto pixelShader = m_shaderManager->loadShader(psDesc);
         if (!pixelShader)
@@ -373,12 +370,12 @@ namespace Engine::Graphics
     Utils::VoidResult CubeRenderer::createPipelineState()
     {
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/BasicVertex.hlsl";
+        vsDesc.filePath = "engine-assets/shaders/BasicVertex.cso";
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
-        vsDesc.enableDebug = true;
 
         auto vertexShaderResult = m_shaderManager->loadShader(vsDesc);
+
         if (!vertexShaderResult)
         {
             Utils::log_warning("Failed to load vertex shader for CubeRenderer");
@@ -386,7 +383,7 @@ namespace Engine::Graphics
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/BasicPixel.hlsl";
+        psDesc.filePath = "engine-assets/shaders/BasicPixel.cso";
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
         psDesc.enableDebug = true;

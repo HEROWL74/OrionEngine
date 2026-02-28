@@ -13,6 +13,7 @@ foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
 endforeach()
 
 add_subdirectory(engine)
+add_subdirectory(engine-assets) 
 add_subdirectory(tools/buildworker)
 add_subdirectory(editor)
 add_subdirectory(runtime)

@@ -34,6 +34,48 @@ namespace Engine::Graphics
         return shader;
     }
 
+
+    Utils::Result<std::shared_ptr<Shader>> Shader::loadFromCSO(
+        const std::string& csoFilePath,
+        ShaderType type)
+    {
+        std::ifstream file(csoFilePath, std::ios::binary | std::ios::ate);
+        if (!file.is_open())
+        {
+            return std::unexpected(Utils::make_error(
+                Utils::ErrorType::FileI0,
+                std::format("Cannot open CSO file: {}", csoFilePath)));
+        }
+
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        // ID3DBlob にデータを格納
+        ComPtr<ID3DBlob> blob;
+        HRESULT hr = D3DCreateBlob(static_cast<SIZE_T>(size), &blob);
+        if (FAILED(hr))
+        {
+            return std::unexpected(Utils::make_error(
+                Utils::ErrorType::ResourceCreation,
+                std::format("Failed to create blob for CSO: {}", csoFilePath), hr));
+        }
+
+        if (!file.read(static_cast<char*>(blob->GetBufferPointer()), size))
+        {
+            return std::unexpected(Utils::make_error(
+                Utils::ErrorType::FileI0,
+                std::format("Failed to read CSO file: {}", csoFilePath)));
+        }
+
+        auto shader = std::make_shared<Shader>();
+        shader->m_type = type;
+        shader->m_entryPoint = "main";
+        shader->m_filePath = csoFilePath;
+        shader->m_bytecode = blob;
+
+        return shader;
+    }
+
     Utils::Result<std::shared_ptr<Shader>> Shader::compileFromString(
         const std::string& shaderCode,
         const std::string& entryPoint,
@@ -430,43 +472,41 @@ namespace Engine::Graphics
 
     std::shared_ptr<Shader> ShaderManager::loadShader(const ShaderCompileDesc& desc)
     {
-        // 繝・ヰ繝・げ: this繝昴う繝ｳ繧ｿ縺ｮ遒ｺ隱・
-        Utils::log_info(std::format("ShaderManager::loadShader called, this = {}",
-            static_cast<void*>(this)));
-
-        if (this == nullptr)
-        {
-            Utils::log_warning("ShaderManager::loadShader - this is nullptr!");
-            return nullptr;
-        }
-
-        Utils::log_info(std::format("Checking m_initialized: {}", m_initialized));
-
         if (!m_initialized)
         {
             Utils::log_warning("ShaderManager not initialized");
             return nullptr;
         }
 
-        Utils::log_info(std::format("Generating shader key for: {}", desc.filePath));
-        std::string key = generateShaderKey(desc);
+        const std::string key = generateShaderKey(desc);
 
         if (hasShader(key))
         {
-            Utils::log_info(std::format("Shader already exists: {}", key));
             return getShader(key);
         }
 
-        Utils::log_info(std::format("Compiling new shader: {}", desc.filePath));
-        auto shaderResult = Shader::compileFromFile(desc);
+        const std::string ext = std::filesystem::path(desc.filePath).extension().string();
+        Utils::Result<std::shared_ptr<Shader>> shaderResult;
+
+        if (ext == ".cso")
+        {
+            Utils::log_info(std::format("Loading precompiled shader: {}", desc.filePath));
+            shaderResult = Shader::loadFromCSO(desc.filePath, desc.type);
+        }
+        else
+        {
+            Utils::log_info(std::format("Compiling shader: {}", desc.filePath));
+            shaderResult = Shader::compileFromFile(desc);
+        }
+
         if (!shaderResult)
         {
-            Utils::log_warning(std::format("Failed to compile shader '{}': {}", desc.filePath, shaderResult.error().message));
+            Utils::log_warning(std::format("Failed to load shader '{}': {}", desc.filePath, shaderResult.error().message));
             return nullptr;
         }
 
         m_shaders[key] = *shaderResult;
-        Utils::log_info(std::format("Shader compiled and cached: {}", desc.filePath));
+        Utils::log_info(std::format("Shader loaded and cached: {}", desc.filePath));
         return *shaderResult;
     }
 
@@ -540,24 +580,23 @@ namespace Engine::Graphics
 
     Utils::VoidResult ShaderManager::createDefaultShaders()
     {
-        // HLSL繝輔ぃ繧､繝ｫ縺九ｉ繧ｷ繧ｧ繝ｼ繝繝ｼ繧偵さ繝ｳ繝代う繝ｫ
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/PBR_VS.hlsl";
+        vsDesc.filePath = "engine-assets/shaders/PBR_VS.cso";
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
 
-        auto vsResult = Shader::compileFromFile(vsDesc);
+        auto vsResult = Shader::loadFromCSO(vsDesc.filePath, vsDesc.type);
         if (!vsResult)
         {
             return std::unexpected(vsResult.error());
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/PBR_PS.hlsl";
+        psDesc.filePath = "engine-assets/shaders/PBR_PS.cso";
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
 
-        auto psResult = Shader::compileFromFile(psDesc);
+        auto psResult = Shader::loadFromCSO(psDesc.filePath, psDesc.type);
         if (!psResult)
         {
             return std::unexpected(psResult.error());

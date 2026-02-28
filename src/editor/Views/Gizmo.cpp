@@ -237,7 +237,7 @@ namespace Editor::UI
 		auto dev = m_device->getDevice();
 
 		Engine::Graphics::ShaderCompileDesc vsDesc;
-		vsDesc.filePath = "engine-assets/shaders/GizmoVS.hlsl";
+		vsDesc.filePath = "engine-assets/shaders/GizmoVS.cso";
 		vsDesc.entryPoint = "main";
 		vsDesc.type = Engine::Graphics::ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -249,7 +249,7 @@ namespace Editor::UI
 		}
 
 		Engine::Graphics::ShaderCompileDesc psDesc;
-		psDesc.filePath = "engine-assets/shaders/GizmoPS.hlsl";
+		psDesc.filePath = "engine-assets/shaders/GizmoPS.cso";
 		psDesc.entryPoint = "main";
 		psDesc.type = Engine::Graphics::ShaderType::Pixel;
 		psDesc.enableDebug = true;

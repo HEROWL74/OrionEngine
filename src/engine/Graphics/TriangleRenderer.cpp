@@ -211,7 +211,7 @@ namespace Engine::Graphics
     {
         // ShaderCompileDesc
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/BasicVertex.hlsl";
+        vsDesc.filePath = "engine-assets/shaders/BasicVertex.cso";
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
         vsDesc.enableDebug = true;
@@ -223,7 +223,7 @@ namespace Engine::Graphics
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/PBR_Lite_PS.hlsl";
+        psDesc.filePath = "engine-assets/shaders/PBR_Lite_PS.cso";
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
         psDesc.enableDebug = true;
@@ -241,7 +241,7 @@ namespace Engine::Graphics
     {
         // シェーダーセット
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/BasicVertex.hlsl";
+        vsDesc.filePath = "engine-assets/shaders/BasicVertex.cso";
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
         vsDesc.enableDebug = true;
@@ -254,7 +254,7 @@ namespace Engine::Graphics
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/PBR_Lite_PS.hlsl";
+        psDesc.filePath = "engine-assets/shaders/PBR_Lite_PS.cso";
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
         psDesc.enableDebug = true;

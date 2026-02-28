@@ -1,4 +1,4 @@
-name: build
+ï»¿name: Build OrionEngine
 
 on:
   push:
@@ -13,18 +13,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # MSVCƒRƒ“ƒpƒCƒ‰ŠÂ‹«‚ğƒpƒX‚É’Ê‚·
+      # 1. MSVCç’°å¢ƒã¨Windows SDKãƒ‘ã‚¹ã‚’ã‚»ãƒƒãƒˆã‚¢ãƒƒãƒ—
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
-      # Ninja‚ğƒZƒbƒgƒAƒbƒv
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
 
-      # 3. Configure (x64-release-ci ƒvƒŠƒZƒbƒg‚ğg—p)
+      # 2. vcpkgã®ã‚­ãƒ£ãƒƒã‚·ãƒ¥
+      - name: Restore vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/vcpkg/installed
+            ${{ github.workspace }}/vcpkg/archives
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+
+      # 3. Configure
       - name: Configure
         run: cmake --preset x64-release-ci
 
-      # 4. Editor ƒrƒ‹ƒh
+      # 4. Build
       - name: Build Editor
         run: cmake --build --preset editor-release-ci

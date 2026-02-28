@@ -72,6 +72,12 @@ namespace Engine::Graphics
             const ShaderCompileDesc& desc
         );
 
+        // プリコンパイル済み .csoを読み込む
+        [[nodiscard]] static Utils::Result<std::shared_ptr<Shader>> loadFromCSO(
+            const std::string& csoFilePath,
+            ShaderType type
+        );
+
         // 文字列からのコンパイル
         [[nodiscard]] static Utils::Result<std::shared_ptr<Shader>> compileFromString(
             const std::string& shaderCode,

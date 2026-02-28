@@ -467,7 +467,7 @@ namespace Engine::EngineUI
         auto dev = m_device->getDevice();
 
         Graphics::ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/UITextVS.hlsl";
+        vsDesc.filePath = "engine-assets/shaders/UITextVS.cso";
         vsDesc.entryPoint = "main";
         vsDesc.type = Graphics::ShaderType::Vertex;
 
@@ -479,7 +479,7 @@ namespace Engine::EngineUI
         }
 
         Graphics::ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/UITextPS.hlsl";
+        psDesc.filePath = "engine-assets/shaders/UITextPS.cso";
         psDesc.entryPoint = "main";
         psDesc.type = Graphics::ShaderType::Pixel;
 

@@ -331,7 +331,7 @@ namespace Engine::Graphics
 		auto dev = m_device->getDevice();
 
 		ShaderCompileDesc vsDesc;
-		vsDesc.filePath = "engine-assets/shaders/SkyboxVS.hlsl";
+		vsDesc.filePath = "engine-assets/shaders/SkyboxVS.cso";
 		vsDesc.entryPoint = "main";
 		vsDesc.type = ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -344,7 +344,7 @@ namespace Engine::Graphics
 		}
 
 		ShaderCompileDesc psDesc;
-		psDesc.filePath = "engine-assets/shaders/SkyboxPS.hlsl";
+		psDesc.filePath = "engine-assets/shaders/SkyboxPS.cso";
 		psDesc.entryPoint = "main";
 		psDesc.type = ShaderType::Pixel;
 		psDesc.enableDebug = true;

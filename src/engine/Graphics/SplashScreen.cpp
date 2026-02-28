@@ -153,7 +153,7 @@ namespace Engine::Graphics
     {
         // Load shaders
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/SplashVertex.hlsl";
+        vsDesc.filePath = "engine-assets/shaders/SplashVertex.cso";
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
         vsDesc.enableDebug = true;
@@ -166,7 +166,7 @@ namespace Engine::Graphics
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/SplashPixel.hlsl";
+        psDesc.filePath = "engine-assets/shaders/SplashPixel.cso";
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
         psDesc.enableDebug = true;
