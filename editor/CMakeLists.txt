@@ -32,28 +32,16 @@ endif()
 
 add_custom_command(
     TARGET OrionEditor POST_BUILD
+
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/editor/player"
-    
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/engine-assets/fonts"
-        "${CMAKE_BINARY_DIR}/editor/engine-assets/fonts"
-          COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/engine-assets/skybox"
-        "${CMAKE_BINARY_DIR}/editor/engine-assets/skybox"
-          COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/engine-assets/images"
-        "${CMAKE_BINARY_DIR}/editor/engine-assets/images"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/project"
-        "${CMAKE_BINARY_DIR}/editor/project"
 
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_FILE:OrionGame>"
-        "${CMAKE_BINARY_DIR}/editor/player/OrionGame.exe"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/engine-assets/fonts"  "${CMAKE_BINARY_DIR}/editor/engine-assets/fonts"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/engine-assets/skybox" "${CMAKE_BINARY_DIR}/editor/engine-assets/skybox"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/engine-assets/images" "${CMAKE_BINARY_DIR}/editor/engine-assets/images"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/project"              "${CMAKE_BINARY_DIR}/editor/project"
 
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_FILE:OrionRuntime>"
-        "${CMAKE_BINARY_DIR}/editor/OrionRuntime.dll"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:OrionGame>"    "${CMAKE_BINARY_DIR}/editor/player/OrionGame.exe"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:OrionRuntime>" "${CMAKE_BINARY_DIR}/editor/OrionRuntime.dll"
 
     COMMENT "Bundling player runtime and assets into editor directory"
 )

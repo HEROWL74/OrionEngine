@@ -35,6 +35,7 @@ jobs:
           copy build\x64-release-ci\editor\lua.dll dist\
           copy build\x64-release-ci\editor\OrionRuntime.dll dist\
           xcopy build\x64-release-ci\editor\engine-assets dist\engine-assets /E /I /Y
+          xcopy build\x64-release-ci\editor\player dist\player /E /I /Y
           xcopy build\x64-release-ci\editor\project dist\project /E /I /Y
           echo {"version": "${{ github.ref_name }}"} > dist\engine.json
 
