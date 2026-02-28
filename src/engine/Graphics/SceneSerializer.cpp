@@ -1,4 +1,4 @@
-// src/engine/Graphics/SceneSerializer.cpp
+﻿// src/engine/Graphics/SceneSerializer.cpp
 #include "SceneSerializer.hpp"
 #include <fstream>
 
