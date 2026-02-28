@@ -33,11 +33,11 @@ https://github.com/HEROWL74/OrionEngine/releases/tag/GameVol.1
 
 ## 🧱 構成（予定）
 
-- `src/Core/` : エンジン本体（Application、Timer、Logなど）
-- `src/Renderer/` : DirectX12ラッパー（Device、SwapChain、Commandなど）
-- `src/Game/` : 実際のゲームロジックやオブジェクト
-- `assets/` : テクスチャ・モデル・音声ファイル
-- `include/` : ヘッダーの一部を分離する予定
+- `src/engine/Core` : エンジン本体（Application、GameObject、Windowなど）
+- `src/engine/Graphics/` : DirectX12ラッパー（Device、SwapChain、Commandなど）
+- `src/engine/` : 実際のゲームロジックやオブジェクト
+- `engine-assets` : エンジン内蔵のシェーダーや画像格納フォルダ
+- `assets/` : 実際にユーザーが編集するフォルダ
 
 ---
 
@@ -45,22 +45,6 @@ https://github.com/HEROWL74/OrionEngine/releases/tag/GameVol.1
 ## 🙌 このプロジェクトについて
 
 高校生として、将来ゲームエンジニアになるために、基礎から丁寧に制作中です。
-
----
-
-
-## このプロジェクトのダウンロード方法
-🎮 **[最新版のダウンロードはこちら](https://github.com/HEROWL74/DX12GameEngine/releases/latest)**  
-
-- DX12GameEngine.zip は、Asset と exe ファイルが入っているフォルダです。  
-- DX12GameEngine-with-src.zip は、ソースファイルも一緒に入っているので、ただエンジンに触れたい方は DX12GameEngine.zip をおすすめします。  
-- ダウンロード後、zip を解凍して exe をクリックすると、Windows が SmartScreen を表示します。  
-  詳細情報 → 実行ボタン をクリックしてください。  
-
-### SmartScreen の例
-![SmartScreen の詳細画面](https://github.com/user-attachments/assets/58bb6fa6-d59e-43a3-b1cf-9ed16e860753)  
-![SmartScreen の実行ボタン](https://github.com/user-attachments/assets/6ff98076-17f1-4f36-88d8-4dcbc1686140)
-
 
 ## 📧 作者について
 
