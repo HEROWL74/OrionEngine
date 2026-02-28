@@ -1,7 +1,8 @@
-//src/Scripting/ScriptManager.cpp
+﻿//src/Scripting/ScriptManager.cpp
 
 #include "ScriptManager.hpp"
 #include "LuaScriptComponent.hpp"
+#include <Windows.h>
 #include "LuaBindings.hpp"
 #include "../Utils/Common.hpp"
 #include <filesystem>
@@ -31,8 +32,6 @@ namespace Engine::Scripting
             {
                 m_bindingCallback(m_lua);
                 Utils::log_info("Initial Lua bindings completed");
-
-                // バインディング確認
                 verifyBindings();
             }
             catch (const std::exception& e)
@@ -45,18 +44,20 @@ namespace Engine::Scripting
         }
         else
         {
-            Utils::log_warning("⚠️ Binding callback not set. Call setBindingCallback() before initialize()");
+            Utils::log_warning(" Binding callback not set. Call setBindingCallback() before initialize()");
         }
 
-        // スクリプトディレクトリをスキャン
-        std::vector<std::string> scanDirs = { "scripts", "assets/scripts", "assets" };
+        // Assets ディレクトリ全体をスキャン（統一）
+        fs::path assetsDir = resolveAssetPath("");
 
-        for (const auto& dir : scanDirs)
+        if (fs::exists(assetsDir))
         {
-            if (fs::exists(dir))
-            {
-                scanAndLoadSharedObjects(dir);
-            }
+            Utils::log_info("Scanning for SharedObjects in: " + assetsDir.string());
+            scanAndLoadSharedObjects(assetsDir.string());
+        }
+        else
+        {
+            Utils::log_warning("Assets directory not found: " + assetsDir.string());
         }
     }
 
@@ -64,6 +65,94 @@ namespace Engine::Scripting
     {
         m_bindingCallback = callback;
         Utils::log_info("Lua binding callback registered");
+    }
+
+    fs::path ScriptManager::resolveAssetPath(const std::string& relativePath) const
+    {
+        // 空の場合は Assets ルートを返す
+        if (relativePath.empty())
+        {
+            // ProjectSettings が絶対パスを保持していれば最優先で使用
+            auto& settings = Engine::Core::ProjectSettings::get();
+            fs::path projectRoot = settings.getProjectRootDir();
+
+            if (!projectRoot.empty())
+            {
+                fs::path assetsPath = projectRoot / "Assets";
+                if (fs::exists(assetsPath))
+                {
+                    return fs::weakly_canonical(assetsPath);
+                }
+            }
+
+            // フォールバック: exeDir から上へ辿って project/Assets を探す
+            wchar_t exePath[MAX_PATH]{};
+            GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+            auto current = fs::path(exePath).parent_path();
+
+            while (current.has_parent_path() && current != current.parent_path())
+            {
+                auto candidate = current / "project" / "Assets";
+                if (fs::exists(candidate))
+                    return fs::weakly_canonical(candidate);
+                current = current.parent_path();
+            }
+
+            Utils::log_warning("Assets directory not found by exe-based search");
+            return "Assets";
+        }
+
+        // パスを正規化（バックスラッシュをスラッシュに）
+        std::string normalizedPath = relativePath;
+        std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+
+        // 大文字小文字を問わず "assets/" または "Assets/" プレフィックスを除去して
+        // 純粋な相対パス（scripts/move.lua 等）に統一する
+        {
+            std::string lower = normalizedPath;
+            std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+            if (lower.rfind("assets/", 0) == 0)
+            {
+                normalizedPath = normalizedPath.substr(7); // "assets/" の7文字を除去
+            }
+        }
+
+        // ProjectSettings からパス解決
+        auto& settings = Engine::Core::ProjectSettings::get();
+        fs::path projectRoot = settings.getProjectRootDir();
+
+        if (!projectRoot.empty())
+        {
+            // Assets に統一
+            fs::path fullPath = projectRoot / "Assets" / normalizedPath;
+            if (fs::exists(fullPath))
+            {
+                Utils::log_info("Resolved asset path: " + fullPath.string());
+                return fs::weakly_canonical(fullPath);
+            }
+        }
+
+        // フォールバック: exeDir から上へ辿って project/Assets/{path} を探す
+        {
+            wchar_t exePath[MAX_PATH]{};
+            GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+            auto current = fs::path(exePath).parent_path();
+
+            while (current.has_parent_path() && current != current.parent_path())
+            {
+                auto candidate = current / "project" / "Assets" / normalizedPath;
+                if (fs::exists(candidate))
+                {
+                    Utils::log_info("Resolved asset path (exe-search): " + candidate.string());
+                    return fs::weakly_canonical(candidate);
+                }
+                current = current.parent_path();
+            }
+        }
+
+        // 見つからない場合
+        Utils::log_warning("Could not resolve asset path: " + normalizedPath);
+        return normalizedPath;
     }
 
     void ScriptManager::rebindAll()
@@ -145,16 +234,40 @@ namespace Engine::Scripting
     bool ScriptManager::loadScript(const std::string& path, ScriptType type)
     {
         try {
-            if (!fs::exists(path))
+            // 入力パスを正規化（バックスラッシュ→スラッシュ、大文字小文字を問わず assets/ を Assets/ に統一）
+            std::string inputPath = path;
+            std::replace(inputPath.begin(), inputPath.end(), '\\', '/');
             {
-                Utils::log_warning("Script file not found: " + path);
+                std::string lower = inputPath;
+                std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+                if (lower.rfind("assets/", 0) == 0)
+                    inputPath = "Assets/" + inputPath.substr(7);
+            }
+
+            // キャッシュキー: 常に "Assets/scripts/foo.lua" 形式の相対パスで統一
+            // これにより LuaScriptComponent が渡す相対パスとキャッシュが一致する
+            std::string cacheKey = inputPath;
+
+            // 実ファイルパスを解決（絶対パスが必要な場合のみ resolveAssetPath を使う）
+            fs::path resolvedPath = inputPath;
+            if (!resolvedPath.is_absolute() && !fs::exists(resolvedPath))
+            {
+                resolvedPath = resolveAssetPath(inputPath);
+            }
+
+            if (!fs::exists(resolvedPath))
+            {
+                Utils::log_warning("Script file not found: " + path + " (resolved: " + resolvedPath.string() + ")");
                 return false;
             }
 
-            auto lastWrite = fs::last_write_time(path);
+            // normalizedPath は互換用（ログ等で使用）
+            std::string normalizedPath = cacheKey;
+
+            auto lastWrite = fs::last_write_time(resolvedPath);
 
             {
-                auto it = m_scripts.find(path);
+                auto it = m_scripts.find(cacheKey);
                 if (it != m_scripts.end() && it->second.lastWriteTime == lastWrite)
                 {
                     return true;
@@ -163,7 +276,7 @@ namespace Engine::Scripting
 
             if (type == ScriptType::SharedObject)
             {
-                m_lua.script_file(path);
+                m_lua.script_file(resolvedPath.string());
             }
 
             ScriptData data;
@@ -172,11 +285,11 @@ namespace Engine::Scripting
 
             if (type == ScriptType::Component)
             {
-                sol::load_result loaded = m_lua.load_file(path);
+                sol::load_result loaded = m_lua.load_file(resolvedPath.string());
                 if (!loaded.valid())
                 {
                     sol::error err = loaded;
-                    Utils::log_warning("Failed to load script '" + path + "': " + err.what());
+                    Utils::log_warning("Failed to load script '" + resolvedPath.string() + "': " + err.what());
                     return false;
                 }
 
@@ -186,7 +299,7 @@ namespace Engine::Scripting
                 if (!pfr.valid())
                 {
                     sol::error err = pfr;
-                    Utils::log_warning("Script execution error '" + path + "': " + err.what());
+                    Utils::log_warning("Script execution error '" + resolvedPath.string() + "': " + err.what());
                     return false;
                 }
 
@@ -194,7 +307,7 @@ namespace Engine::Scripting
 
                 if (!result.valid() || !result.is<sol::table>())
                 {
-                    Utils::log_warning("Script '" + path + "' did not return a table. Use: local Script = {} ... return Script");
+                    Utils::log_warning("Script '" + resolvedPath.string() + "' did not return a table. Use: local Script = {} ... return Script");
                     return false;
                 }
 
@@ -210,23 +323,23 @@ namespace Engine::Scripting
                     if (fn.valid() && fn.is<sol::function>())
                     {
                         data.functions[name] = fn.as<sol::function>();
-                        Utils::log_info("  Loaded module function: " + path + "." + name);
+                        Utils::log_info("  Loaded module function: " + normalizedPath + "." + name);
                     }
                 }
             }
 
-            m_scripts[path] = std::move(data);
+            m_scripts[cacheKey] = std::move(data);
 
             if (type == ScriptType::SharedObject)
             {
-                if (std::find(m_sharedObjects.begin(), m_sharedObjects.end(), path) == m_sharedObjects.end())
+                if (std::find(m_sharedObjects.begin(), m_sharedObjects.end(), cacheKey) == m_sharedObjects.end())
                 {
-                    m_sharedObjects.push_back(path);
+                    m_sharedObjects.push_back(cacheKey);
                 }
             }
 
             std::string typeStr = (type == ScriptType::SharedObject) ? "[SharedObject]" : "[Component]";
-            Utils::log_info("Script loaded " + typeStr + ": " + path);
+            Utils::log_info("Script loaded " + typeStr + ": " + cacheKey + " (file: " + resolvedPath.string() + ")");
             return true;
         }
         catch (const sol::error& e)
@@ -284,7 +397,17 @@ namespace Engine::Scripting
 
     sol::function ScriptManager::getFunction(const std::string& path, const std::string& functionName) const
     {
-        auto it = m_scripts.find(path);
+        // 入力パスを cacheKey 形式（Assets/scripts/foo.lua）に正規化してから検索
+        std::string key = path;
+        std::replace(key.begin(), key.end(), '\\', '/');
+        {
+            std::string lower = key;
+            std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+            if (lower.rfind("assets/", 0) == 0)
+                key = "Assets/" + key.substr(7);
+        }
+
+        auto it = m_scripts.find(key);
         if (it != m_scripts.end())
         {
             auto fit = it->second.functions.find(functionName);
@@ -392,7 +515,9 @@ namespace Engine::Scripting
         Utils::log_info("Reloading SharedObjects...");
         for (const auto& path : scriptableObjPaths)
         {
-            if (fs::exists(path))
+            // cacheKey（相対パス）から実ファイルパスを解決して存在確認
+            fs::path resolved = resolveAssetPath(path);
+            if (fs::exists(resolved))
             {
                 Utils::log_info("  Loading: " + path);
                 loadScript(path, ScriptType::SharedObject);
@@ -402,7 +527,8 @@ namespace Engine::Scripting
         Utils::log_info("Reloading Component scripts...");
         for (const auto& [path, type] : allScriptPaths)
         {
-            if (type == ScriptType::Component && fs::exists(path))
+            fs::path resolved = resolveAssetPath(path);
+            if (type == ScriptType::Component && fs::exists(resolved))
             {
                 Utils::log_info("  Loading: " + path);
                 loadScript(path, ScriptType::Component);
@@ -424,7 +550,9 @@ namespace Engine::Scripting
         {
             try
             {
-                if (!fs::exists(path))
+                // cacheKey（相対パス）から実ファイルパスを解決
+                fs::path resolved = resolveAssetPath(path);
+                if (!fs::exists(resolved))
                 {
                     continue;
                 }
@@ -432,13 +560,13 @@ namespace Engine::Scripting
                 auto it = m_scripts.find(path);
                 if (it == m_scripts.end()) continue;
 
-                auto lastWrite = fs::last_write_time(path);
+                auto lastWrite = fs::last_write_time(resolved);
 
                 if (lastWrite != it->second.lastWriteTime)
                 {
                     Utils::log_info("Reloading modified script: " + path);
                     invalidateAllComponents();
-                    loadScript(path, type);
+                    loadScript(path, type);  // path は cacheKey（相対パス）、loadScript 内で解決する
                 }
             }
             catch (const std::exception& e)

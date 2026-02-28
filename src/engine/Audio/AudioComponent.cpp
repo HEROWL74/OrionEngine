@@ -1,5 +1,8 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "AudioComponent.hpp"
+#include "../Core/ProjectSettings.hpp"
+#include <algorithm>
+#include <filesystem>
 #include <format>
 #include <thread>
 #include <chrono>
@@ -28,13 +31,70 @@ namespace Engine::Audio
 		// 既存のオーディオをクリーンアップ
 		cleanup();
 
+		// パス解決
+		std::string resolvedPath = filePath;
+
+		// Assets で始まっていない、かつ存在しない場合は解決を試みる
+		if (!std::filesystem::exists(filePath))
+		{
+			auto& settings = Engine::Core::ProjectSettings::get();
+			auto projectRoot = settings.getProjectRootDir();
+
+			if (!projectRoot.empty())
+			{
+				// Assets/ から始まっていない場合
+				std::string normalized = filePath;
+				std::replace(normalized.begin(), normalized.end(), '\\', '/');
+
+				if (normalized.rfind("Assets/", 0) != 0)
+				{
+					// Assets/ を追加して試行
+					auto candidatePath = projectRoot / "Assets" / normalized;
+					if (std::filesystem::exists(candidatePath))
+					{
+						resolvedPath = candidatePath.string();
+						Utils::log_info(std::format("Resolved audio path: {}", resolvedPath));
+					}
+				}
+				else
+				{
+					// 既に Assets/ で始まっている場合は直接試行
+					auto candidatePath = projectRoot / normalized;
+					if (std::filesystem::exists(candidatePath))
+					{
+						resolvedPath = candidatePath.string();
+						Utils::log_info(std::format("Resolved audio path: {}", resolvedPath));
+					}
+				}
+			}
+
+			// フォールバック
+			if (!std::filesystem::exists(resolvedPath))
+			{
+				std::vector<std::string> candidates = {
+					filePath,
+					"Assets/" + filePath,
+					"project-templates/3d/Assets/" + filePath
+				};
+
+				for (const auto& candidate : candidates)
+				{
+					if (std::filesystem::exists(candidate))
+					{
+						resolvedPath = candidate;
+						break;
+					}
+				}
+			}
+		}
+
 		// デコーダーを初期化
-		ma_result result = ma_decoder_init_file(filePath.c_str(), nullptr, &m_decoder);
+		ma_result result = ma_decoder_init_file(resolvedPath.c_str(), nullptr, &m_decoder);
 		if (result != MA_SUCCESS)
 		{
 			return std::unexpected(Utils::make_error(
 				Utils::ErrorType::FileI0,
-				std::format("Failed to load audio file: {}", filePath)
+				std::format("Failed to load audio file: {} (resolved: {})", filePath, resolvedPath)
 			));
 		}
 
@@ -60,7 +120,7 @@ namespace Engine::Audio
 		m_filepath = filePath;
 		m_audioLoaded = true;
 
-		Utils::log_info(std::format("Audio loaded: {}", filePath));
+		Utils::log_info(std::format("Audio loaded: {}", resolvedPath));
 		return {};
 	}
 

@@ -4,6 +4,9 @@
 #include "buildworker/BuildSystem.hpp"
 #include <vector>
 #include <string>
+#include <mutex>
+#include <queue>
+#include <atomic>
 #include "../UI/ImGuiManager.hpp"
 
 namespace Editor::UI
@@ -22,7 +25,7 @@ namespace Editor::UI
         BuildWindow();
         ~BuildWindow() = default;
 
-        void initialize(Build::BuildSystem* buildSystem);
+        void initialize();
         void draw();
 
         void show() { m_isVisible = true; }
@@ -45,11 +48,14 @@ namespace Editor::UI
         }
 
         bool m_isVisible = false;
-        Build::BuildSystem* m_buildSystem = nullptr;
+        std::shared_ptr<Build::BuildSystem> m_buildSystem;
         Build::BuildResult m_lastResult;
         std::vector<BuildLogEntry> m_buildLog;
-        bool m_isBuilding = false;
+        std::atomic<bool> m_isBuilding = false;
         float m_buildProgress = 0.0f;
         std::string m_currentStatus;
+
+        std::mutex m_resultMutex;
+        std::queue<Build::BuildResult> m_resultQueue;
     };
 }

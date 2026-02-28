@@ -1,6 +1,10 @@
 {
   "version": 6,
-
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 26,
+    "patch": 0
+  },
   "configurePresets": [
     {
       "name": "x64-debug",
@@ -26,12 +30,11 @@
     },
     {
       "name": "x64-release-ci",
+      "displayName": "Windows x64 Release CI",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/x64-release-ci",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "cl",
-        "CMAKE_CXX_COMPILER": "cl",
         "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows"
       }
@@ -46,46 +49,50 @@
       }
     }
   ],
-
   "buildPresets": [
     {
       "name": "editor-debug",
+      "displayName": "Build Editor (Debug)",
       "configurePreset": "x64-debug",
       "configuration": "Debug",
       "targets": [ "OrionEditor", "OrionBuildWorker" ]
     },
     {
       "name": "runtime-debug",
+      "displayName": "Build Runtime (Debug)",
       "configurePreset": "x64-debug",
       "configuration": "Debug",
       "targets": [ "OrionGame" ]
     },
     {
       "name": "editor-release-local",
+      "displayName": "Build Editor (Release Local)",
       "configurePreset": "x64-release-local",
       "configuration": "Release",
       "targets": [ "OrionEditor" ]
     },
     {
       "name": "runtime-release-local",
+      "displayName": "Build Runtime (Release Local)",
       "configurePreset": "x64-release-local",
       "configuration": "Release",
       "targets": [ "OrionGame" ]
     },
     {
       "name": "editor-release-ci",
+      "displayName": "Build Editor (Release CI)",
       "configurePreset": "x64-release-ci",
-      "configuration": "Release",
       "targets": [ "OrionEditor" ]
     },
     {
       "name": "runtime-release-ci",
+      "displayName": "Build Runtime (Release CI)",
       "configurePreset": "x64-release-ci",
-      "configuration": "Release",
       "targets": [ "OrionGame" ]
     },
     {
       "name": "runtime-web-release",
+      "displayName": "Build Runtime (Web Release)",
       "configurePreset": "web-release",
       "targets": [ "OrionGame" ]
     }
