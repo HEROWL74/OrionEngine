@@ -12,6 +12,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       # 1. MSVC環境とWindows SDKパスをセットアップ
       - name: Set up MSVC
@@ -21,13 +23,18 @@ jobs:
         uses: ashutoshvarma/setup-ninja@master
 
       # 2. vcpkgのキャッシュ
+      # 警告対策: vcpkgのバイナリキャッシュ場所を明示的に指定してキャッシュ効率を上げる
+      - name: Set vcpkg binary cache path
+        run: echo "VCPKG_DEFAULT_BINARY_CACHE=${{ github.workspace }}/vcpkg_cache" >> $GITHUB_ENV
+        shell: bash
+
       - name: Restore vcpkg cache
         uses: actions/cache@v4
         with:
-          path: |
-            ${{ github.workspace }}/vcpkg/installed
-            ${{ github.workspace }}/vcpkg/archives
+          path: ${{ github.workspace }}/vcpkg_cache
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-
 
       # 3. Configure
       - name: Configure
