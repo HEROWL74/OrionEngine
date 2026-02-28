@@ -19,6 +19,8 @@ namespace Editor
         auto initResult = app.initialize(hInstance, nCmdShow);
         if (!initResult)
         {
+            MessageBoxA(NULL, "App Initialization Failed!", "Orion Engine", MB_ICONERROR | MB_OK);
+
             Engine::Utils::log_error(initResult.error());
             return -1;
         }
