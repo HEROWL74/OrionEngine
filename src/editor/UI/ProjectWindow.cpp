@@ -455,7 +455,7 @@ namespace Editor::UI
 
                 // C++スクリプト作成
                 if (ImGui::MenuItem("C++ Script")) {
-                    std::string path = "assets/scripts/NewCppScript";
+                    std::string path = "Assets/scripts/NewCppScript";
                     path = Engine::Scripting::CppScriptUtility::normalizePath(path);
 
                     if (Engine::Scripting::CppScriptUtility::createNewScript(path)) {

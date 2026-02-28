@@ -1,5 +1,5 @@
 {
-  "ProjectName": "Sample",
+  "ProjectName": "__PROJECT_NAME__",
   "EngineVersion": "__ENGINE_VERSION__",
   "DefaultScene": "Assets/scenes/default.scene",
   "AssetRoot": "Assets",

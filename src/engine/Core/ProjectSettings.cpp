@@ -2,21 +2,32 @@
 #include "ProjectSettings.hpp"
 #include "../Utils/Common.hpp"
 
+#include <Windows.h>
 #include <fstream>
 #include <sstream>
 
 namespace Engine::Core
 {
-	// Singleton
-	ProjectSettings& ProjectSettings::get()
-	{
-		static ProjectSettings instance;
-		return instance;
-	}
+    // Singleton
+    ProjectSettings& ProjectSettings::get()
+    {
+        static ProjectSettings instance;
+        return instance;
+    }
 
-	// Json Parser
-	namespace
-	{
+    // =========================================================
+    // 内部ユーティリティ
+    // =========================================================
+    namespace
+    {
+        // 実行ファイルのディレクトリを返す（絶対パス）
+        static std::filesystem::path GetExeDir()
+        {
+            wchar_t path[MAX_PATH]{};
+            GetModuleFileNameW(nullptr, path, MAX_PATH);
+            return std::filesystem::path(path).parent_path();
+        }
+
         bool parseString(const std::string& src, const std::string& key, std::string& out)
         {
             std::string searchKey = "\"" + key + "\"";
@@ -93,8 +104,11 @@ namespace Engine::Core
             }
             return false;
         }
-	}
+    }
 
+    // =========================================================
+    // load
+    // =========================================================
     bool ProjectSettings::load(const std::filesystem::path& jsonPath)
     {
         std::ifstream file(jsonPath);
@@ -123,7 +137,7 @@ namespace Engine::Core
             parseBool(windowBlock, "VSync", m_window.vsync);
         }
 
-        // JSON が置かれているディレクトリを記憶
+        // JSON が置かれているディレクトリを絶対パスで記憶
         m_jsonPath = std::filesystem::weakly_canonical(jsonPath);
         m_projectRootDir = m_jsonPath.parent_path();
 
@@ -135,32 +149,74 @@ namespace Engine::Core
         return true;
     }
 
+    // =========================================================
+    // loadForEditor
+    //
+    // exeの場所から上へ辿り "project/ProjectSettings.json" を探す。
+    // カレントディレクトリに依存しない。
+    //
+    // ディレクトリ構成（開発ビルド）:
+    //   build/x64-debug/
+    //     editor/
+    //       Debug/
+    //         OrionEditor.exe   ← GetExeDir()
+    //       project/            ← ここを探す
+    //         ProjectSettings.json
+    //         Assets/
+    //       engine-assets/
+    //
+    // ディレクトリ構成（配布）:
+    //   OrionEditor/
+    //     OrionEditor.exe       ← GetExeDir()
+    //     project/
+    //       ProjectSettings.json
+    //       Assets/
+    //     engine-assets/
+    // =========================================================
     void ProjectSettings::loadForEditor()
     {
         m_projectName.clear();
-        const std::vector<std::filesystem::path> candidates = {
-            "project-templates/3d/ProjectSettings.json",
-            "../project-templates/3d/ProjectSettings.json",
-        };
 
-        for (const auto& p : candidates)
+        auto exeDir = GetExeDir();
+        auto current = exeDir;
+
+        // exeDir から上へ辿って project/ProjectSettings.json を探す
+        while (current.has_parent_path() && current != current.parent_path())
         {
-            if (std::filesystem::exists(p))
+            auto candidate = current / "project" / "ProjectSettings.json";
+            if (std::filesystem::exists(candidate))
             {
-                if (load(p)) return;
+                if (load(candidate)) return;
             }
+            current = current.parent_path();
         }
 
-        // 見つからない場合はデフォルト値 + projectRootDir を手動設定
-        Utils::log_warning("ProjectSettings(Editor): JSON not found — using built-in defaults");
-        m_projectRootDir = std::filesystem::path("project-templates/3d");
+        // 見つからない場合は exeDir 基準の絶対パスでデフォルト設定
+        Utils::log_warning("ProjectSettings(Editor): project/ProjectSettings.json not found — using defaults");
+        m_projectRootDir = std::filesystem::weakly_canonical(exeDir / "project");
     }
 
+    // =========================================================
+    // loadForRuntime
+    //
+    // 配布パッケージでは Assets/ と同階層 or Assets/ 内に
+    // ProjectSettings.json を置く運用。
+    //
+    // ディレクトリ構成（配布）:
+    //   MyGame/
+    //     MyGame.exe            ← GetExeDir()
+    //     Assets/
+    //       ProjectSettings.json
+    //       scenes/
+    //     engine-assets/
+    // =========================================================
     void ProjectSettings::loadForRuntime()
     {
+        auto exeDir = GetExeDir();
+
         const std::vector<std::filesystem::path> candidates = {
-            "assets/ProjectSettings.json",
-            "ProjectSettings.json",
+            exeDir / "Assets" / "ProjectSettings.json",
+            exeDir / "ProjectSettings.json",
         };
 
         for (const auto& p : candidates)
@@ -171,8 +227,8 @@ namespace Engine::Core
             }
         }
 
-        Utils::log_warning("ProjectSettings(Runtime): JSON not found — using built-in defaults");
-        m_projectRootDir = std::filesystem::path(".");
+        Utils::log_warning("ProjectSettings(Runtime): JSON not found — using defaults");
+        m_projectRootDir = exeDir;
     }
 
     std::wstring ProjectSettings::getProjectNameW() const
@@ -185,4 +241,5 @@ namespace Engine::Core
         }
         return result;
     }
-}
+
+} // namespace Engine::Core

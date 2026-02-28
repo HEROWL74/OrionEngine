@@ -8,6 +8,7 @@
 #include <vector>
 #include <filesystem>
 #include <functional>
+#include "../Core/ProjectSettings.hpp"
 
 namespace Engine::Scripting
 {
@@ -47,7 +48,16 @@ namespace Engine::Scripting
 
         sol::table getScriptTable(const std::string& path) const
         {
-            auto it = m_scripts.find(path);
+            // cacheKey Œ`Ž®iAssets/scripts/foo.luaj‚É³‹K‰»‚µ‚Ä‚©‚çŒŸõ
+            std::string key = path;
+            std::replace(key.begin(), key.end(), '\\', '/');
+            {
+                std::string lower = key;
+                std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+                if (lower.rfind("assets/", 0) == 0)
+                    key = "Assets/" + key.substr(7);
+            }
+            auto it = m_scripts.find(key);
             if (it != m_scripts.end())
             {
                 return it->second.moduleTable;
@@ -76,6 +86,7 @@ namespace Engine::Scripting
         ScriptManager& operator=(const ScriptManager&) = delete;
 
         bool isSharedObject(const std::string& filepath) const;
+        std::filesystem::path resolveAssetPath(const std::string& relativePath) const;
 
         sol::state m_lua;
         std::unordered_map<std::string, ScriptData> m_scripts;

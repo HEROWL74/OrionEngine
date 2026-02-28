@@ -280,15 +280,12 @@ namespace Runtime
     {
         Engine::Utils::log_info("Loading scene...");
 
-        // ProjectSettings からシーンパスを取得（デフォルト: assets/scenes/default.scene）
         auto& settings = Engine::Core::ProjectSettings::get();
         std::string scenePath = settings.getDefaultScene();
 
-        // ProjectSettings.json の AssetRoot が大文字 "Assets" の場合に備えて
-        // 実ファイルが存在するか確認し、なければ小文字 assets/ にフォールバック
         if (!std::filesystem::exists(scenePath))
         {
-            std::string fallback = "assets/scenes/default.scene";
+            std::string fallback = "Assets/scenes/default.scene";
             if (std::filesystem::exists(fallback))
             {
                 Engine::Utils::log_warning("Scene not found at '" + scenePath

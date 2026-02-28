@@ -30,7 +30,7 @@ namespace Engine::Core
 		/// 見つからなければデフォルト値を使う。
 		void loadForEditor();
 
-		/// ランタイム用: assets/ProjectSettings.json など実行ファイル隣を探して読む。
+		/// ランタイム用: Asets/ProjectSettings.json など実行ファイル隣を探して読む。
 		void loadForRuntime();
 
 		// -----------------------

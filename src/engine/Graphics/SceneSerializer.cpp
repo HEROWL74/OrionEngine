@@ -241,6 +241,16 @@ namespace Engine::Graphics
             const auto& luaJson = json["lua"];
             std::string scriptPath = luaJson.value("scriptPath", "");
 
+            // 旧シーンファイル互換: バックスラッシュとアセットパスの大文字小文字を正規化
+            if (!scriptPath.empty())
+            {
+                std::replace(scriptPath.begin(), scriptPath.end(), '\\', '/');
+                std::string lower = scriptPath;
+                std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+                if (lower.rfind("assets/", 0) == 0)
+                    scriptPath = "Assets/" + scriptPath.substr(7);
+            }
+
             if (!scriptPath.empty())
             {
                 auto* luaComponent = gameObject->addComponent<Scripting::LuaScriptComponent>(
@@ -521,8 +531,18 @@ namespace Engine::Graphics
     {
         nlohmann::json json;
         json["name"] = "Lua";
-        json["scriptPath"] = component->getScriptPath();
 
+        // バックスラッシュをスラッシュに統一し、大文字小文字を問わず
+        // "assets/" プレフィックスを "Assets/" に正規化して保存する
+        std::string path = component->getScriptPath();
+        std::replace(path.begin(), path.end(), '\\', '/');
+
+        std::string lower = path;
+        std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+        if (lower.rfind("assets/", 0) == 0)
+            path = "Assets/" + path.substr(7);
+
+        json["scriptPath"] = path;
         return json;
     }
 
@@ -572,7 +592,14 @@ namespace Engine::Graphics
     {
         json audioJson;
 
-        audioJson["filePath"] = audioComponent->getFilePath();
+        // バックスラッシュをスラッシュに統一し "Assets/" プレフィックスを正規化
+        std::string audioPath = audioComponent->getFilePath();
+        std::replace(audioPath.begin(), audioPath.end(), '\\', '/');
+        std::string audioLower = audioPath;
+        std::transform(audioLower.begin(), audioLower.end(), audioLower.begin(), ::tolower);
+        if (audioLower.rfind("assets/", 0) == 0)
+            audioPath = "Assets/" + audioPath.substr(7);
+        audioJson["filePath"] = audioPath;
         audioJson["loop"] = audioComponent->isLoop();
         audioJson["volume"] = audioComponent->getVolume();
 

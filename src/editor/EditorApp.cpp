@@ -200,7 +200,7 @@ namespace Editor
         // フォールバック: project-templates 側に無ければ assets/ を試す
         if (!std::filesystem::exists(defaultScenePath))
         {
-            std::filesystem::path fallback = "assets/scenes/default.scene";
+            std::filesystem::path fallback = "Assets/scenes/default.scene";
             Utils::log_warning(std::format("Default scene not found at '{}', trying '{}'",
                 defaultScenePath.string(), fallback.string()));
             defaultScenePath = fallback;
