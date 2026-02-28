@@ -19,3 +19,5 @@ PSInput main(VSInput input)
     o.pos = mul(float4(input.pos, 1.0), wvp);
     return o;
 }
+
+

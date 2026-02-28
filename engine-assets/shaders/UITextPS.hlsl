@@ -1,4 +1,4 @@
-// UITextPS.hlsl - 3D World Space—p
+// UITextPS.hlsl - 3D World Spaceç”¨
 Texture2D fontTexture : register(t0);
 SamplerState fontSampler : register(s0);
 
@@ -11,16 +11,17 @@ struct PSInput
 
 float4 main(PSInput input) : SV_TARGET
 {
-    // ƒtƒHƒ“ƒgƒeƒNƒXƒ`ƒƒ‚©‚çƒAƒ‹ƒtƒ@’l‚ğƒTƒ“ƒvƒŠƒ“ƒO
+    // ãƒ•ã‚©ãƒ³ãƒˆãƒ†ã‚¯ã‚¹ãƒãƒ£ã‹ã‚‰ã‚¢ãƒ«ãƒ•ã‚¡å€¤ã‚’ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°
     float alpha = fontTexture.Sample(fontSampler, input.texCoord).r;
     
-    // ƒeƒLƒXƒgƒJƒ‰[‚ÆƒAƒ‹ƒtƒ@‚ğ“K—p
+    // ãƒ†ã‚­ã‚¹ãƒˆã‚«ãƒ©ãƒ¼ã¨ã‚¢ãƒ«ãƒ•ã‚¡ã‚’é©ç”¨
     float4 finalColor = input.color;
     finalColor.a *= alpha;
     
-    // ƒAƒ‹ƒtƒ@‚ª0‚È‚ç”jŠüi“§–¾•”•ªj
+    // ã‚¢ãƒ«ãƒ•ã‚¡ãŒ0ãªã‚‰ç ´æ£„ï¼ˆé€æ˜éƒ¨åˆ†ï¼‰
     if (finalColor.a < 0.01f)
         discard;
     
     return finalColor;
 }
+

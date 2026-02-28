@@ -6,18 +6,18 @@ cbuffer MaterialConstants : register(b2)
 {
     float4 albedo; // xyz: baseColor, w: metallic
     float4 roughnessAoEmissiveStrength; // x: roughness, y: ao, z: emissiveStrength, w: padding
-    float4 emissive; // xyz: emissive, w: normalStrength(–¢g—p)
-    float4 alphaParams; // x: alpha, y: useAlphaTest, z: alphaTestThreshold, w: heightScale(–¢g—p)
+    float4 emissive; // xyz: emissive, w: normalStrength(æœªä½¿ç”¨)
+    float4 alphaParams; // x: alpha, y: useAlphaTest, z: alphaTestThreshold, w: heightScale(æœªä½¿ç”¨)
     float4 uvTransform; // xy: uvScale, zw: uvOffset
     int hasAlbedoTexture;
     int pad0, pad1, pad2;
 };
 
-// SRV / Samplerit0 / s0j
+// SRV / Samplerï¼ˆt0 / s0ï¼‰
 Texture2D albedoTexture : register(t0);
 SamplerState linearSampler : register(s0);
 
-// ---- PBRŒvZiÅ¬j ----------------------------------------
+// ---- PBRè¨ˆç®—ï¼ˆæœ€å°ï¼‰ ----------------------------------------
 static const float PI = 3.14159265359;
 
 float3 FresnelSchlick(float cosTheta, float3 F0)
@@ -71,19 +71,19 @@ struct VertexOutput2
 
 float4 main(VertexOutput2 input) : SV_TARGET
 {
-    // Å¬‚Ì–@üi–Ê–@ü‚ª–³‚¢‚Ì‚Å view-space‚ÌZ‚ğ‰¼’è ¨ ‹ÇŠ‚Å(0,0,1) j
-    // ¦ –{Ši“±“ü‚Í’¸“_–@ü/ƒ^ƒ“ƒWƒFƒ“ƒg‚©‚çÄŒvZ‚µ‚Ü‚·
+    // æœ€å°ã®æ³•ç·šï¼ˆé¢æ³•ç·šãŒç„¡ã„ã®ã§ view-spaceã®Zã‚’ä»®å®š â†’ å±€æ‰€ã§(0,0,1) ï¼‰
+    // â€» æœ¬æ ¼å°å…¥æ™‚ã¯é ‚ç‚¹æ³•ç·š/ã‚¿ãƒ³ã‚¸ã‚§ãƒ³ãƒˆã‹ã‚‰å†è¨ˆç®—ã—ã¾ã™
     float3 N = float3(0.0, 0.0, 1.0);
 
-    // ƒJƒƒ‰^s—ñ‚Í b0/b1 ‚Åó‚¯æ‚Á‚Ä‚¢‚éiBasicVertex.hlsl‚Ì’è‹`j
-    // ƒJƒƒ‰ˆÊ’u‚Í CameraConstants.cameraPosition
+    // ã‚«ãƒ¡ãƒ©ï¼è¡Œåˆ—ã¯ b0/b1 ã§å—ã‘å–ã£ã¦ã„ã‚‹ï¼ˆBasicVertex.hlslã®å®šç¾©ï¼‰
+    // ã‚«ãƒ¡ãƒ©ä½ç½®ã¯ CameraConstants.cameraPosition
     float3 V = normalize(cameraPosition - input.worldPos);
 
-    // •ûŒüŒõi‰¼j: ã‚©‚çÎ‚ßi‚¨D‚İ‚Å’²®‰Âj
+    // æ–¹å‘å…‰ï¼ˆä»®ï¼‰: ä¸Šã‹ã‚‰æ–œã‚ï¼ˆãŠå¥½ã¿ã§èª¿æ•´å¯ï¼‰
     float3 L = normalize(float3(0.4, -1.0, 0.2));
     float3 H = normalize(V + L);
 
-    // ƒ}ƒeƒŠƒAƒ‹
+    // ãƒãƒ†ãƒªã‚¢ãƒ«
     float3 baseColor = albedo.rgb;
     if (hasAlbedoTexture > 0)
     {
@@ -110,18 +110,20 @@ float4 main(VertexOutput2 input) : SV_TARGET
     float3 kD = (1.0 - kS) * (1.0 - metallic);
     float3 diff = kD * baseColor / PI;
 
-    float3 lightColor = float3(1.0, 0.97, 0.94); // ­‚µ’gF
+    float3 lightColor = float3(1.0, 0.97, 0.94); // å°‘ã—æš–è‰²
     float lightInt = 3.0;
     float3 direct = (diff + spec) * lightColor * lightInt * NdotL;
 
-    float3 ambient = baseColor * 0.03 * ao; // IBL“±“ü‘O‚ÌŠÈˆÕƒAƒ“ƒrƒGƒ“ƒg
+    float3 ambient = baseColor * 0.03 * ao; // IBLå°å…¥å‰ã®ç°¡æ˜“ã‚¢ãƒ³ãƒ“ã‚¨ãƒ³ãƒˆ
 
     float3 color = direct + ambient + emissive.rgb * roughnessAoEmissiveStrength.z;
 
-    // ƒg[ƒ“ƒ}ƒbƒsƒ“ƒO ¨ sRGB
+    // ãƒˆãƒ¼ãƒ³ãƒãƒƒãƒ”ãƒ³ã‚° â†’ sRGB
     color = ACES(color);
     color = toSRGB(color);
 
-    // ƒAƒ‹ƒtƒ@iƒAƒ‹ƒtƒ@ƒeƒXƒgÈ—ª^•K—v‚È‚çBasicPixel‚ÌƒƒWƒbƒN‚ğ—¬—pj
+    // ã‚¢ãƒ«ãƒ•ã‚¡ï¼ˆã‚¢ãƒ«ãƒ•ã‚¡ãƒ†ã‚¹ãƒˆçœç•¥ï¼å¿…è¦ãªã‚‰BasicPixelã®ãƒ­ã‚¸ãƒƒã‚¯ã‚’æµç”¨ï¼‰
     return float4(color, alphaParams.x);
 }
+
+

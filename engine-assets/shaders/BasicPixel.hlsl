@@ -36,3 +36,5 @@ float4 main(VertexOutput input) : SV_TARGET
 
     return float4(baseColor, alphaParams.x);
 }
+
+

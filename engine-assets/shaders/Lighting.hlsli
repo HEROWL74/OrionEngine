@@ -1,4 +1,4 @@
-﻿//assets/shaders/Lighting.hlsli
+//assets/shaders/Lighting.hlsli
 //PBRLightingFunc
 
 #include "Common.hlsli"
@@ -108,3 +108,5 @@ float3 acesToneMapping(float3 color)
     
     return saturate((color * (a * color + b)) / (color * (c * color + d) + e));
 }
+
+

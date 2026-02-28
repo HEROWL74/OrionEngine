@@ -23,3 +23,4 @@ VSOutput main(VSInput input)
     output.color = input.color;
     return output;
 }
+

@@ -721,7 +721,7 @@ namespace Engine::Graphics
 
     Utils::Result<std::string> readShaderFile(const std::string& filePath)
     {
-        std::ifstream file(filePath);
+        std::ifstream file(filePath, std::ios::binary);
         if (!file.is_open())
         {
             return std::unexpected(Utils::make_error(Utils::ErrorType::FileI0,
@@ -730,7 +730,9 @@ namespace Engine::Graphics
 
         std::stringstream buffer;
         buffer << file.rdbuf();
-        return buffer.str();
+        std::string content = buffer.str();
+
+        return content;
     }
 
     std::string processIncludes(const std::string& shaderCode, const std::string& baseDir)

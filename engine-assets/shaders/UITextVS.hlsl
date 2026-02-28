@@ -1,15 +1,15 @@
-// engine-assets/shaders/UITextVS.hlsl - 3D‹óŠÔ‘Î‰”ÅiC³j
+// engine-assets/shaders/UITextVS.hlsl - 3Dç©ºé–“å¯¾å¿œç‰ˆï¼ˆä¿®æ­£ï¼‰
 cbuffer TextConstants : register(b0)
 {
     float4x4 world; 
     float4x4 viewProjection;
-    float4 color; // ƒJƒ‰[
-    uint4 padding; // ƒAƒ‰ƒCƒƒ“ƒg—p
+    float4 color; // ã‚«ãƒ©ãƒ¼
+    uint4 padding; // ã‚¢ãƒ©ã‚¤ãƒ¡ãƒ³ãƒˆç”¨
 };
 
 struct VSInput
 {
-    float3 position : POSITION; // ƒ[ƒJƒ‹À•Wi3Dj
+    float3 position : POSITION; // ãƒ­ãƒ¼ã‚«ãƒ«åº§æ¨™ï¼ˆ3Dï¼‰
     float2 texCoord : TEXCOORD;
     float4 color : COLOR;
 };
@@ -35,3 +35,4 @@ PSInput main(VSInput input)
     
     return output;
 }
+

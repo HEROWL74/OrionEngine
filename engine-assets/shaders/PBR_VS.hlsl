@@ -1,4 +1,4 @@
-//assets/shaders/PBR_VS.hlsl
+// engine-assets/shaders/PBR_VS.hlsl
 //PBR VertexShader
 
 #include "Common.hlsli"
@@ -28,3 +28,5 @@ VertexOutput main(VertexInput input)
     
     return output;
 }
+
+

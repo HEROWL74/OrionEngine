@@ -28,3 +28,4 @@ VSOutput main(uint vertexID : SV_VertexID)
 
     return output;
 }
+

@@ -1,5 +1,5 @@
 // assets/shaders/PBR_PS.hlsl
-// PBRピクセルシェーダー
+// PBR繝斐け繧ｻ繝ｫ繧ｷ繧ｧ繝ｼ繝繝ｼ
 
 #include "Common.hlsli"
 #include "Lighting.hlsli"
@@ -64,3 +64,4 @@ float4 main(VertexOutput input) : SV_TARGET
     
     return float4(finalColor, alpha);
 }
+

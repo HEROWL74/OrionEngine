@@ -24,14 +24,15 @@ PSInput main(VSInput input)
 {
     PSInput output;
     
-    // ƒXƒP[ƒ‹‚ğ“K—p
+    // ã‚¹ã‚±ãƒ¼ãƒ«ã‚’é©ç”¨
     float3 scaledPos = input.position * scale;
     
-    // ƒ[ƒ‹ƒhEƒrƒ…[EƒvƒƒWƒFƒNƒVƒ‡ƒ“•ÏŠ·
+    // ãƒ¯ãƒ¼ãƒ«ãƒ‰ãƒ»ãƒ“ãƒ¥ãƒ¼ãƒ»ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ã‚·ãƒ§ãƒ³å¤‰æ›
     output.position = mul(float4(scaledPos, 1.0f), worldViewProjection);
     
-    // ƒJƒ‰[‚ğ‚»‚Ì‚Ü‚Ü“n‚·
+    // ã‚«ãƒ©ãƒ¼ã‚’ãã®ã¾ã¾æ¸¡ã™
     output.color = input.color;
     
     return output;
 }
+
