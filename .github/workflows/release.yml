@@ -36,6 +36,7 @@ jobs:
           copy build\x64-release-ci\editor\lua.dll dist_package\
           xcopy build\x64-release-ci\editor\engine-assets dist_package\engine-assets /E /I /Y
           xcopy build\x64-release-ci\editor\project dist_package\project /E /I /Y
+          xcopy build\x64-release-ci\editor\project\Assets dist_package\project\Assets /E /I /Y
           xcopy build\x64-release-ci\editor\player dist_package\player /E /I /Y
           echo {"name": "OrionEngine", "version": "${{ github.ref_name }}", "editorExecutable": "OrionEditor.exe"} > dist_package\engine.json
 
