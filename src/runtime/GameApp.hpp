@@ -5,7 +5,7 @@
 #include <memory>
 #include "engine/Utils/Common.hpp"
 #include "engine/Core/Window.hpp"
-#include "engine/Core/ProjectSettings.hpp"          // ★ 追加
+#include "engine/Core/ProjectSettings.hpp"
 #include "engine/Graphics/Device.hpp"
 #include "engine/Graphics/Scene.hpp"
 #include "engine/Graphics/Camera.hpp"
@@ -31,7 +31,8 @@ namespace Runtime
     class GameApp
     {
     public:
-        Engine::Utils::VoidResult initialize(HINSTANCE hInstance, int nCmdShow);
+        Engine::Utils::VoidResult initialize(HINSTANCE hInstance, int nCmdShow,
+            const std::filesystem::path& projectPath = {});
         int run();
 
     private:

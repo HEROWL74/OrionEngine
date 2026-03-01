@@ -1,5 +1,6 @@
 ﻿// EditorView.cpp
 #include "EditorView.hpp"
+#include "engine/Core/ProjectSettings.hpp"
 #include <directx/d3dx12.h>
 
 namespace Editor::UI
@@ -462,6 +463,7 @@ namespace Editor::UI
 	Utils::VoidResult EditorView::createGridPipelineState(Graphics::ShaderManager* shaderManager)
 	{
 		auto dev = m_device->getDevice();
+		auto& settings = Engine::Core::ProjectSettings::get();
 
 		if (!shaderManager)
 		{
@@ -471,7 +473,7 @@ namespace Editor::UI
 
 		// シェーダー読み込み
 		Graphics::ShaderCompileDesc vsDesc;
-		vsDesc.filePath = "engine-assets/shaders/GridVS.cso";
+		vsDesc.filePath = settings.getEngineAssetPath("shaders/GridVS.cso").string();
 		vsDesc.entryPoint = "main";
 		vsDesc.type = Graphics::ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -484,7 +486,7 @@ namespace Editor::UI
 		}
 
 		Graphics::ShaderCompileDesc psDesc;
-		psDesc.filePath = "engine-assets/shaders/GridPS.cso";
+		psDesc.filePath = settings.getEngineAssetPath("shaders/GridPS.cso").string();
 		psDesc.entryPoint = "main";
 		psDesc.type = Graphics::ShaderType::Pixel;
 		psDesc.enableDebug = true;

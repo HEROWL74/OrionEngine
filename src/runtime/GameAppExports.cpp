@@ -1,4 +1,5 @@
 ﻿#define ORION_RUNTIME_EXPORTS
+#include <filesystem>
 #include "IGameApp.hpp"
 #include "GameApp.hpp"
 
@@ -16,11 +17,13 @@ extern "C"
         }
     }
 
-    ORION_API int GameAppInitialize(void* app, HINSTANCE hInstance, int nCmdShow)
+    ORION_API int GameAppInitialize(void* app, HINSTANCE hInstance, int nCmdShow,
+        const wchar_t* projectPath)
     {
         if (!app) return -1;
 
-        auto result = static_cast<Runtime::GameApp*>(app)->initialize(hInstance, nCmdShow);
+        auto result = static_cast<Runtime::GameApp*>(app)
+            ->initialize(hInstance, nCmdShow, std::filesystem::path(projectPath ? projectPath : L""));
         if (!result)
         {
             MessageBoxA(nullptr,

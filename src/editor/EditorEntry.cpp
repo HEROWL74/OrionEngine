@@ -5,7 +5,8 @@
 
 namespace Editor
 {
-    int RunEditor(HINSTANCE hInstance, int nCmdShow)
+    int RunEditor(HINSTANCE hInstance, int nCmdShow,
+        const std::filesystem::path& projectPath)
     {
 #ifdef _DEBUG
         AllocConsole();
@@ -16,7 +17,7 @@ namespace Editor
 
         Editor::EditorApp app;
 
-        auto initResult = app.initialize(hInstance, nCmdShow);
+        auto initResult = app.initialize(hInstance, nCmdShow, projectPath);
         if (!initResult)
         {
             std::string errorDetail = initResult.error().what();

@@ -1,5 +1,10 @@
 ﻿cmake_minimum_required(VERSION 3.21)
-project(Orion LANGUAGES CXX RC)
+if(EMSCRIPTEN)
+    project(Orion LANGUAGES CXX)
+else()
+    project(Orion LANGUAGES CXX RC)
+endif()
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -13,7 +18,11 @@ foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
 endforeach()
 
 add_subdirectory(engine)
-add_subdirectory(engine-assets) 
-add_subdirectory(tools/buildworker)
-add_subdirectory(editor)
+
+if(NOT EMSCRIPTEN)
+    add_subdirectory(engine-assets)
+    add_subdirectory(tools/buildworker)
+    add_subdirectory(editor)
+endif()
+
 add_subdirectory(runtime)

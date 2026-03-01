@@ -8,6 +8,7 @@
 #include <dxgi1_6.h>
 #include <chrono>
 #include <mutex>
+#include <filesystem>
 #include "../engine/Core/Window.hpp"
 #include "../engine/Core/ProjectSettings.hpp"
 #include "../engine/Graphics/Device.hpp"
@@ -53,7 +54,8 @@ namespace Editor
         EditorApp(EditorApp&&) = delete;
         EditorApp& operator=(EditorApp&&) = delete;
 
-        [[nodiscard]] Engine::Utils::VoidResult initialize(HINSTANCE hInstance, int nCmdShow);
+        [[nodiscard]] Engine::Utils::VoidResult initialize(HINSTANCE hInstance, int nCmdShow,
+            const std::filesystem::path& projectPath = {});
         [[nodiscard]] int run();
 
     private:

@@ -398,7 +398,6 @@ namespace Editor::Build
         m_currentConfig = DetectBuildConfig(m_cachedEditorRootDir);
         m_cachedSourceRootDir = FindSourceRootDir();
 
-        Engine::Core::ProjectSettings::get().loadForEditor();
         m_cachedProjectName = GetProjectName();
 
         // ---- ログファイルを開く ----
@@ -705,7 +704,8 @@ namespace Editor::Build
     // =========================================================
     bool BuildSystem::copyEngineAssets()
     {
-        fs::path src = getEditorRootDir() / "engine-assets";
+        auto& settings = Engine::Core::ProjectSettings::get();
+        fs::path src = settings.getEngineAssetPath();
         fs::path dst = getDistOutputDir() / "engine-assets";
 
         writeLog("DEBUG", "Engine assets src: " + src.string());

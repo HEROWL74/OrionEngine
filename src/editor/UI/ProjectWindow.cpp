@@ -1,5 +1,6 @@
 ﻿//src/UI/ProjectWindow.cpp
 #include "ProjectWindow.hpp"
+#include "engine/Core/ProjectSettings.hpp"
 #include <format>
 #include <algorithm>
 #include <fstream>
@@ -732,8 +733,9 @@ namespace Editor::UI
 
         if (m_textureManager && m_imguiManager)
         {
-            m_folderIcon = m_textureManager->loadTexture("engine-assets/images/ProjectWindowFolder.png");
-            m_luaIcon = m_textureManager->loadTexture("engine-assets/images/LuaFileImage.png");
+            auto& settings = Engine::Core::ProjectSettings::get();
+            m_folderIcon = m_textureManager->loadTexture(settings.getEngineAssetPath("images/ProjectWindowFolder.png").string());
+            m_luaIcon = m_textureManager->loadTexture(settings.getEngineAssetPath("images/LuaFileImage.png").string());
 
             if (m_folderIcon) {
                 m_folderIconID = m_imguiManager->registerTexture(m_folderIcon.get());

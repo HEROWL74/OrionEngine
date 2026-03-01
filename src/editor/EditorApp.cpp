@@ -7,7 +7,39 @@ namespace Editor
 {
     using namespace Engine;
 
-    Utils::VoidResult EditorApp::initialize(HINSTANCE hInstance, int nCmdShow)
+    // 実行ファイルのディレクトリを返す（絶対パス）
+    static std::filesystem::path GetExeDir()
+    {
+        wchar_t path[MAX_PATH]{};
+        GetModuleFileNameW(nullptr, path, MAX_PATH);
+        return std::filesystem::path(path).parent_path();
+    }
+
+    static std::filesystem::path resolveEngineRoot()
+    {
+        // OrionEditor.exe は build/editor/Debug/ にある
+        // engine-assets は build/editor/ にある → 1階層上
+        // バージョン管理する場合は versions/vX.X.X/ を探す
+        auto exeDir = GetExeDir();  // ProjectSettings.cpp の無名namespaceから移動推奨
+
+        // exe と同階層に engine-assets/ があればそこ
+        if (std::filesystem::exists(exeDir / "engine-assets"))
+            return exeDir;
+
+        // 上の階層を探す（開発ビルド）
+        auto current = exeDir;
+        while (current.has_parent_path() && current != current.parent_path())
+        {
+            if (std::filesystem::exists(current / "engine-assets"))
+                return current;
+            current = current.parent_path();
+        }
+
+        return exeDir;  // フォールバック
+    }
+
+    Utils::VoidResult EditorApp::initialize(HINSTANCE hInstance, int nCmdShow,
+        const std::filesystem::path& projectPath)
     {
         Utils::log_info("Initializing Game Engine...");
 
@@ -16,7 +48,24 @@ namespace Editor
         // project-templates/3d/ProjectSettings.json を参照
         // ============================================================
         auto& settings = Engine::Core::ProjectSettings::get();
-        settings.loadForEditor();
+        auto engineRoot = resolveEngineRoot(); 
+
+        if (!projectPath.empty() && std::filesystem::exists(projectPath / "ProjectSettings.json"))
+        {
+            // --project 引数あり: そのまま使う
+            settings.load(projectPath / "ProjectSettings.json");
+        }
+        else
+        {
+            // 引数なし: 従来の探索ロジック（loadForEditor）
+            settings.loadForEditor();
+        }
+
+        // engineRoot を明示的に注入
+        Engine::Core::EnginePaths paths;
+        paths.engineRoot = engineRoot;
+        paths.projectRoot = settings.getProjectRootDir();
+        settings.setPaths(paths);
 
         // ウィンドウの作成
         // タイトル・サイズ・フルスクリーンは ProjectSettings.json の値を使用
@@ -213,7 +262,7 @@ namespace Editor
             auto loadResult = m_sceneSerializer.loadScene(
                 m_scene, &m_device, m_shaderManager.get(),
                 &m_materialManager, &m_textureManager,
-                defaultScenePath.string()
+                defaultScenePath
             );
 
             if (loadResult)

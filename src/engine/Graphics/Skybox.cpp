@@ -1,4 +1,5 @@
 ﻿#include "Skybox.hpp"
+#include "../Core/ProjectSettings.hpp"
 #include <d3dcompiler.h>
 #include <DirectXTex.h>
 #include <format>
@@ -24,8 +25,11 @@ namespace Engine::Graphics
 		m_device = device;
 		m_shaderManager = shaderManager;
 
+		auto& settings = Engine::Core::ProjectSettings::get();
+
 		// loadCubeTexture
-		auto loadResult = loadCubeTexture(Utils::get_absolute_path( L"engine-assets/skybox/cubemap.dds"));
+		auto cubemapPath = settings.getEngineAssetPath("skybox/cubemap.dds").wstring();
+		auto loadResult = loadCubeTexture(cubemapPath);
 		if (!loadResult) return loadResult;  
 
 		// RootSignature
@@ -314,9 +318,10 @@ namespace Engine::Graphics
 	Utils::VoidResult Skybox::createPipelineState()
 	{
 		auto dev = m_device->getDevice();
+		auto& settings = Engine::Core::ProjectSettings::get();
 
 		ShaderCompileDesc vsDesc;
-		vsDesc.filePath = "engine-assets/shaders/SkyboxVS.cso";
+		vsDesc.filePath = settings.getEngineAssetPath("shaders/SkyboxVS.cso").string();
 		vsDesc.entryPoint = "main";
 		vsDesc.type = ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -329,7 +334,7 @@ namespace Engine::Graphics
 		}
 
 		ShaderCompileDesc psDesc;
-		psDesc.filePath = "engine-assets/shaders/SkyboxPS.cso";
+		psDesc.filePath = settings.getEngineAssetPath("shaders/SkyboxPS.cso").string();
 		psDesc.entryPoint = "main";
 		psDesc.type = ShaderType::Pixel;
 		psDesc.enableDebug = true;

@@ -1,4 +1,5 @@
 ﻿#include "Gizmo.hpp"
+#include "engine/Core/ProjectSettings.hpp"
 #include <directx/d3dx12.h>
 #include "../Utils/RayPicking.hpp"
 
@@ -235,9 +236,10 @@ namespace Editor::UI
 	Engine::Utils::VoidResult Gizmo::createPipelineState()
 	{
 		auto dev = m_device->getDevice();
+		auto& settings = Engine::Core::ProjectSettings::get();
 
 		Engine::Graphics::ShaderCompileDesc vsDesc;
-		vsDesc.filePath = "engine-assets/shaders/GizmoVS.cso";
+		vsDesc.filePath = settings.getEngineAssetPath("shaders/GizmoVS.cso").string();
 		vsDesc.entryPoint = "main";
 		vsDesc.type = Engine::Graphics::ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -249,7 +251,7 @@ namespace Editor::UI
 		}
 
 		Engine::Graphics::ShaderCompileDesc psDesc;
-		psDesc.filePath = "engine-assets/shaders/GizmoPS.cso";
+		psDesc.filePath = settings.getEngineAssetPath("shaders/GizmoPS.cso").string();
 		psDesc.entryPoint = "main";
 		psDesc.type = Engine::Graphics::ShaderType::Pixel;
 		psDesc.enableDebug = true;

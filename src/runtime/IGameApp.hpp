@@ -13,7 +13,8 @@ extern "C"
     ORION_API void* GameAppCreate();
 
     // 初期化。戻り値 0=成功、非0=失敗
-    ORION_API int   GameAppInitialize(void* app, HINSTANCE hInstance, int nCmdShow);
+    ORION_API int GameAppInitialize(void* app, HINSTANCE hInstance, int nCmdShow,
+        const wchar_t* projectPath);
 
     // メインループ実行（ブロッキング）。戻り値=終了コード
     ORION_API int   GameAppRun(void* app);

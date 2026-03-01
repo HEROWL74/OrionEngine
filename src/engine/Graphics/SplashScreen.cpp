@@ -1,4 +1,5 @@
 ﻿// src/Graphics/SplashScreen.cpp
+#include "../Core/ProjectSettings.hpp"
 #include "SplashScreen.hpp"
 #include <format>
 
@@ -25,7 +26,9 @@ namespace Engine::Graphics
         Utils::log_info("Initializing Splash Screen...");
 
         // Load logo texture
-        m_logoTexture = textureManager->loadTexture("engine-assets/images/OrionEngineIcon.png", false, false);
+        auto& settings = Engine::Core::ProjectSettings::get();
+        m_logoTexture = textureManager->loadTexture(
+            settings.getEngineAssetPath("images/OrionEngineIcon.png").string(), false, false);
         if (!m_logoTexture)
         {
             return std::unexpected(Utils::make_error(Utils::ErrorType::ResourceCreation,
@@ -151,9 +154,10 @@ namespace Engine::Graphics
 
     Utils::VoidResult SplashScreen::createPipelineState()
     {
+        auto& settings = Engine::Core::ProjectSettings::get();
         // Load shaders
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/SplashVertex.cso";
+        vsDesc.filePath = settings.getEngineAssetPath("shaders/SplashVertex.cso").string();
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
         vsDesc.enableDebug = true;
@@ -166,7 +170,7 @@ namespace Engine::Graphics
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/SplashPixel.cso";
+        psDesc.filePath = settings.getEngineAssetPath("shaders/SplashPixel.cso").string();
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
         psDesc.enableDebug = true;

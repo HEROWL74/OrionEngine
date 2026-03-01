@@ -20,11 +20,12 @@ namespace Engine::Core
     // =========================================================
     namespace
     {
-        // 実行ファイルのディレクトリを返す（絶対パス）
         static std::filesystem::path GetExeDir()
         {
             wchar_t path[MAX_PATH]{};
+
             GetModuleFileNameW(nullptr, path, MAX_PATH);
+
             return std::filesystem::path(path).parent_path();
         }
 
@@ -107,6 +108,14 @@ namespace Engine::Core
     }
 
     // =========================================================
+    // setPaths
+    // =========================================================
+    void ProjectSettings::setPaths(const EnginePaths& paths)
+    {
+        m_paths = paths;
+    }
+
+    // =========================================================
     // load
     // =========================================================
     bool ProjectSettings::load(const std::filesystem::path& jsonPath)
@@ -137,9 +146,12 @@ namespace Engine::Core
             parseBool(windowBlock, "VSync", m_window.vsync);
         }
 
-        // JSON が置かれているディレクトリを絶対パスで記憶
+
         m_jsonPath = std::filesystem::weakly_canonical(jsonPath);
         m_projectRootDir = m_jsonPath.parent_path();
+
+        // projectRoot は JSON の場所から自動決定
+        m_paths.projectRoot = m_projectRootDir;
 
         Utils::log_info("ProjectSettings loaded from: " + m_jsonPath.string());
         Utils::log_info("  ProjectName  : " + m_projectName);

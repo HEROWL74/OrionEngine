@@ -4,6 +4,7 @@
 
 namespace Editor
 {
-	int RunEditor(HINSTANCE hInstance, int nCmdShow);
+	int RunEditor(HINSTANCE hInstance, int nCmdShow,
+		const std::filesystem::path& projectPath = {});
 }
 

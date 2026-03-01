@@ -1,5 +1,6 @@
 ﻿//src/Graphics/ShaderManager.cpp
 #include "ShaderManager.hpp"
+#include "../Core/ProjectSettings.hpp"
 #include <format>
 #include <fstream>
 #include <filesystem>
@@ -580,8 +581,9 @@ namespace Engine::Graphics
 
     Utils::VoidResult ShaderManager::createDefaultShaders()
     {
+        auto& settings = Engine::Core::ProjectSettings::get();
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/PBR_VS.cso";
+        vsDesc.filePath = settings.getEngineAssetPath("shaders/PBR_VS.cso").string();
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
 
@@ -592,7 +594,7 @@ namespace Engine::Graphics
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/PBR_PS.cso";
+        psDesc.filePath = settings.getEngineAssetPath("shaders/PBR_PS.cso").string();
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
 
