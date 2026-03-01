@@ -15,7 +15,7 @@ namespace Engine::Graphics
 	using json = nlohmann::json;
 
 	// ===============================================
-	// Scene縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ縲√ョ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ繧定｡後≧繧ｯ繝ｩ繧ｹ
+	// SceneSerializer
 	// ===============================================
 	class SceneSerializer
 	{
@@ -23,22 +23,22 @@ namespace Engine::Graphics
 		SceneSerializer() = default;
 		~SceneSerializer() = default;
 
-		// Scene繧谷SON縺ｫ菫晏ｭ・
+		// Scene Save
 		[[nodiscard]] Utils::VoidResult saveScene(
 			const Scene& scene,
-			const std::string& filePath);
+			const std::filesystem::path& filePath);
 
-		// JSON縺九ｉScene繧定ｪｭ縺ｿ霎ｼ縺ｿ
+		// JSON load
 		[[nodiscard]] Utils::VoidResult loadScene(
 			Scene& scene,
 			Device* device,
 			ShaderManager* shaderManager,
 			MaterialManager* materialManager,
 			TextureManager* textureManager,
-			const std::string& filePath);
+			const std::filesystem::path& filePath);
 
 	private:
-		// GameObject繧谷SON蛹・
+		// GameObject Serialize
 		json serializeGameObject(const Core::GameObject* gameObject);
 
 		// JSON縺九ｉGameObject繧貞ｾｩ蜈・
@@ -51,15 +51,15 @@ namespace Engine::Graphics
 			const json& json
 		);
 
-		// UIText繧ｳ繝ｳ繝昴・繝阪Φ繝医・繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ
+		// UIText Serialize & Deserialzie
 		json serializeUITextComponent(const EngineUI::UIText* text);
 		void deserializeUITextComponent(EngineUI::UIText* text, const json& json);
 
-		// Transform諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ
+		// Transform Serialize & Deserialzie
 		json serializeTransform(const Core::Transform* transform);
 		void deserializeTransform(Core::Transform* transform, const json& json);
 
-		// RenderComponent諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ
+		// RenderComponent Serialize
 		json serializeRenderComponent(const RenderComponent* renderComponent);
 
 		[[nodiscard]] Utils::VoidResult deserializeRenderComponent(
@@ -70,17 +70,17 @@ namespace Engine::Graphics
 			TextureManager* textureManager,
 			const json& json);
 
-		// Material諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ
+		// Material Serialize
 		json serializeMaterial(const Material* material);
 
-		// Lua繧ｹ繧ｯ繝ｪ繝励ヨ諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ
+		// Lua Serialize
 		json serializeLuaComponent(const Scripting::LuaScriptComponent* component);
 
-		// BoxCollider諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ & 繝・す繝ｪ繧｢繝ｩ繧､繧ｺ
+		// BoxCollider Serialize & Deserialzie
 		json serializeBoxCollider(const Physics::BoxCollider* collider);
 		void deserializeBoxCollider(Physics::BoxCollider* collider, const json& json);
 
-		// AudioComponent諠・ｱ縺ｮ繧ｷ繝ｪ繧｢繝ｩ繧､繧ｺ & 繝・す繝ｪ繧｢繝ｩ繧､繧ｺ
+		// AudioComponent Serialize & Deserialzie
 		json serializeAudioComponent(const Audio::AudioComponent* audioComponent);
 		void deserializeAudioComponent(Audio::AudioComponent* audioComponent, const json& json);
 	};

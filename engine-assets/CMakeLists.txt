@@ -1,12 +1,8 @@
 # engine-assets/CMakeLists.txt
-
-# ‚Ü‚¸ PATH ã‚É‚ ‚é fxc ‚ð’T‚·imsvc-dev-cmd ‚ª’Ê‚µ‚Ä‚­‚ê‚Ä‚¢‚é‚Í‚¸j
 find_program(FXC_EXECUTABLE fxc)
-
 if(NOT FXC_EXECUTABLE)
     message(FATAL_ERROR "fxc.exe not found. Please ensure Windows SDK is installed.")
 endif()
-
 message(STATUS "Found fxc: ${FXC_EXECUTABLE}")
 
 set(SHADER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
@@ -64,7 +60,6 @@ foreach(HLSL_PATH ${HLSL_FILES})
         COMMENT "fxc: ${SHADER_NAME}.hlsl -> ${SHADER_NAME}.cso [${SHADER_PROFILE}]"
         VERBATIM
     )
-
     list(APPEND CSO_OUTPUTS "${CSO_PATH}")
 endforeach()
 

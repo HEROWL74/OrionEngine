@@ -17,6 +17,12 @@ namespace Engine::Core
 		bool vsync = true;
 	};
 
+	struct EnginePaths
+	{
+		std::filesystem::path engineRoot; // engine-assets/ Parent
+		std::filesystem::path projectRoot; // Assets/ Parent
+	};
+
 	class ProjectSettings
 	{
 	public:
@@ -32,6 +38,9 @@ namespace Engine::Core
 
 		/// ランタイム用: Asets/ProjectSettings.json など実行ファイル隣を探して読む。
 		void loadForRuntime();
+
+		// Accessor
+		void setPaths(const EnginePaths& paths);
 
 		// -----------------------
 	    // アクセサ — JSON フィールド値
@@ -50,10 +59,18 @@ namespace Engine::Core
 		/// JSON ファイルが置かれているディレクトリ
 		const std::filesystem::path& getProjectRootDir() const { return m_projectRootDir; }
 
-		/// AssetRoot を projectRootDir 基準で解決したパス
+		// engine-assets 基準パス（skybox, shader, font など）
+		std::filesystem::path getEngineAssetPath(const std::string& relativePath = "") const
+		{
+			return relativePath.empty()
+				? m_paths.engineRoot / "engine-assets"
+				: m_paths.engineRoot / "engine-assets" / relativePath;
+		}
+
+		// project Assets 基準パス（既存の getAssetRootPath() を置き換え）
 		std::filesystem::path getAssetRootPath() const
 		{
-			return m_projectRootDir / m_assetRoot;
+			return m_paths.projectRoot / m_assetRoot;
 		}
 
 		/// DefaultScene を projectRootDir 基準で解決したパス
@@ -83,6 +100,7 @@ namespace Engine::Core
 		std::string  m_assetRoot = "Assets";
 		std::string  m_projectType = "3D";
 		WindowConfig m_window{};
+		EnginePaths m_paths{};
 	};
 }
 

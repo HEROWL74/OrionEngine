@@ -1,5 +1,6 @@
 ﻿// src/Graphics/CubeRenderer.cpp
 #include "CubeRenderer.hpp"
+#include "../Core/ProjectSettings.hpp"
 #include <format>
 
 namespace Engine::Graphics
@@ -342,8 +343,9 @@ namespace Engine::Graphics
 
     Utils::VoidResult CubeRenderer::createShaders()
     {
+        auto& settings = Engine::Core::ProjectSettings::get();
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/BasicVertex.cso";
+        vsDesc.filePath = settings.getEngineAssetPath("shaders/BasicVertex.cso").string();
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
 
@@ -354,7 +356,7 @@ namespace Engine::Graphics
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/BasicPixel.cso";
+        psDesc.filePath = settings.getEngineAssetPath("shaders/BasicPixel.cso").string();
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
 
@@ -369,8 +371,9 @@ namespace Engine::Graphics
 
     Utils::VoidResult CubeRenderer::createPipelineState()
     {
+        auto& settings = Engine::Core::ProjectSettings::get();
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/BasicVertex.cso";
+        vsDesc.filePath = settings.getEngineAssetPath("shaders/BasicVertex.cso").string();
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
 
@@ -383,7 +386,7 @@ namespace Engine::Graphics
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/BasicPixel.cso";
+        psDesc.filePath = settings.getEngineAssetPath("shaders/BasicPixel.cso").string();
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
         psDesc.enableDebug = true;

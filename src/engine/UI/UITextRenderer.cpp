@@ -1,5 +1,6 @@
 ﻿// src/engine/UI/UITextRenderer.cpp
 #include "UITextRenderer.hpp"
+#include "../Core/ProjectSettings.hpp"
 #include <directx/d3dx12.h>
 #include <fstream>
 #include <format>
@@ -27,7 +28,8 @@ namespace Engine::EngineUI
 
         Utils::log_info("Initializing UITextRenderer...");
 
-        auto fontResult = loadFont("engine-assets/fonts/arial.ttf");
+        auto& settings = Engine::Core::ProjectSettings::get();
+        auto fontResult = loadFont(settings.getEngineAssetPath("fonts/arial.ttf").string());
         if (!fontResult) return fontResult;
 
         auto heapResult = createDescriptorHeap();
@@ -466,8 +468,10 @@ namespace Engine::EngineUI
     {
         auto dev = m_device->getDevice();
 
+        auto& settings = Engine::Core::ProjectSettings::get();
+
         Graphics::ShaderCompileDesc vsDesc;
-        vsDesc.filePath = "engine-assets/shaders/UITextVS.cso";
+        vsDesc.filePath = settings.getEngineAssetPath("shaders/UITextVS.cso").string();
         vsDesc.entryPoint = "main";
         vsDesc.type = Graphics::ShaderType::Vertex;
 
@@ -479,7 +483,7 @@ namespace Engine::EngineUI
         }
 
         Graphics::ShaderCompileDesc psDesc;
-        psDesc.filePath = "engine-assets/shaders/UITextPS.cso";
+        psDesc.filePath = settings.getEngineAssetPath("shaders/UITextPS.cso").string();
         psDesc.entryPoint = "main";
         psDesc.type = Graphics::ShaderType::Pixel;
 

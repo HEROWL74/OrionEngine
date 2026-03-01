@@ -15,7 +15,7 @@
 // IGameApp.hpp と同じシグネチャ（ヘッダを include しないため手書き）
 // =========================================================
 using FnGameAppCreate = void* (*)();
-using FnGameAppInitialize = int   (*)(void*, HINSTANCE, int);
+using FnGameAppInitialize = int (*)(void*, HINSTANCE, int, const wchar_t*);
 using FnGameAppRun = int   (*)(void*);
 using FnGameAppDestroy = void  (*)(void*);
 
@@ -33,6 +33,18 @@ int WINAPI WinMain(
     _In_     LPSTR,
     _In_     int nCmdShow)
 {
+
+    // --project 解析
+    std::filesystem::path projectPath;
+    int argc;
+    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    for (int i = 1; i < argc; ++i)
+    {
+        if (std::wstring(argv[i]) == L"--project" && i + 1 < argc)
+            projectPath = argv[++i];
+    }
+    LocalFree(argv);
+
     // ---- OrionRuntime.dll をロード ----
     const std::wstring dllPath = GetRuntimeDllPath();
     HMODULE hRuntime = LoadLibraryW(dllPath.c_str());
@@ -78,7 +90,7 @@ int WINAPI WinMain(
 
     int exitCode = 0;
 
-    if (fnInitialize(app, hInstance, nCmdShow) == 0)
+    if (fnInitialize(app, hInstance, nCmdShow, projectPath.wstring().c_str()) == 0)
     {
         // 初期化成功 -> メインループ（ブロッキング）
         exitCode = fnRun(app);

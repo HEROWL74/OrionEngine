@@ -8,7 +8,39 @@
 
 namespace Runtime
 {
-    Engine::Utils::VoidResult GameApp::initialize(HINSTANCE hInstance, int nCmdShow)
+    static std::filesystem::path GetExeDir()
+    {
+        wchar_t path[MAX_PATH]{};
+
+        GetModuleFileNameW(nullptr, path, MAX_PATH);
+
+        return std::filesystem::path(path).parent_path();
+    }
+
+    static std::filesystem::path resolveEngineRoot()
+    {
+        auto exeDir = GetExeDir();
+
+        // exe と同階層に engine-assets/ があればそこ
+        if (std::filesystem::exists(exeDir / "engine-assets"))
+            return exeDir;
+
+        // 上の階層を探す（開発ビルド）
+        auto current = exeDir;
+
+        while (current.has_parent_path() && current != current.parent_path())
+        {
+            if (std::filesystem::exists(current / "engine-assets"))
+                return current;
+
+            current = current.parent_path();
+        }
+
+        return exeDir;  // フォールバック
+    }
+
+    Engine::Utils::VoidResult GameApp::initialize(HINSTANCE hInstance, int nCmdShow,
+        const std::filesystem::path& projectPath)
     {
         Engine::Utils::log_info("Initializing Runtime Game...");
 
@@ -16,7 +48,23 @@ namespace Runtime
         // ProjectSettings を読み込む（assets/ 直下を優先して自動探索）
         // ============================================================
         auto& settings = Engine::Core::ProjectSettings::get();
-        settings.loadForRuntime();
+
+        if (!projectPath.empty())
+        {
+            // --project 引数あり
+            settings.load(projectPath / "ProjectSettings.json");
+        }
+        else
+        {
+            // 従来の自動探索（配布パッケージ向け）
+            settings.loadForRuntime();
+        }
+
+        // engineRoot を解決して注入
+        Engine::Core::EnginePaths paths;
+        paths.projectRoot = settings.getProjectRootDir();
+        paths.engineRoot = resolveEngineRoot();  // exe 基準で engine-assets/ を探す
+        settings.setPaths(paths);
 
         const auto& wincfg = settings.getWindowConfig();
 
@@ -281,15 +329,13 @@ namespace Runtime
         Engine::Utils::log_info("Loading scene...");
 
         auto& settings = Engine::Core::ProjectSettings::get();
-        std::string scenePath = settings.getDefaultScene();
+        std::filesystem::path scenePath = settings.getDefaultScenePath();
 
         if (!std::filesystem::exists(scenePath))
         {
-            std::string fallback = "Assets/scenes/default.scene";
+            auto fallback = settings.getAssetRootPath() / "scenes/default.scene";
             if (std::filesystem::exists(fallback))
             {
-                Engine::Utils::log_warning("Scene not found at '" + scenePath
-                    + "', falling back to '" + fallback + "'");
                 scenePath = fallback;
             }
         }
@@ -306,7 +352,7 @@ namespace Runtime
         if (result)
         {
             Engine::Utils::log_info(std::format("Scene loaded: {} ({} objects)",
-                scenePath, m_scene.getGameObjects().size()));
+                scenePath.string(), m_scene.getGameObjects().size()));
         }
         else
         {

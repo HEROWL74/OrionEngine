@@ -1,3 +1,4 @@
+# tools/buildworker/CMakeLists.txt
 add_library(OrionBuildSystem
     ${CMAKE_SOURCE_DIR}/src/buildworker/BuildSystem.cpp
     ${CMAKE_SOURCE_DIR}/src/buildworker/BuildSystem.hpp

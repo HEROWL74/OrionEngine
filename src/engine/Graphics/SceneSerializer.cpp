@@ -6,7 +6,7 @@ namespace Engine::Graphics
 {
     Utils::VoidResult SceneSerializer::saveScene(
         const Scene& scene,
-        const std::string& filepath)
+        const std::filesystem::path& filepath)
     {
         try
         {
@@ -31,7 +31,7 @@ namespace Engine::Graphics
             {
                 return std::unexpected(Utils::make_error(
                     Utils::ErrorType::FileI0,
-                    "Failed to open file for writing: " + filepath
+                    "Failed to open file for writing: " + filepath.string()
                 ));
             }
 
@@ -39,7 +39,7 @@ namespace Engine::Graphics
             file.close();
 
             Utils::log_info(std::format("Scene saved to: {} ({} objects)",
-                filepath, sceneJson["gameObjects"].size()));
+                filepath.string(), sceneJson["gameObjects"].size()));
             return {};
         }
         catch (const std::exception& e)
@@ -57,16 +57,16 @@ namespace Engine::Graphics
         ShaderManager* shaderManager,
         MaterialManager* materialManager,
         TextureManager* textureManager,
-        const std::string& filepath)
+        const std::filesystem::path& filePath)
     {
         try
         {
-            std::ifstream file(filepath);
+            std::ifstream file(filePath);
             if (!file.is_open())
             {
                 return std::unexpected(Utils::make_error(
                     Utils::ErrorType::FileI0,
-                    "Failed to open file for reading: " + filepath
+                    "Failed to open file for reading: " + filePath.string()
                 ));
             }
 
@@ -106,7 +106,7 @@ namespace Engine::Graphics
             }
 
             Utils::log_info(std::format("Scene loaded from: {} ({} objects)",
-                filepath,
+                filePath.string(),
                 sceneJson.value("gameObjects", nlohmann::json::array()).size()));
             return {};
         }

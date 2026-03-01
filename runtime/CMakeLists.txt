@@ -3,7 +3,6 @@
 # -------------------------------------------------------
 # RUNTIME_PROJECT_NAME : ゲームロジック DLL の名前
 # デフォルトは "OrionRuntime"
-# ※ "OrionGame" は固定ランチャー EXE の名前なので使用禁止
 # -------------------------------------------------------
 if(NOT DEFINED RUNTIME_PROJECT_NAME)
     set(RUNTIME_PROJECT_NAME "OrionRuntime")
@@ -12,7 +11,7 @@ endif()
 message(STATUS "Runtime DLL Name: ${RUNTIME_PROJECT_NAME}")
 
 # -------------------------------------------------------
-# ソース分割
+# ソース定義
 # -------------------------------------------------------
 
 # ランチャー EXE 用: GameMain.cpp のみ
@@ -20,7 +19,7 @@ set(LAUNCHER_SOURCES
     ${CMAKE_SOURCE_DIR}/src/runtime/GameMain.cpp
 )
 
-# DLL 用: GameMain.cpp だけ除外した残り全部
+# DLL 用: GameMain.cpp 以外の全ファイル
 file(GLOB_RECURSE RUNTIME_DLL_SOURCES
     ${CMAKE_SOURCE_DIR}/src/runtime/*.cpp
     ${CMAKE_SOURCE_DIR}/src/runtime/*.hpp
@@ -28,8 +27,7 @@ file(GLOB_RECURSE RUNTIME_DLL_SOURCES
 list(FILTER RUNTIME_DLL_SOURCES EXCLUDE REGEX ".*GameMain\\.cpp$")
 
 # -------------------------------------------------------
-# OrionGame.exe (固定ランチャー)
-# Windows SDK のみにリンク。一度ビルドしたら変わらない。
+# OrionGame.exe（固定ランチャー）
 # -------------------------------------------------------
 add_executable(OrionGame WIN32
     ${LAUNCHER_SOURCES}
@@ -44,14 +42,19 @@ set_target_properties(OrionGame PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL     "${CMAKE_BINARY_DIR}/runtime"
 )
 
-if (MSVC)
+# 開発中: VS デバッガから F5 で起動したとき --project を自動付与
+set_target_properties(OrionGame PROPERTIES
+    VS_DEBUGGER_COMMAND_ARGUMENTS
+    "--project \"${CMAKE_SOURCE_DIR}/project\""
+)
+
+if(MSVC)
     target_compile_options(OrionGame PRIVATE /W4 /EHsc)
     target_compile_definitions(OrionGame PRIVATE UNICODE _UNICODE)
 endif()
 
 # -------------------------------------------------------
-# ${RUNTIME_PROJECT_NAME}.dll (ゲームロジック DLL)
-# エディタが cmake --build でビルドして player/ へキャッシュする。
+# ${RUNTIME_PROJECT_NAME}.dll（ゲームロジック DLL）
 # -------------------------------------------------------
 add_library(${RUNTIME_PROJECT_NAME} SHARED
     ${RUNTIME_DLL_SOURCES}
@@ -78,6 +81,6 @@ set_target_properties(${RUNTIME_PROJECT_NAME} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY_RELEASE        "${CMAKE_BINARY_DIR}/lib"
 )
 
-if (MSVC)
+if(MSVC)
     target_compile_options(${RUNTIME_PROJECT_NAME} PRIVATE /W4 /EHsc)
 endif()

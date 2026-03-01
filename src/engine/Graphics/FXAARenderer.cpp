@@ -1,4 +1,5 @@
 ﻿#include "FXAARenderer.hpp"
+#include "../Core/ProjectSettings.hpp"
 #include <directx/d3dx12.h>
 #include <format>
 
@@ -147,9 +148,10 @@ namespace Engine::Graphics
 	Utils::VoidResult FXAARenderer::createPipelineState(ShaderManager* shaderManager)
 	{
 		auto dev = m_device->getDevice();
+		auto& settings = Engine::Core::ProjectSettings::get();
 
 		ShaderCompileDesc vsDesc;
-		vsDesc.filePath = "engine-assets/shaders/FXAA_VS.cso";
+		vsDesc.filePath = settings.getEngineAssetPath("shaders/FXAA_VS.cso").string();
 		vsDesc.entryPoint = "main";
 		vsDesc.type = ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -160,7 +162,7 @@ namespace Engine::Graphics
 		));
 
 		ShaderCompileDesc psDesc;
-		psDesc.filePath = "engine-assets/shaders/FXAA_PS.cso";
+		psDesc.filePath = settings.getEngineAssetPath("shaders/FXAA_PS.cso").string();
 		psDesc.entryPoint = "main";
 		psDesc.type = ShaderType::Pixel;
 		psDesc.enableDebug = true;
