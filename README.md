@@ -1,6 +1,6 @@
 # OrionEngine ==> Game Engine Prototype
 
-![Build and Release](https://github.com/HEROWL74/DX12GameEngine/actions/workflows/release.yml/badge.svg)
+![Build and Release](https://github.com/HEROWL74/OrionEngine/actions/workflows/release.yml/badge.svg)
 
 このプロジェクトは、高校生が独学で開発している**GameEngine**のプロトタイプです。  
 C++ と DirectX12 を使って、エンジン内部の仕組みを一から学びながら構築しています。
