@@ -303,7 +303,8 @@ namespace Editor::Build
 
     fs::path BuildSystem::getDistOutputDir() const
     {
-        return m_cachedEditorRootDir / "dist" / m_cachedProjectName;
+        auto projectRoot = GetProjectRoot();
+        return projectRoot / "dist" / m_cachedProjectName;
     }
 
     // =========================================================
@@ -621,9 +622,8 @@ namespace Editor::Build
     // =========================================================
     bool BuildSystem::copyAssets()
     {
-        auto  projectRoot = GetProjectRoot();
+        auto projectRoot = GetProjectRoot();
 
-        // Assets に統一
         fs::path src = projectRoot / "Assets";
         fs::path dst = getDistOutputDir() / "Assets";
 
@@ -636,6 +636,23 @@ namespace Editor::Build
                 std::format("Warning: Asset folder not found: {}", src.string()), 0.65f);
             return true;
         }
+
+        // コピー先のAssetsを一旦削除して完全同期
+        if (fs::exists(dst))
+        {
+            try
+            {
+                fs::remove_all(dst);
+                writeLog("DEBUG", "Removed stale assets: " + dst.string());
+            }
+            catch (const std::exception& e)
+            {
+                updateProgress(BuildStatus::Failed,
+                    std::format("Failed to clean asset output dir: {}", e.what()), 0.65f);
+                return false;
+            }
+        }
+
         return copyDirectory(src, dst);
     }
 

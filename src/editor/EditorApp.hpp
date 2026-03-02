@@ -92,7 +92,7 @@ namespace Editor
 
         // Serializer
         Engine::Graphics::SceneSerializer m_sceneSerializer;
-        std::string m_currentScenePath = "Assets/scenes/default.scene";
+        std::string m_currentScenePath = "";
 
         // スワップチェーン関係
         ComPtr<ID3D12CommandQueue>   m_commandQueue;

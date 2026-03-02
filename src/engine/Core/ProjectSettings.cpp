@@ -235,7 +235,13 @@ namespace Engine::Core
         {
             if (std::filesystem::exists(p))
             {
-                if (load(p)) return;
+                if (load(p))
+                {
+                    // Assets/ProjectSettings.json から読んだ場合、
+                    // projectRootDir をexeDir（Assetsの親）に上書き
+                    m_projectRootDir = exeDir;
+                    return;
+                }
             }
         }
 

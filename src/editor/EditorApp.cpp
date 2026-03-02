@@ -245,14 +245,36 @@ namespace Editor
         // ============================================================
         auto& settings = Engine::Core::ProjectSettings::get();
         std::filesystem::path defaultScenePath = settings.getDefaultScenePath();
+        defaultScenePath = std::filesystem::weakly_canonical(defaultScenePath);
 
-        // フォールバック: project-templates 側に無ければ assets/ を試す
-        if (!std::filesystem::exists(defaultScenePath))
+        if (std::filesystem::exists(defaultScenePath))
         {
-            std::filesystem::path fallback = "Assets/scenes/default.scene";
-            Utils::log_warning(std::format("Default scene not found at '{}', trying '{}'",
-                defaultScenePath.string(), fallback.string()));
-            defaultScenePath = fallback;
+            auto loadResult = m_sceneSerializer.loadScene(
+                m_scene,
+                &m_device,
+                m_shaderManager.get(),
+                &m_materialManager,
+                &m_textureManager,
+                defaultScenePath
+            );
+            if (loadResult)
+            {
+                m_currentScenePath = defaultScenePath.string();
+                Utils::log_info("Default scene loaded: " + m_currentScenePath);
+            }
+            else
+            {
+                // ロード失敗時も正しい絶対パスをセット
+                m_currentScenePath = defaultScenePath.string();
+                Utils::log_warning("Failed to load default scene, creating initial scene");
+                createInitialScene();
+            }
+        }
+        else
+        {
+            // ファイルが存在しない場合も絶対パスをセット
+            m_currentScenePath = defaultScenePath.string();
+            createInitialScene();
         }
 
         Utils::log_info(std::format("Checking for default scene: {}", defaultScenePath.string()));
@@ -1471,16 +1493,30 @@ namespace Editor
 
     void EditorApp::saveScene()
     {
-        Utils::log_info(std::format("Saving scene to: {}", m_currentScenePath));
+        // m_currentScenePathが空ならデフォルトパスを設定
+        if (m_currentScenePath.empty())
+        {
+            auto& settings = Engine::Core::ProjectSettings::get();
+            m_currentScenePath = (settings.getAssetRootPath() / "scenes/default.scene").string();
+            std::replace(m_currentScenePath.begin(), m_currentScenePath.end(), '\\', '/');
+        }
 
         std::filesystem::path scenePath(m_currentScenePath);
+
+        // 念のため絶対パス確認
+        Utils::log_info(std::format("Saving scene to: {}", scenePath.string()));
+        Utils::log_info(std::format("  is_absolute: {}", scenePath.is_absolute()));
+        Utils::log_info(std::format("  has_extension: {}", scenePath.has_extension()));
+
+        m_scene.processPendingDestroy();
+
         auto parentPath = scenePath.parent_path();
         if (!parentPath.empty() && !std::filesystem::exists(parentPath))
         {
             std::filesystem::create_directories(parentPath);
         }
 
-        auto result = m_sceneSerializer.saveScene(m_scene, m_currentScenePath);
+        auto result = m_sceneSerializer.saveScene(m_scene, scenePath);
         if (result)
             Utils::log_info("Scene saved successfully");
         else
