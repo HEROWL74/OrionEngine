@@ -35,11 +35,6 @@ namespace Engine::Graphics
 		//レンダリング
 		void render(const Utils::RenderContext& renderContext);
 
-		//互換性のため、こっちのrenderも残す
-		[[deprecated("Use render(const RenderContext&) instead")]]
-		void render(ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex);
-
-
 		//レンダリングタイプ
 		RenderableType getRenderableType() const { return m_renderableType; }
 		void setRenderableType(RenderableType type);

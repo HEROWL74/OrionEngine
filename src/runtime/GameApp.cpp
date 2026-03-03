@@ -592,15 +592,15 @@ namespace Runtime
         }
         else
         {
+            Engine::Utils::RenderContext context;
+            context.commandList = m_commandList.Get();
+            context.frameIndex = m_frameIndex;
+
             m_skybox.render(m_commandList.Get(), m_camera);
-            m_scene.render(m_commandList.Get(), m_camera, m_frameIndex);
+            m_scene.render(context);
 
             if (m_uiTextRenderer)
             {
-                Engine::Utils::RenderContext context;
-                context.commandList = m_commandList.Get();
-                context.frameIndex = m_frameIndex;
-
                 for (auto* text : m_scene.getUITexts())
                 {
                     if (text && text->isVisible())

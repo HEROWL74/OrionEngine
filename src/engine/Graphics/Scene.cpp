@@ -149,7 +149,7 @@ namespace Engine::Graphics
 		}
 	}
 
-	void Scene::render(ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex)
+	void Scene::render(const Utils::RenderContext& context)
 	{
 		if (!m_initialized)
 		{
@@ -163,7 +163,7 @@ namespace Engine::Graphics
 				auto* renderComponent = gameObject->getComponent<RenderComponent>();
 				if (renderComponent && renderComponent->isEnabled() && renderComponent->isVisible())
 				{
-					renderComponent->render(commandList, camera, frameIndex);
+					renderComponent->render(context);
 				}
 			}
 		}

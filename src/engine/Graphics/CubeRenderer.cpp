@@ -33,12 +33,6 @@ namespace Engine::Graphics
             return rootSigResult;
         }
 
-        auto shaderResult = createShaders();
-        if (!shaderResult) {
-            Utils::log_error(shaderResult.error());
-            return shaderResult;
-        }
-
         auto pipelineResult = createPipelineState();
         if (!pipelineResult) {
             Utils::log_error(pipelineResult.error());
@@ -59,68 +53,6 @@ namespace Engine::Graphics
 
         Utils::log_info("Cube Renderer initialized successfully!");
         return {};
-    }
-
-    void CubeRenderer::render(ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex)
-    {
-        if (!m_material && m_materialManager)
-        {
-            m_material = m_materialManager->getDefaultMaterial();
-        }
-
-        CameraConstants cameraConstants{};
-        cameraConstants.viewMatrix = camera.getViewMatrix();
-        cameraConstants.projectionMatrix = camera.getProjectionMatrix();
-        cameraConstants.viewProjectionMatrix = camera.getViewProjectionMatrix();
-        cameraConstants.cameraPosition = camera.getPosition();
-
-        ObjectConstants objectConstants{};
-        objectConstants.worldMatrix = m_worldMatrix;
-        objectConstants.worldViewProjectionMatrix = camera.getViewProjectionMatrix() * m_worldMatrix;
-        objectConstants.objectPosition = m_position;
-
-        m_constantBufferManager.updateCameraConstants(frameIndex, cameraConstants);
-        m_constantBufferManager.updateObjectConstants(frameIndex, objectConstants);
-
-        commandList->SetGraphicsRootSignature(m_rootSignature.Get());
-        commandList->SetPipelineState(m_pipelineState.Get());
-
-        commandList->SetGraphicsRootConstantBufferView(0, m_constantBufferManager.getCameraConstantsGPUAddress(frameIndex));
-        commandList->SetGraphicsRootConstantBufferView(1, m_constantBufferManager.getObjectConstantsGPUAddress(frameIndex));
-
-        if (m_material && m_material->getConstantBuffer())
-        {
-            commandList->SetGraphicsRootConstantBufferView(2, m_material->getConstantBuffer()->GetGPUVirtualAddress());
-        }
-
-        //SRVヒープをセット
-        ID3D12DescriptorHeap* heaps[] = { m_device->getSrvHeap() };
-        commandList->SetDescriptorHeaps(1, heaps);
-
-        //Albedoテクスチャをバインド (RootParam=3)
-        if (m_material)
-        {
-            auto tex = m_material->getTexture(TextureType::Albedo);
-            if (tex)
-            {
-                commandList->SetGraphicsRootDescriptorTable(3, tex->getSRVHandle());
-            }
-        }
-
-        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-        commandList->IASetIndexBuffer(&m_indexBufferView);
-
-        commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
-
-        static int renderCounter = 0;
-        if (renderCounter++ % 120 == 0) {
-            auto pos = camera.getPosition();
-            Utils::log_info(std::format("CubeRenderer using camera at: ({:.2f}, {:.2f}, {:.2f})",
-                pos.x, pos.y, pos.z));
-        }
-
-        Utils::log_info("CubeRenderer render called!");
     }
 
     void CubeRenderer::render(const Utils::RenderContext& context)
@@ -192,73 +124,6 @@ namespace Engine::Graphics
         context.commandList->IASetIndexBuffer(&m_indexBufferView);
 
         context.commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
-    }
-
-    Utils::VoidResult CubeRenderer::createRootSignature()
-    {
-        // 3Root Parameters camera, Object, Material・・
-        D3D12_ROOT_PARAMETER rootParameters[3];
-
-        // \ (b0)
-        rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[0].Descriptor.ShaderRegister = 0;
-        rootParameters[0].Descriptor.RegisterSpace = 0;
-        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-        // \ (b1)
-        rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[1].Descriptor.ShaderRegister = 1;
-        rootParameters[1].Descriptor.RegisterSpace = 0;
-        rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-        //  (b2)
-        rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[2].Descriptor.ShaderRegister = 2;
-        rootParameters[2].Descriptor.RegisterSpace = 0;
-        rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-        // Static Sampler
-        D3D12_STATIC_SAMPLER_DESC samplerDesc{};
-        samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        samplerDesc.MipLODBias = 0.0f;
-        samplerDesc.MaxAnisotropy = 1;
-        samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-        samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
-        samplerDesc.MinLOD = 0.0f;
-        samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-        samplerDesc.ShaderRegister = 0; // s0
-        samplerDesc.RegisterSpace = 0;
-        samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-        D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
-        rootSignatureDesc.NumParameters = _countof(rootParameters);
-        rootSignatureDesc.pParameters = rootParameters;
-        rootSignatureDesc.NumStaticSamplers = 1;
-        rootSignatureDesc.pStaticSamplers = &samplerDesc;
-        rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-        ComPtr<ID3DBlob> signature;
-        ComPtr<ID3DBlob> error;
-
-        HRESULT hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
-        if (FAILED(hr))
-        {
-            std::string errorMsg = "Failed to serialize root signature";
-            if (error)
-            {
-                errorMsg += std::format(": {}", static_cast<char*>(error->GetBufferPointer()));
-            }
-            return std::unexpected(Utils::make_error(Utils::ErrorType::ResourceCreation, errorMsg, hr));
-        }
-
-        CHECK_HR(m_device->getDevice()->CreateRootSignature(0, signature->GetBufferPointer(),
-            signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)),
-            Utils::ErrorType::ResourceCreation, "Failed to create root signature");
-
-        return {};
     }
 
     Utils::VoidResult CubeRenderer::createPBRRootSignature()
@@ -337,34 +202,6 @@ namespace Engine::Graphics
         CHECK_HR(m_device->getDevice()->CreateRootSignature(0, signature->GetBufferPointer(),
             signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)),
             Utils::ErrorType::ResourceCreation, "Failed to create PBR root signature");
-
-        return {};
-    }
-
-    Utils::VoidResult CubeRenderer::createShaders()
-    {
-        auto& settings = Engine::Core::ProjectSettings::get();
-        ShaderCompileDesc vsDesc;
-        vsDesc.filePath = settings.getEngineAssetPath("shaders/BasicVertex.cso").string();
-        vsDesc.entryPoint = "main";
-        vsDesc.type = ShaderType::Vertex;
-
-        auto vertexShader = m_shaderManager->loadShader(vsDesc);
-        if (!vertexShader)
-        {
-            return std::unexpected(Utils::make_error(Utils::ErrorType::ShaderCompilation, "Failed to load vertex shader"));
-        }
-
-        ShaderCompileDesc psDesc;
-        psDesc.filePath = settings.getEngineAssetPath("shaders/BasicPixel.cso").string();
-        psDesc.entryPoint = "main";
-        psDesc.type = ShaderType::Pixel;
-
-        auto pixelShader = m_shaderManager->loadShader(psDesc);
-        if (!pixelShader)
-        {
-            return std::unexpected(Utils::make_error(Utils::ErrorType::ShaderCompilation, "Failed to load pixel shader"));
-        }
 
         return {};
     }

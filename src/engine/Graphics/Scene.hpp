@@ -8,6 +8,7 @@
 #include "RenderComponent.hpp"
 #include "ShaderManager.hpp"
 #include "../UI/UIComponent.hpp"
+#include "../Utils/RenderContext.hpp"
 
 namespace Engine::Graphics
 {
@@ -44,7 +45,7 @@ namespace Engine::Graphics
 
 		// deprecated function
 		[[deprecated("Use GameView instead")]]
-		void render(ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex);
+		void render(const Utils::RenderContext& context);
 
 		// initialize
 		[[nodiscard]] Utils::VoidResult initialize(Device* device);

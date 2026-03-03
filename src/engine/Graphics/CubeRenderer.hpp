@@ -39,9 +39,6 @@ namespace Engine::Graphics
         // 立方体を描画
         void render(const Utils::RenderContext& context);
 
-        [[deprecated("Use render(const RenderContext&) instead")]]
-        void render(ID3D12GraphicsCommandList* commandList, const Camera& camera, UINT frameIndex);
-
         // 3D空間での位置・回転・スケールを設定
         void setPosition(const Math::Vector3& position) { m_position = position; updateWorldMatrix(); }
         void setRotation(const Math::Vector3& rotation) { m_rotation = rotation; updateWorldMatrix(); }
@@ -95,9 +92,7 @@ namespace Engine::Graphics
         std::array<uint16_t, 36> m_cubeIndices;
 
         // 初期化用メソッド
-        [[nodiscard]] Utils::VoidResult createRootSignature();
         [[nodiscard]] Utils::VoidResult createPBRRootSignature();
-        [[nodiscard]] Utils::VoidResult createShaders();
         [[nodiscard]] Utils::VoidResult createPipelineState();
         [[nodiscard]] Utils::VoidResult createVertexBuffer();
         [[nodiscard]] Utils::VoidResult createIndexBuffer();
