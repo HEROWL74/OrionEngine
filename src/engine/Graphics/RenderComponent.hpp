@@ -4,7 +4,6 @@
 #include "../Core/GameObject.hpp"
 #include "Device.hpp"
 #include "Camera.hpp"
-#include "TriangleRenderer.hpp"
 #include "CubeRenderer.hpp"
 #include "Material.hpp"
 #include "ShaderManager.hpp"
@@ -15,7 +14,6 @@ namespace Engine::Graphics
 	//レンダリング可能なオブジェクトの種類
 	enum class RenderableType
 	{
-		Triangle,
 		Cube,
 		//SphereやPlaneも追加予定
 	};
@@ -64,7 +62,6 @@ namespace Engine::Graphics
 		Graphics::MaterialManager* m_materialManager = nullptr;
 
 		//レンダラー
-		std::unique_ptr<TriangleRenderer> m_triangleRenderer;
 		std::unique_ptr<CubeRenderer> m_cubeRenderer;
 		std::shared_ptr<Graphics::Material> m_material;
 
@@ -72,4 +69,3 @@ namespace Engine::Graphics
 		[[nodiscard]] Utils::VoidResult initializeRenderer();
 	};
 }
-

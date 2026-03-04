@@ -21,32 +21,23 @@ namespace Engine::Graphics
 		}
 
 		// レンダラーを明示的に破棄
-		m_triangleRenderer.reset();
 		m_cubeRenderer.reset();
 		m_material.reset();
 	}
 
 	Utils::VoidResult RenderComponent::initialize(Device* device, ShaderManager* shaderManager)
 	{
-		if (m_initialized)
-		{
-			return {};
-		}
+		if (m_initialized) return {};
 
 		CHECK_CONDITION(device != nullptr, Utils::ErrorType::Unknown, "Device is null");
 		CHECK_CONDITION(device->isValid(), Utils::ErrorType::Unknown, "Device is not valid");
-		CHECK_CONDITION(shaderManager != nullptr, Utils::ErrorType::Unknown, "ShaderManager is null in RenderComponent::initialize");
+		CHECK_CONDITION(shaderManager != nullptr, Utils::ErrorType::Unknown,
+			"ShaderManager is null in RenderComponent::initialize");
 
 		m_device = device;
 		m_shaderManager = shaderManager;
 
 		Utils::log_info("RenderComponent::initialize - Device and ShaderManager assigned successfully");
-
-		// ShaderManagerのエラー返し
-		if (!m_shaderManager) {
-			Utils::log_warning("ShaderManager became null after assignment");
-			return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown, "ShaderManager is null after assignment"));
-		}
 
 		auto result = initializeRenderer();
 		if (!result)
@@ -81,17 +72,6 @@ namespace Engine::Graphics
 		// レンダラーに RenderContext を渡す
 		switch (m_renderableType)
 		{
-		case RenderableType::Triangle:
-			if (m_triangleRenderer && m_triangleRenderer->isValid())
-			{
-				m_triangleRenderer->setPosition(transform->getPosition());
-				m_triangleRenderer->setRotation(transform->getRotation());
-				m_triangleRenderer->setScale(transform->getScale());
-				m_triangleRenderer->setMaterial(m_material);
-				//m_triangleRenderer->render(context);
-			}
-			break;
-
 		case RenderableType::Cube:
 			if (m_cubeRenderer && m_cubeRenderer->isValid())
 			{
@@ -126,8 +106,6 @@ namespace Engine::Graphics
 
 		switch (m_renderableType)
 		{
-		case RenderableType::Triangle:
-			return m_triangleRenderer && m_triangleRenderer->isValid();
 		case RenderableType::Cube:
 			return m_cubeRenderer && m_cubeRenderer->isValid();
 		default:
@@ -137,7 +115,6 @@ namespace Engine::Graphics
 
 	Utils::VoidResult RenderComponent::initializeRenderer()
 	{
-		m_triangleRenderer.reset();
 		m_cubeRenderer.reset();
 
 		// ShaderManagerエラー返し
@@ -148,24 +125,10 @@ namespace Engine::Graphics
 
 		switch (m_renderableType)
 		{
-		case RenderableType::Triangle:
-		{
-			m_triangleRenderer.reset(new TriangleRenderer());
-			auto result = m_triangleRenderer->initialize(m_device, m_shaderManager);
-			if (!result) {
-				m_triangleRenderer.reset();
-				return result;
-			}
-			if (m_materialManager) {
-				m_triangleRenderer->setMaterialManager(m_materialManager);
-			}
-		}
-		break;
-
 		case RenderableType::Cube:
 		{
 			m_cubeRenderer.reset(new CubeRenderer());
-			auto result = m_cubeRenderer->initialize(m_device, m_shaderManager);
+			auto result = m_cubeRenderer->initialize(m_device);
 			if (!result) {
 				m_cubeRenderer.reset();
 				return result;
@@ -183,4 +146,3 @@ namespace Engine::Graphics
 		return {};
 	}
 }
-

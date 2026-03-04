@@ -188,6 +188,11 @@ namespace Editor
         }
         Utils::log_info("ShaderManager initialization completed successfully");
 
+        auto psoCacheResult = m_psoCache.initialize(&m_device, m_shaderManager.get());
+        if (!psoCacheResult) return psoCacheResult;
+
+        Utils::log_info("PSOCache initialization completed successfully");
+
         Utils::log_info("Initializing Skybox...");
         auto skyboxResult = m_skybox.initialize(&m_device, m_shaderManager.get());
         if (!skyboxResult) { Utils::log_error(skyboxResult.error()); return skyboxResult; }
@@ -213,12 +218,14 @@ namespace Editor
         const auto [clientWidth, clientHeight] = m_window.getClientSize();
 
         Utils::log_info("Initializing EditorView...");
-        auto editorViewResult = m_editorView.initialize(&m_device, clientWidth, clientHeight, m_shaderManager.get());
+        auto editorViewResult = m_editorView.initialize(&m_device, clientWidth, clientHeight, m_shaderManager.get(), &m_psoCache);
         if (!editorViewResult) { Utils::log_error(editorViewResult.error()); return editorViewResult; }
+        m_editorView.setPSOCache(&m_psoCache);
 
         Utils::log_info("Initializing GameView...");
-        auto gameViewResult = m_gameView.initialize(&m_device, clientWidth, clientHeight);
+        auto gameViewResult = m_gameView.initialize(&m_device, clientWidth, clientHeight, &m_psoCache);
         if (!gameViewResult) { Utils::log_error(gameViewResult.error()); return gameViewResult; }
+        m_gameView.setPSOCache(&m_psoCache);
 
         m_editorView.setSkybox(&m_skybox);
         m_editorView.setScene(&m_scene);
@@ -1407,7 +1414,7 @@ namespace Editor
         {
         case UI::PrimitiveType::Cube:     return Graphics::RenderableType::Cube;
         case UI::PrimitiveType::Sphere:   return Graphics::RenderableType::Cube;
-        case UI::PrimitiveType::Plane:    return Graphics::RenderableType::Triangle;
+        case UI::PrimitiveType::Plane:  
         case UI::PrimitiveType::Cylinder: return Graphics::RenderableType::Cube;
         default:                          return Graphics::RenderableType::Cube;
         }
@@ -1418,7 +1425,7 @@ namespace Editor
         switch (renderType)
         {
         case Graphics::RenderableType::Cube:     return UI::PrimitiveType::Cube;
-        case Graphics::RenderableType::Triangle: return UI::PrimitiveType::Plane;
+        return UI::PrimitiveType::Plane;
         default:                                 return UI::PrimitiveType::Cube;
         }
     }

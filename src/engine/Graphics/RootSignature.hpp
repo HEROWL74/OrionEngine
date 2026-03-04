@@ -62,8 +62,11 @@ namespace Engine::Graphics
 		// パラメータを確定してGPUオブジェクトを生成
 		[[nodiscard]] Utils::VoidResult finalize(Device* device);
 
+		// D3D12Object取得
+		ID3D12RootSignature* get() const { return m_rootSignature.Get(); }
+
 		// 有効性チェック
-		bool isvalid() const { return m_rootSignature != nullptr; }
+		bool isValid() const { return m_rootSignature != nullptr; }
 	private:
 		// finalize()前のパラメータ蓄積用
 		// DescriptorRangeはポインタで参照されるため

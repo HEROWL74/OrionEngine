@@ -2,7 +2,6 @@
 #include "../Core/GameObject.hpp"
 #include "Device.hpp"
 #include "Camera.hpp"
-#include "TriangleRenderer.hpp"
 #include "CubeRenderer.hpp"
 #include "Material.hpp"
 #include "RenderComponent.hpp"

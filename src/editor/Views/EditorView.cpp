@@ -7,7 +7,8 @@ namespace Editor::UI
 {
 	using namespace Engine;
 
-	Utils::VoidResult EditorView::initialize(Graphics::Device* device, uint32_t width, uint32_t height, Graphics::ShaderManager* shaderManager)
+	Utils::VoidResult EditorView::initialize(Graphics::Device* device, uint32_t width, uint32_t height, Graphics::ShaderManager* shaderManager
+	 ,Graphics::PipelineStateCache* psoCache)
 	{
 		CHECK_CONDITION(device != nullptr, Utils::ErrorType::Unknown, "Device is null");
 		CHECK_CONDITION(device->isValid(), Utils::ErrorType::Unknown, "Device is not valid");
@@ -16,6 +17,7 @@ namespace Editor::UI
 		m_device = device;
 		m_width = width;
 		m_height = height;
+		m_psoCache = psoCache;
 
 		Utils::log_info(std::format("EditorView::initialize - Creating RenderTarget {}x{}", width, height));
 
@@ -130,6 +132,7 @@ namespace Editor::UI
 		context.camera = &camera;
 		context.viewType = Utils::RenderViewType::Editor;
 		context.frameIndex = frameIndex;
+		context.psoCache = m_psoCache;
 
 		for (auto& gameObject : scene.getGameObjects())
 		{
@@ -541,4 +544,3 @@ namespace Editor::UI
 		return {};
 	}
 }
-

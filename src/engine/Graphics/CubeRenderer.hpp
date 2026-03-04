@@ -7,6 +7,7 @@
 #include <array>
 #include "Device.hpp"
 #include "ShaderManager.hpp"
+#include "PipelineStateCache.hpp"
 #include "ConstantBuffer.hpp"
 #include "Material.hpp"
 #include "Camera.hpp"
@@ -33,8 +34,8 @@ namespace Engine::Graphics
         CubeRenderer(CubeRenderer&&) = delete;
         CubeRenderer& operator=(CubeRenderer&&) = delete;
 
-        // 初期化
-        [[nodiscard]] Utils::VoidResult initialize(Device* device, ShaderManager* shaderManager);
+        // 初期化 (PSO は render() 時に RenderContext から取得)
+        [[nodiscard]] Utils::VoidResult initialize(Device* device);
 
         // 立方体を描画
         void render(const Utils::RenderContext& context);
@@ -52,20 +53,17 @@ namespace Engine::Graphics
         const Math::Vector3& getRotation() const { return m_rotation; }
         const Math::Vector3& getScale() const { return m_scale; }
 
-        // 有効かチェック
-        [[nodiscard]] bool isValid() const noexcept {
-            return m_rootSignature != nullptr &&
-                m_pipelineState != nullptr &&
-                m_vertexBuffer != nullptr &&
-                m_indexBuffer != nullptr &&
-                m_constantBufferManager.isValid();
+        // 有効性チェック
+        [[nodiscard]] bool isValid() const noexcept
+        {
+            return m_vertexBuffer != nullptr
+                && m_indexBuffer != nullptr
+                && m_constantBufferManager.isValid();
         }
 
     private:
         Device* m_device = nullptr;
-        ShaderManager* m_shaderManager = nullptr;
         ConstantBufferManager m_constantBufferManager;
-        bool m_usePBRPipeline = false;
 
         // 3D変換パラメータ
         Math::Vector3 m_position = Math::Vector3::zero();
@@ -73,35 +71,29 @@ namespace Engine::Graphics
         Math::Vector3 m_scale = Math::Vector3::one();
         Math::Matrix4 m_worldMatrix;
 
-        //マテリアル管理ポインタ
+        // マテリアル
         std::shared_ptr<Graphics::Material> m_material;
         Graphics::MaterialManager* m_materialManager = nullptr;
 
-        // 描画リソース
-        ComPtr<ID3D12RootSignature> m_rootSignature;
-        ComPtr<ID3D12PipelineState> m_pipelineState;
-        ComPtr<ID3D12Resource> m_vertexBuffer;
-        ComPtr<ID3D12Resource> m_indexBuffer;
-        D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView{};
-        D3D12_INDEX_BUFFER_VIEW m_indexBufferView{};
+        // 頂点・インデックスバッファ
+        ComPtr<ID3D12Resource>       m_vertexBuffer;
+        ComPtr<ID3D12Resource>       m_indexBuffer;
+        D3D12_VERTEX_BUFFER_VIEW     m_vertexBufferView{};
+        D3D12_INDEX_BUFFER_VIEW      m_indexBufferView{};
 
-        // 立方体の頂点データ（24頂点 - 各面に4頂点）
-        std::array<Vertex, 24> m_cubeVertices;
+        // 頂点データ（24頂点: 各面4頂点）
+        std::array<Vertex, 24>    m_cubeVertices;
+        // インデックスデータ（36個: 12三角形 × 3頂点）
+        std::array<uint16_t, 36>  m_cubeIndices;
 
-        // 立方体のインデックスデータ（36インデックス - 12三角形 * 3頂点）
-        std::array<uint16_t, 36> m_cubeIndices;
-
-        // 初期化用メソッド
-        [[nodiscard]] Utils::VoidResult createPBRRootSignature();
-        [[nodiscard]] Utils::VoidResult createPipelineState();
+        // バッファ生成
         [[nodiscard]] Utils::VoidResult createVertexBuffer();
         [[nodiscard]] Utils::VoidResult createIndexBuffer();
 
-        // 立方体の頂点データを設定
+        // 頂点データのセットアップ
         void setupCubeVertices();
 
-        // ワールド行列を更新
+        // ワールド行列の更新
         void updateWorldMatrix();
     };
 }
-

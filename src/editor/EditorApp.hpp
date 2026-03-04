@@ -62,7 +62,6 @@ namespace Editor
         // ウィンドウとデバイス管理
         Engine::Core::Window m_window;
         Engine::Graphics::Device m_device;
-        Engine::Graphics::TriangleRenderer m_triangleRenderer;
         Engine::Graphics::CubeRenderer m_cubeRenderer;
         std::vector<Engine::Graphics::CubeRenderer> m_cubes;
 
@@ -71,6 +70,9 @@ namespace Editor
         Engine::Graphics::Camera m_gameCamera;
         std::unique_ptr<Engine::Graphics::FPSCameraController> m_cameraController;
         Engine::Input::InputManager m_inputManager;
+
+        // PipelineStateCacje
+        Engine::Graphics::PipelineStateCache m_psoCache;
 
         // Scene & Views
         Engine::Graphics::Scene m_scene;

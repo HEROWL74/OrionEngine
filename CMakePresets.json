@@ -56,7 +56,7 @@
       "displayName": "Build Editor (Debug)",
       "configurePreset": "x64-debug",
       "configuration": "Debug",
-      "targets": [ "OrionEditor", "OrionBuildWorker" ]
+      "targets": [ "OrionEditor"]
     },
     {
       "name": "runtime-debug",

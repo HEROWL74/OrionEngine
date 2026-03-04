@@ -111,6 +111,7 @@ namespace Engine::Graphics
 
 		auto srvHandles = m_device->allocateSrvDescriptor();
 		m_colorSrvGpu = srvHandles.GpuHandle;
+		m_srv = srvHandles.CpuHandle;
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
 		srvDesc.Format = format;
@@ -168,6 +169,8 @@ namespace Engine::Graphics
 		m_dsvHeap.Reset();
 		m_rtv = {};
 		m_dsv = {};
+		m_srv = {};
+		m_colorSrvGpu = {};
 		m_currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 		Utils::log_info("RenderTarget released");

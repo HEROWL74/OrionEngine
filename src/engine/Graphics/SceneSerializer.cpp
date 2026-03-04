@@ -628,4 +628,3 @@ namespace Engine::Graphics
         audioComponent->setVolume(json.value("volume", 1.0f));
     }
 }
-

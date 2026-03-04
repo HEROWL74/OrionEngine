@@ -2,13 +2,14 @@
 
 namespace Editor::UI
 {
-    Utils::VoidResult GameView::initialize(Graphics::Device* device, uint32_t width, uint32_t height)
+    Utils::VoidResult GameView::initialize(Graphics::Device* device, uint32_t width, uint32_t height, Graphics::PipelineStateCache* psoCache)
     {
         CHECK_CONDITION(device, Utils::ErrorType::Unknown, "Device is null");
 
         m_device = device;
         m_width = width;
         m_height = height;
+        m_psoCache = psoCache;
 
         m_renderTarget = std::make_unique<Graphics::RenderTarget>();
         auto result = m_renderTarget->initialize(
@@ -48,6 +49,7 @@ namespace Editor::UI
         context.camera = &camera;
         context.viewType = Utils::RenderViewType::Game;
         context.frameIndex = frameIndex;
+        context.psoCache = m_psoCache;
 
         // 3Dオブジェクトの描画
         for (auto& obj : scene.getGameObjects())
