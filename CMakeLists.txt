@@ -1,6 +1,12 @@
-﻿cmake_minimum_required(VERSION 3.21)
+﻿# CMakeLists.txt (Root)
 
-project(Orion LANGUAGES CXX RC)
+cmake_minimum_required(VERSION 3.21)
+
+if(WIN32)
+    project(Orion LANGUAGES CXX RC)
+else()
+    project(Orion LANGUAGES CXX)
+endif()
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,8 +22,17 @@ foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} ${CMAKE_BINARY_DIR}/bin)
 endforeach()
 
-add_subdirectory(engine)
-add_subdirectory(engine-assets)
-add_subdirectory(tools/buildworker)
-add_subdirectory(runtime)
-add_subdirectory(editor)
+# -------------------------------------------------------------------
+# Linux: engine と editor だけビルド
+# Windows: 全サブディレクトリをビルド（従来通り）
+# -------------------------------------------------------------------
+if(WIN32)
+    add_subdirectory(engine)
+    add_subdirectory(engine-assets)
+    add_subdirectory(tools/buildworker)
+    add_subdirectory(runtime)
+    add_subdirectory(editor)
+else()
+    add_subdirectory(engine)
+    add_subdirectory(editor)
+endif()

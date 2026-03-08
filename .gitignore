@@ -41,6 +41,9 @@ x64/
 Win32/
 project/
 
+# ===== Shader Dependencies =====
+*.d
+
 # ===== IDE =====
 .vscode/
 .idea/

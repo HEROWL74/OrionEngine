@@ -7,45 +7,63 @@ on:
     branches: [develop, main]
 
 jobs:
-  windows-build:
-    runs-on: windows-latest
+  build:
+    name: ${{ matrix.os }} Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            preset: x64-release-ci
+            build-preset: editor-release-ci
+          - os: ubuntu-latest
+            preset: linux-release-ci
+            build-preset: editor-release-ci
 
     steps:
       - uses: actions/checkout@v4
         with:
           lfs: true
 
-      # 1. MSVC環境とWindows SDKパスをセットアップ
+      # --- Windows Setup ---
       - name: Set up MSVC
+        if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      # Ninjaをセットアップ
+      # --- Linux Setup ---
+      - name: Install system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libglfw3-dev libvulkan-dev \
+            vulkan-validationlayers-dev libx11-dev libxrandr-dev \
+            libxinerama-dev libxcursor-dev libxi-dev
+
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
 
-      # 2. vcpkgのキャッシュ準備
-      # 警告対策: キャッシュ対象ディレクトリを事前に作成し、バイナリキャッシュのパスを環境変数で指定する
-      - name: Prepare vcpkg directories
-        shell: bash
-        run: |
-          mkdir -p "${{ github.workspace }}/vcpkg_installed"
-          mkdir -p "${{ github.workspace }}/vcpkg_cache"
-          echo "VCPKG_DEFAULT_BINARY_CACHE=${{ github.workspace }}/vcpkg_cache" >> $GITHUB_ENV
-
-      - name: Restore vcpkg cache
+      # --- vcpkg Setup (Unified) ---
+      - name: Restore vcpkg
         uses: actions/cache@v4
         with:
           path: |
             ${{ github.workspace }}/vcpkg_installed
-            ${{ github.workspace }}/vcpkg_cache
+            ~/.cache/vcpkg # Linux用
+            ${{ env.LOCALAPPDATA }}/vcpkg/archives # Windows用
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: |
-            vcpkg-${{ runner.os }}-
+          restore-keys: vcpkg-${{ runner.os }}-
 
-      # 3. Configure
       - name: Configure
-        run: cmake --preset x64-release-ci
+        shell: bash
+        run: |
+          # Linuxの場合、VCPKG_ROOTを標準の場所かカスタムパスに設定
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT # GitHub標準のvcpkgを使用
+            cmake --preset ${{ matrix.preset }} -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+          else
+            # Windowsはプリセット内の C:/vcpkg/... が生きていればそのまま
+            cmake --preset ${{ matrix.preset }}
+          fi
 
-      # 4. Build
-      - name: Build Editor
-        run: cmake --build --preset editor-release-ci
+      - name: Build
+        run: cmake --build --preset ${{ matrix.build-preset }}

@@ -1,25 +1,25 @@
 # runtime/CMakeLists.txt
 
+# Linux ではランタイムは不要のため丸ごとスキップ
+if(NOT WIN32)
+    return()
+endif()
+
 # -------------------------------------------------------
 # RUNTIME_PROJECT_NAME : ゲームロジック DLL の名前
-# デフォルトは "OrionRuntime"
 # -------------------------------------------------------
 if(NOT DEFINED RUNTIME_PROJECT_NAME)
     set(RUNTIME_PROJECT_NAME "OrionRuntime")
 endif()
-
 message(STATUS "Runtime DLL Name: ${RUNTIME_PROJECT_NAME}")
 
 # -------------------------------------------------------
 # ソース定義
 # -------------------------------------------------------
-
-# ランチャー EXE 用: GameMain.cpp のみ
 set(LAUNCHER_SOURCES
     ${CMAKE_SOURCE_DIR}/src/runtime/GameMain.cpp
 )
 
-# DLL 用: GameMain.cpp 以外の全ファイル
 file(GLOB_RECURSE RUNTIME_DLL_SOURCES
     ${CMAKE_SOURCE_DIR}/src/runtime/*.cpp
     ${CMAKE_SOURCE_DIR}/src/runtime/*.hpp
@@ -40,12 +40,7 @@ set_target_properties(OrionGame PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELEASE        "${CMAKE_BINARY_DIR}/runtime"
     RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/runtime"
     RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL     "${CMAKE_BINARY_DIR}/runtime"
-)
-
-# 開発中: VS デバッガから F5 で起動したとき --project を自動付与
-set_target_properties(OrionGame PROPERTIES
-    VS_DEBUGGER_COMMAND_ARGUMENTS
-    "--project \"${CMAKE_SOURCE_DIR}/project\""
+    VS_DEBUGGER_COMMAND_ARGUMENTS "--project \"${CMAKE_SOURCE_DIR}/project\""
 )
 
 if(MSVC)

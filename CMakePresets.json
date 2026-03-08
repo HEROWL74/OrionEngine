@@ -41,12 +41,56 @@
       }
     },
     {
-      "name": "web-release",
-      "displayName": "Web Release (Emscripten)",
+      "name": "linux-debug",
+      "displayName": "Linux Debug (WSL Ubuntu)",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/web-release",
+      "binaryDir": "${sourceDir}/build/linux-debug",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "/home/pc_user/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+          "hostOS": [ "Linux" ]
+        }
+      }
+    },
+    {
+      "name": "linux-release-local",
+      "displayName": "Linux Release (WSL Ubuntu)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-release-local",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "/home/pc_user/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+          "hostOS": [ "Linux" ]
+        }
+      }
+    },
+    {
+      "name": "linux-release-ci",
+      "displayName": "Linux Release CI",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-release-ci",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "/home/pc_user/vcpkg/scripts/buildsystems/vcpkg.cmake", // 環境変数ではなく直接指定
+        "VCPKG_TARGET_TRIPLET": "x64-linux"
       }
     }
   ],
@@ -56,14 +100,25 @@
       "displayName": "Build Editor (Debug)",
       "configurePreset": "x64-debug",
       "configuration": "Debug",
-      "targets": [ "OrionEditor"]
+      "targets": [ "OrionEditor" ]
     },
     {
-      "name": "runtime-debug",
-      "displayName": "Build Runtime (Debug)",
-      "configurePreset": "x64-debug",
-      "configuration": "Debug",
-      "targets": [ "OrionGame" ]
+      "name": "linux-editor-debug",
+      "displayName": "Build Linux (Debug)",
+      "configurePreset": "linux-debug",
+      "targets": [ "OrionEditor" ]
+    },
+    {
+      "name": "linux-editor-release-local",
+      "displayName": "Build Linux (Release Local)",
+      "configurePreset": "linux-release-local",
+      "targets": [ "OrionEditor" ]
+    },
+    {
+      "name": "linux-editor-release-ci",
+      "displayName": "Build Linux (Release CI)",
+      "configurePreset": "linux-release-ci",
+      "targets": [ "OrionEditor" ]
     },
     {
       "name": "editor-release-local",
@@ -73,29 +128,10 @@
       "targets": [ "OrionEditor" ]
     },
     {
-      "name": "runtime-release-local",
-      "displayName": "Build Runtime (Release Local)",
-      "configurePreset": "x64-release-local",
-      "configuration": "Release",
-      "targets": [ "OrionGame" ]
-    },
-    {
       "name": "editor-release-ci",
       "displayName": "Build Editor (Release CI)",
       "configurePreset": "x64-release-ci",
       "targets": [ "OrionEditor" ]
-    },
-    {
-      "name": "runtime-release-ci",
-      "displayName": "Build Runtime (Release CI)",
-      "configurePreset": "x64-release-ci",
-      "targets": [ "OrionGame" ]
-    },
-    {
-      "name": "runtime-web-release",
-      "displayName": "Build Runtime (Web Release)",
-      "configurePreset": "web-release",
-      "targets": [ "OrionGame" ]
     }
   ]
 }

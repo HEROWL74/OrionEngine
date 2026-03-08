@@ -4,16 +4,25 @@
   "dependencies": [
     "sol2",
     "lua",
-    "directxtex",
     "nlohmann-json",
     "stb",
     "miniaudio",
-    "directx-headers"
-  ],
-  "overrides": [
     {
-      "name": "directx-headers",
-      "version-string": "1.615.0"
+      "name": "directx12-agility",
+      "platform": "windows"
+    },
+    {
+      "name": "directxtex",
+      "platform": "windows"
+    },
+    "directx-headers",
+    {
+      "name": "glfw3",
+      "platform": "linux"
+    },
+    {
+      "name": "vulkan",
+      "platform": "linux"
     }
   ]
 }

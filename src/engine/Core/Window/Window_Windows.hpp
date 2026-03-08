@@ -27,7 +27,7 @@ namespace Engine::Window
 		void SetTitle(const std::string& title) override;
 
 	private:
-		HWND m_hwnd;
+		HWND m_hwnd = nullptr;
 		uint32_t m_width = 0;
 		uint32_t m_height = 0;
 		bool m_shouldClose = false;

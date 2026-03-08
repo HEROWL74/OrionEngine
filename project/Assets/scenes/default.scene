@@ -1,4 +1,47 @@
 {
-    "gameObjects": [],
+    "gameObjects": [
+        {
+            "active": true,
+            "lua": {
+                "name": "Lua",
+                "scriptPath": "C:/Users/PC_User/source/repos/VS2022Project/OrionEngine/project/Assets/scripts/move.lua"
+            },
+            "name": "Player",
+            "renderComponent": {
+                "material": {
+                    "name": "Material",
+                    "properties": {
+                        "albedo": [
+                            0.800000011920929,
+                            0.800000011920929,
+                            0.800000011920929
+                        ],
+                        "metallic": 0.0,
+                        "roughness": 0.5
+                    },
+                    "textures": {}
+                },
+                "renderableType": 0,
+                "visible": true
+            },
+            "transform": {
+                "position": [
+                    -2.2240311636778642e-07,
+                    3.410003185272217,
+                    5.456005096435547
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        }
+    ],
     "version": "1.0"
 }
