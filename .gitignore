@@ -37,7 +37,7 @@ downloads/
 *.hlsl.temp
 Debug/
 Release/
-x64/
+/x64/
 Win32/
 project/
 
