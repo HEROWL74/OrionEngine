@@ -18,7 +18,7 @@ jobs:
             build-preset: editor-release-ci
           - os: ubuntu-latest
             preset: linux-release-ci
-            build-preset: editor-release-ci
+            build-preset: linux-editor-release-ci
 
     steps:
       - uses: actions/checkout@v4
