@@ -1,6 +1,11 @@
+when:
+  event: [push, pull_request]
+
 steps:
   hello-orion:
     image: alpine
     commands:
-      - echo "OrionEngine Local CI System is Online!!"
+      - echo "OrionEngine Local CI System is Online!"
       - echo "Checking build environment..."
+    when:
+      branch: "*"
