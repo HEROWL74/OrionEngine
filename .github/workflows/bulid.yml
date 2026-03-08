@@ -35,9 +35,17 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libglfw3-dev libvulkan-dev \
-            vulkan-validationlayers-dev libx11-dev libxrandr-dev \
-            libxinerama-dev libxcursor-dev libxi-dev
+          sudo apt-get install -y \
+            ninja-build \
+            libglfw3-dev \
+            libvulkan-dev \
+            vulkan-tools \
+            vulkan-validationlayers \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
