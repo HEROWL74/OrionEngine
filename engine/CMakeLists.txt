@@ -46,7 +46,7 @@ if(WIN32)
         d3d12 dxgi dxguid d3dcompiler
     )
     target_link_libraries(OrionEngine PRIVATE
-        directxtex::DirectXTex
+        Microsoft::DirectXTex
     )
 
     if(MSVC)
