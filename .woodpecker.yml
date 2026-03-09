@@ -5,7 +5,7 @@ steps:
   hello-orion:
     image: alpine
     commands:
-      - echo "OrionEngine Local CI System is Online!"
+      - echo "OrionEditor Local CI System is Online!"
       - echo "Checking build environment..."
     when:
       branch: "*"
