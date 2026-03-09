@@ -9,6 +9,7 @@
 #include <chrono>
 #include <mutex>
 #include <filesystem>
+#include <imgui_internal.h>
 #include "../engine/Core/Window.hpp"
 #include "../engine/Core/ProjectSettings.hpp"
 #include "../engine/Graphics/Device.hpp"
@@ -16,7 +17,6 @@
 #include "../engine/Input/InputManager.hpp"
 #include "../engine/Utils/Common.hpp"
 #include "../engine/Graphics/RenderComponent.hpp"
-#include "UI/imgui_internal.h"
 #include "UI/ImGuiManager.hpp"
 #include "../engine/Graphics/ShaderManager.hpp"
 #include "UI/ProjectWindow.hpp"

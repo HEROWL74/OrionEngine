@@ -8,6 +8,24 @@
     "stb",
     "miniaudio",
     {
+      "name": "imgui",
+      "platform": "windows",
+      "features": [
+        "win32-binding",
+        "dx12-binding",
+        "docking-experimental"
+      ]
+    },
+    {
+      "name": "imgui",
+      "platform": "linux",
+      "features": [
+        "vulkan-binding",
+        "glfw-binding",
+        "docking-experimental"
+      ]
+    },
+    {
       "name": "directx12-agility",
       "platform": "windows"
     },

@@ -10,7 +10,7 @@
 #include <dxgi1_6.h>
 #include "../Utils/Common.hpp"
 #include "Device.hpp"
-#include "editor/UI/imgui.h"
+#include <imgui.h>
 
 using Microsoft::WRL::ComPtr;
 

@@ -1,7 +1,7 @@
 ﻿//src/UI/ImGuiManager.hpp
 #pragma once
 
-#include "imgui.h"
+#include <imgui.h>
 #include <Windows.h>
 #include <wrl.h>
 #include <d3d12.h>
@@ -22,8 +22,8 @@
 #include "engine/Physics/BoxCollider.hpp"
 #include "engine/Audio/AudioComponent.hpp"
 
-#include "../UI/backends/imgui_impl_dx12.h"
-#include "../UI/backends/imgui_impl_win32.h"
+#include <imgui_impl_dx12.h>
+#include <imgui_impl_win32.h>
 
 using Microsoft::WRL::ComPtr;
 

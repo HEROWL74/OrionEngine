@@ -43,6 +43,10 @@ project/
 !/tools/dxc/bin/x64/*.exe
 !/tools/dxc/bin/x64/*.dll
 
+# ===== Platforms =====
+src/engine/Graphics/Platforms/Switch/
+src/engine/Graphics/Platforms/PS5/
+
 # ===== Shader Dependencies =====
 *.d
 

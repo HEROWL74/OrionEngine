@@ -1,5 +1,6 @@
 ﻿# editor/CMakeLists.txt
 
+find_package(imgui CONFIG REQUIRED)
 if(WIN32)
     # -------------------------------------------------------------------------
     # Windows: 既存の全ソースをそのまま使う（変更なし）
@@ -17,6 +18,7 @@ if(WIN32)
     target_link_libraries(OrionEditor
         PRIVATE OrionEngine
         PRIVATE OrionBuildSystem
+        PRIVATE imgui::imgui
     )
 
     if(TARGET Shaders)
