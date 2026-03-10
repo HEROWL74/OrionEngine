@@ -76,7 +76,8 @@ namespace Editor
 
         // Scene & Views
         Engine::Graphics::Scene m_scene;
-        Engine::Graphics::Skybox m_skybox;
+        Engine::Graphics::Skybox m_editorSkybox;
+        Engine::Graphics::Skybox m_gameSkybox;
         UI::EditorView m_editorView;
         UI::GameView m_gameView;
 

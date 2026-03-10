@@ -194,8 +194,8 @@ namespace Editor
         Utils::log_info("PSOCache initialization completed successfully");
 
         Utils::log_info("Initializing Skybox...");
-        auto skyboxResult = m_skybox.initialize(&m_device, m_shaderManager.get());
-        if (!skyboxResult) { Utils::log_error(skyboxResult.error()); return skyboxResult; }
+        auto editorSkyboxResult = m_editorSkybox.initialize(&m_device, m_shaderManager.get());
+        auto gameSkyboxResult = m_gameSkybox.initialize(&m_device, m_shaderManager.get());
         Utils::log_info("Skybox initialized successfully");
 
         auto textureManagerResult = m_textureManager.initialize(&m_device);
@@ -227,7 +227,7 @@ namespace Editor
         if (!gameViewResult) { Utils::log_error(gameViewResult.error()); return gameViewResult; }
         m_gameView.setPSOCache(&m_psoCache);
 
-        m_editorView.setSkybox(&m_skybox);
+        m_editorView.setSkybox(&m_editorSkybox);
         m_editorView.setScene(&m_scene);
         m_editorView.setUITextRenderer(m_uiTextRenderer.get());
 
@@ -240,7 +240,7 @@ namespace Editor
             Utils::log_warning("FXAA renderer not available");
         }
 
-        m_gameView.setSkybox(&m_skybox);
+        m_gameView.setSkybox(&m_gameSkybox);
         m_gameView.setScene(&m_scene);
         m_gameView.setUITextRenderer(m_uiTextRenderer.get());
 
@@ -681,14 +681,7 @@ namespace Editor
             triangleObject->getTransform()->setRotation(Math::Vector3(0.0f, triangleRotation, 0.0f));
         }
 
-        auto* inputManager = m_window.getInputManager();
-        if (inputManager)
-        {
-            if (!inputManager->getMouseState().isRelativeMode)
-            {
-                inputManager->resetMouseDelta();
-            }
-        }
+        processInput();
     }
 
     void EditorApp::render()
@@ -846,7 +839,6 @@ namespace Editor
         m_debugWindow->draw();
         m_projectWindow->draw();
         m_buildWindow->draw();
-        processInput();
 
         if (isResizing)
         {
