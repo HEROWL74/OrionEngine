@@ -64,6 +64,7 @@ namespace Renderer
 		ID3D12RootSignature* getRootSignature() const { return m_rootSignature.get() ; }
 		ID3D12PipelineState* getPipelineState() const { return m_pipelineState.Get(); }
 
+		// 有効性チェック
 		bool isValid() const
 		{
 			return m_rootSignature.isValid() && m_pipelineState != nullptr;
