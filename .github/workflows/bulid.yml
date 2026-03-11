@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [develop, main]
 
-env:
-  VCPKG_BINARY_SOURCES: 'clear;files,D:/vcpkg_cache,readwrite'
-
 jobs:
   build:
     name: ${{ matrix.os }} Build
@@ -21,10 +18,12 @@ jobs:
             preset: x64-release-ci
             build-preset: editor-release-ci
             use_sccache: true
+            vcpkg_cache_path: "D:/vcpkg_cache"
           - os: ubuntu-latest
             preset: linux-release-ci
             build-preset: linux-editor-release-ci
-            use_sccache: false
+            use_sccache: true
+            vcpkg_cache_path: "/home/runner/.cache/vcpkg_bin"
 
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +31,6 @@ jobs:
           lfs: true
 
       - name: Run sccache-cache
-        if: matrix.use_sccache
         uses: mozilla/sccache-action@v0.0.5
 
       - name: Set up MSVC
@@ -48,7 +46,7 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/vcpkg_installed
-            D:/vcpkg_cache
+            ${{ matrix.vcpkg_cache_path }}
             ${{ github.workspace }}/.sccache_storage
           key: build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: |
@@ -57,14 +55,16 @@ jobs:
       - name: Configure
         shell: bash
         env:
-          CMAKE_C_COMPILER_LAUNCHER: ${{ matrix.use_sccache && 'sccache' || '' }}
-          CMAKE_CXX_COMPILER_LAUNCHER: ${{ matrix.use_sccache && 'sccache' || '' }}
+          CMAKE_C_COMPILER_LAUNCHER: sccache
+          CMAKE_CXX_COMPILER_LAUNCHER: sccache
           SCCACHE_GHA_ENABLED: "false"
           SCCACHE_DIR: ${{ github.workspace }}/.sccache_storage
+          VCPKG_BINARY_SOURCES: "clear;files,${{ matrix.vcpkg_cache_path }},readwrite"
           MSYS_NO_PATHCONV: 1
         run: |
           mkdir -p "$SCCACHE_DIR"
-          mkdir -p "D:/vcpkg_cache"
+          mkdir -p "${{ matrix.vcpkg_cache_path }}"
+          
           if [ "${{ runner.os }}" == "Windows" ]; then
             cmake --preset ${{ matrix.preset }} -DCMAKE_CXX_FLAGS="/Z7" -DCMAKE_C_FLAGS="/Z7"
           else
@@ -76,7 +76,6 @@ jobs:
         run: cmake --build --preset ${{ matrix.build-preset }} --parallel
 
       - name: Show sccache stats
-        if: matrix.use_sccache
         env:
           SCCACHE_DIR: ${{ github.workspace }}/.sccache_storage
         run: sccache --show-stats
