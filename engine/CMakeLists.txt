@@ -2,23 +2,22 @@
 
 if(WIN32)
     # -------------------------------------------------------------------------
-    # Windows: 既存の全ソースをそのまま使う（変更なし）
+    # Windows: engineを使う
     # -------------------------------------------------------------------------
     file(GLOB_RECURSE ENGINE_SOURCES
-        ${CMAKE_SOURCE_DIR}/src/engine/*.cpp
-        ${CMAKE_SOURCE_DIR}/src/engine/*.hpp
+        ${CMAKE_SOURCE_DIR}/engine/*.cpp
+        ${CMAKE_SOURCE_DIR}/engine/*.hpp
     )
 
 else()
     # -------------------------------------------------------------------------
-    # Linux: Window_Linux / IWindow / WindowFactory のみ
-    #   Phase 2 以降: VulkanDevice 等をここに追加していく
+    # Linux: Window_Linux / IWindow / WindowFactory
     # -------------------------------------------------------------------------
     set(ENGINE_SOURCES
-        ${CMAKE_SOURCE_DIR}/src/engine/Core/Window/IWindow.hpp
-        ${CMAKE_SOURCE_DIR}/src/engine/Core/Window/WindowFactory.hpp
-        ${CMAKE_SOURCE_DIR}/src/engine/Core/Window/Window_Linux.hpp
-        ${CMAKE_SOURCE_DIR}/src/engine/Core/Window/Window_Linux.cpp
+        ${CMAKE_SOURCE_DIR}/engine/Core/Window/IWindow.hpp
+        ${CMAKE_SOURCE_DIR}/engine/Core/Window/WindowFactory.hpp
+        ${CMAKE_SOURCE_DIR}/engine/Core/Window/Window_Linux.hpp
+        ${CMAKE_SOURCE_DIR}/engine/Core/Window/Window_Linux.cpp
     )
 
 endif()
@@ -69,8 +68,4 @@ else()
     )
     target_compile_definitions(OrionEngine PUBLIC ORION_PLATFORM_LINUX)
 
-endif()
-
-if(EMSCRIPTEN)
-    target_compile_definitions(OrionEngine PRIVATE ORION_PLATFORM_WEB)
 endif()

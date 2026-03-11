@@ -4,7 +4,6 @@ cbuffer TextConstants : register(b0)
     float4x4 world; 
     float4x4 viewProjection;
     float4 color; // カラー
-    uint4 padding; // アライメント用
 };
 
 struct VSInput

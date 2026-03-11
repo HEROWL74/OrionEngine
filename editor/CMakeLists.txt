@@ -6,8 +6,8 @@ if(WIN32)
     # Windows: 既存の全ソースをそのまま使う（変更なし）
     # -------------------------------------------------------------------------
     file(GLOB_RECURSE EDITOR_SOURCES
-        ${CMAKE_SOURCE_DIR}/src/editor/*.cpp
-        ${CMAKE_SOURCE_DIR}/src/editor/*.hpp
+        ${CMAKE_SOURCE_DIR}/editor/*.cpp
+        ${CMAKE_SOURCE_DIR}/editor/*.hpp
     )
 
     add_executable(OrionEditor WIN32
@@ -57,9 +57,9 @@ else()
     #   Phase 2 以降: Vulkan描画・ImGui等をここに追加していく
     # -------------------------------------------------------------------------
     add_executable(OrionEditor
-        ${CMAKE_SOURCE_DIR}/src/editor/EditorMain.cpp
-        ${CMAKE_SOURCE_DIR}/src/editor/LinuxApp.hpp
-        ${CMAKE_SOURCE_DIR}/src/editor/LinuxApp.cpp
+        ${CMAKE_SOURCE_DIR}/editor/EditorMain.cpp
+        ${CMAKE_SOURCE_DIR}/editor/LinuxApp.hpp
+        ${CMAKE_SOURCE_DIR}/editor/LinuxApp.cpp
     )
 
     target_link_libraries(OrionEditor

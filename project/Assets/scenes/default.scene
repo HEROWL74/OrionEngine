@@ -2,11 +2,7 @@
     "gameObjects": [
         {
             "active": true,
-            "lua": {
-                "name": "Lua",
-                "scriptPath": "C:/Users/PC_User/source/repos/VS2022Project/OrionEngine/project/Assets/scripts/move.lua"
-            },
-            "name": "Player",
+            "name": "Cube_1",
             "renderComponent": {
                 "material": {
                     "name": "Material",
