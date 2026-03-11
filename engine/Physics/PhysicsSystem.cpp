@@ -108,13 +108,13 @@ namespace Engine::Physics
 		}
 		else
 		{
-			Utils::log_info(std::format("} has no LuaScript", a->getName()));
+			Utils::log_info(std::format("{} has no LuaScript", a->getName()));
 		}
 
 		auto* scriptB = b->getComponent<Scripting::LuaScriptComponent>();
 		if (scriptB && scriptB->isEnabled())
 		{
-			Utils::log_info(std::format("} has LuaScript: {}",
+			Utils::log_info(std::format("{} has LuaScript: {}",
 				b->getName(), scriptB->getScriptPath()));
 
 			auto& mgr = Scripting::ScriptManager::get();
