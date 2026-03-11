@@ -4,6 +4,9 @@
 
 namespace Renderer
 {
+	// =================================
+	// GraphicsPipelineStateDesc
+	// =================================
 	struct GraphicsPipelineStateDesc
 	{
 		// シェーダー
