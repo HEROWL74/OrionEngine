@@ -2,7 +2,7 @@
 #pragma once
 
 #include <sol/sol.hpp>
-#include "../Graphics/Camera.hpp"
+#include "../World/Camera.hpp"
 #include "../Math/Math.hpp"
 #include "../Core/GameObject.hpp"
 #include "../Input/InputSystem.hpp"

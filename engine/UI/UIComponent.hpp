@@ -1,13 +1,14 @@
 ﻿// src/engine/UI/UIComponent.hpp
 #pragma once
-#include "../Graphics/Device.hpp"
-#include "../Graphics/ShaderManager.hpp"
+#include "../renderer/Device.hpp"
+#include "../renderer/ShaderManager.hpp"
 #include "../Math/Math.hpp"
 #include "../Core/GameObject.hpp"
 
 namespace Engine::EngineUI
 {
-    // UI繧｢繝ｳ繧ｫ繝ｼ(蟆・擂縺ｮ2D繝｢繝ｼ繝臥畑縺ｫ菫晄戟)
+    using namespace Renderer;
+
     enum class UIAnchor
     {
         TopLeft,
@@ -21,15 +22,14 @@ namespace Engine::EngineUI
         BottomRight
     };
 
-    // UI縺ｮ繝ｬ繝ｳ繝繝ｪ繝ｳ繧ｰ繝｢繝ｼ繝・
     enum class UIRenderMode
     {
-        ScreenSpace,    // 2D逕ｻ髱｢遨ｺ髢・譛ｪ螳溯｣・
-        WorldSpace      // 3D遨ｺ髢・迴ｾ蝨ｨ縺ｮ螳溯｣・
+        ScreenSpace,    // 2D
+        WorldSpace      // 3D
     };
 
     // ======================================
-    // UIComponent繝吶・繧ｹ繧ｯ繝ｩ繧ｹ - Component繧堤ｶ呎価
+    // UIComponent
     // ======================================
     class UIComponent : public Core::Component
     {
@@ -42,7 +42,7 @@ namespace Engine::EngineUI
         UIComponent(UIComponent&&) = delete;
         UIComponent& operator=(UIComponent&&) = delete;
 
-        [[nodiscard]] virtual Utils::VoidResult initialize(Graphics::Device* device, Graphics::ShaderManager* shaderManager);
+        [[nodiscard]] virtual Utils::VoidResult initialize(Device* device, ShaderManager* shaderManager);
 
         bool isVisible() const noexcept { return m_isVisible; }
         void setVisible(bool visible) { m_isVisible = visible; }
@@ -57,29 +57,27 @@ namespace Engine::EngineUI
         void setRenderMode(UIRenderMode mode) { m_renderMode = mode; }
 
     protected:
-        Graphics::Device* m_device = nullptr;
-        Graphics::ShaderManager* m_shaderManager = nullptr;
+        Device* m_device = nullptr;
+        ShaderManager* m_shaderManager = nullptr;
         bool m_isVisible = true;
         UIAnchor m_anchor = UIAnchor::TopLeft;
         Math::Vector2 m_screenPosition = Math::Vector2::zero();
-        UIRenderMode m_renderMode = UIRenderMode::WorldSpace; // 繝・ヵ繧ｩ繝ｫ繝医・3D
+        UIRenderMode m_renderMode = UIRenderMode::WorldSpace;
     };
 
     // ======================================
-    // UIText繧ｯ繝ｩ繧ｹ - UIComponent繧堤ｶ呎価
+    // UIText - UIComponent 継承
     // ======================================
     class UIText : public UIComponent
     {
     public:
         UIText() : UIComponent()
         {
-            // UI縺ｮ陦ｨ遉ｺ迥ｶ諷九ｒ譏守､ｺ逧・↓險ｭ螳・
             m_isVisible = true;
         }
 
         ~UIText() override = default;
 
-        // 蝓ｺ譛ｬ險ｭ螳・
         void setName(const std::string& name) { m_name = name; }
         const std::string& getName() const { return m_name; }
 
@@ -100,7 +98,6 @@ namespace Engine::EngineUI
                 m_position = position;
                 m_dirty = true;
 
-                // GameObject縺ｮTransform繧よ峩譁ｰ
                 syncToGameObjectTransform();
             }
         }
@@ -113,7 +110,6 @@ namespace Engine::EngineUI
                 m_rotation = rotation;
                 m_dirty = true;
 
-                // GameObject縺ｮTransform繧よ峩譁ｰ
                 syncToGameObjectTransform();
             }
         }
@@ -126,13 +122,11 @@ namespace Engine::EngineUI
                 m_scale = scale;
                 m_dirty = true;
 
-                // GameObject縺ｮTransform繧よ峩譁ｰ
                 syncToGameObjectTransform();
             }
         }
         const Math::Vector3& getScale() const { return m_scale; }
 
-        // 繝・く繧ｹ繝医せ繧ｿ繧､繝ｫ
         void setFontSize(float size)
         {
             if (m_fontSize != size)
@@ -149,7 +143,6 @@ namespace Engine::EngineUI
         void setAlpha(float alpha) { m_alpha = alpha; }
         float getAlpha() const { return m_alpha; }
 
-        // 繝ｯ繝ｼ繝ｫ繝牙､画鋤陦悟・繧貞叙蠕・繧ｭ繝｣繝・す繝･莉倥″)
         Math::Matrix4 getWorldMatrix() const
         {
             if (m_dirty)
@@ -160,7 +153,6 @@ namespace Engine::EngineUI
             return m_cachedWorldMatrix;
         }
 
-        // Dirty 繝輔Λ繧ｰ
         bool isDirty() const { return m_dirty; }
         void markDirty() { m_dirty = true; }
 
@@ -186,7 +178,7 @@ namespace Engine::EngineUI
 
         void syncFromGameObjectTransform()
         {
-            if (m_syncInProgress) return;  // 辟｡髯舌Ν繝ｼ繝鈴亟豁｢
+            if (m_syncInProgress) return;
 
             auto* gameObject = getGameObject();
             if (!gameObject) return;
@@ -206,25 +198,23 @@ namespace Engine::EngineUI
         std::string m_name = "UIText";
         std::string m_text = "New Text";
 
-        // 3D Transform - GameObject縺ｮTransform縺ｨ蜷梧悄
+        // 3D Transform
         Math::Vector3 m_position = Math::Vector3(0.0f, 0.0f, 0.0f);
         Math::Vector3 m_rotation = Math::Vector3(0.0f, 0.0f, 0.0f);
         Math::Vector3 m_scale = Math::Vector3(1.0f, 1.0f, 1.0f);
 
-        // 繧ｹ繧ｿ繧､繝ｫ
         float m_fontSize = 32.0f;
         Math::Vector3 m_color = Math::Vector3(1.0f, 1.0f, 1.0f);
         float m_alpha = 1.0f;
 
-        // 繧ｭ繝｣繝・す繝･
         mutable Math::Matrix4 m_cachedWorldMatrix = Math::Matrix4::identity();
         mutable bool m_dirty = true;
 
-        bool m_syncInProgress = false;  // 蜷梧悄荳ｭ繝輔Λ繧ｰ
+        bool m_syncInProgress = false;
 
         void syncToGameObjectTransform()
         {
-            if (m_syncInProgress) return;  // 辟｡髯舌Ν繝ｼ繝鈴亟豁｢
+            if (m_syncInProgress) return;
 
             auto* gameObject = getGameObject();
             if (!gameObject) return;

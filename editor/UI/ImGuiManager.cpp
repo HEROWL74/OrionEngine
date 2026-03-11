@@ -16,7 +16,7 @@ namespace Editor::UI
 		shutdown();
 	}
 
-	Utils::VoidResult ImGuiManager::initialize(Graphics::Device* device, HWND hwnd, ID3D12CommandQueue* commandQueue, DXGI_FORMAT rtvFormat, UINT frameCount)
+	Utils::VoidResult ImGuiManager::initialize(Device* device, HWND hwnd, ID3D12CommandQueue* commandQueue, DXGI_FORMAT rtvFormat, UINT frameCount)
 	{
 		if (m_initialized)
 		{
@@ -473,7 +473,7 @@ namespace Editor::UI
 		return {};
 	}
 
-	ImTextureID ImGuiManager::registerTexture(Graphics::Texture* tex)
+	ImTextureID ImGuiManager::registerTexture(Texture* tex)
 	{
 		if (!tex || !m_device || !m_srvDescHeap || !m_initialized)
 		{
@@ -1551,7 +1551,7 @@ namespace Editor::UI
 				auto mat = entry->material; // entry は unregister 後に無効になるので先に取得
 				m_scene->unregisterRenderable(gameObject);
 				m_scene->registerRenderable(gameObject,
-					static_cast<Graphics::RenderableType>(currentType), mat);
+					static_cast<RenderableType>(currentType), mat);
 			}
 
 			if (m_materialManager)
@@ -1625,7 +1625,7 @@ namespace Editor::UI
 						if (ImGui::Checkbox("Use Albedo Texture", &useTex)) {
 							props.useAlbedoTex = useTex ? 1 : 0;
 							if (!useTex)
-								currentMaterial->removeTexture(Engine::Graphics::TextureType::Albedo);
+								currentMaterial->removeTexture(TextureType::Albedo);
 							currentMaterial->setDirty();
 							(void)currentMaterial->updateConstantBuffer();
 						}
@@ -1638,7 +1638,7 @@ namespace Editor::UI
 								ImGuiWindowFlags_NoScrollbar);
 
 							ImGui::TextWrapped(
-								currentMaterial->hasTexture(Engine::Graphics::TextureType::Albedo)
+								currentMaterial->hasTexture(TextureType::Albedo)
 								? "Assigned" : "Drop Texture Here");
 
 							if (ImGui::BeginDragDropTarget()) {
@@ -1653,7 +1653,7 @@ namespace Editor::UI
 											dropped->path, true, true);
 										if (tex) {
 											currentMaterial->setTexture(
-												Engine::Graphics::TextureType::Albedo, tex);
+												TextureType::Albedo, tex);
 											props.useAlbedoTex = 1;
 											currentMaterial->setDirty();
 											currentMaterial->updateConstantBuffer();
@@ -1666,7 +1666,7 @@ namespace Editor::UI
 
 							if (ImGui::SmallButton("Clear##Albedo")) {
 								currentMaterial->removeTexture(
-									Engine::Graphics::TextureType::Albedo);
+									TextureType::Albedo);
 								props.useAlbedoTex = 0;
 								currentMaterial->setDirty();
 								(void)currentMaterial->updateConstantBuffer();
@@ -1711,13 +1711,13 @@ namespace Editor::UI
 
 				if (ImGui::CollapsingHeader("Textures"))
 				{
-					drawTextureSlot("Albedo", Graphics::TextureType::Albedo, currentMaterial);
-					drawTextureSlot("Normal", Graphics::TextureType::Normal, currentMaterial);
-					drawTextureSlot("Metallic", Graphics::TextureType::Metallic, currentMaterial);
-					drawTextureSlot("Roughness", Graphics::TextureType::Roughness, currentMaterial);
-					drawTextureSlot("AO", Graphics::TextureType::AO, currentMaterial);
-					drawTextureSlot("Emissive", Graphics::TextureType::Emissive, currentMaterial);
-					drawTextureSlot("Height", Graphics::TextureType::Height, currentMaterial);
+					drawTextureSlot("Albedo", TextureType::Albedo, currentMaterial);
+					drawTextureSlot("Normal", TextureType::Normal, currentMaterial);
+					drawTextureSlot("Metallic", TextureType::Metallic, currentMaterial);
+					drawTextureSlot("Roughness",TextureType::Roughness, currentMaterial);
+					drawTextureSlot("AO", TextureType::AO, currentMaterial);
+					drawTextureSlot("Emissive", TextureType::Emissive, currentMaterial);
+					drawTextureSlot("Height", TextureType::Height, currentMaterial);
 				}
 
 				if (ImGui::CollapsingHeader("UV Settings"))
@@ -1958,8 +1958,8 @@ namespace Editor::UI
 	}
 
 	void InspectorWindow::drawTextureSlot(const char* name,
-		Graphics::TextureType textureType,
-		std::shared_ptr<Graphics::Material> material)
+		TextureType textureType,
+		std::shared_ptr<Material> material)
 	{
 		ImGui::PushID(static_cast<int>(textureType));
 
@@ -2009,7 +2009,7 @@ namespace Editor::UI
 		}
 		else
 		{
-			if (textureType == Graphics::TextureType::Albedo)
+			if (textureType == TextureType::Albedo)
 			{
 				float albedo[3] = { properties.albedo.x, properties.albedo.y, properties.albedo.z };
 				if (ImGui::ColorEdit3("Albedo Color", albedo))

@@ -7,8 +7,8 @@
 #include <filesystem>
 #include <unordered_map>
 #include "ImGuiManager.hpp"
-#include "../engine/Graphics/Texture.hpp"
-#include "../engine/Graphics/Material.hpp"
+#include "../renderer/Texture.hpp"
+#include "../renderer/Material.hpp"
 #include "../engine/Scripting/LuaScriptUtility.hpp"
 
 namespace Editor::UI
@@ -36,8 +36,8 @@ namespace Editor::UI
         bool renaming = false;
         char renameBuffer[256]{};
 
-        std::shared_ptr<Engine::Graphics::Texture> texture; // テクスチャプレビュー用
-        std::shared_ptr<Engine::Graphics::Material> material; // マテリアル用
+        std::shared_ptr<Renderer::Texture> texture; // テクスチャプレビュー用
+        std::shared_ptr<Renderer::Material> material; // マテリアル用
     };
 
     struct AssetPayload
@@ -58,8 +58,8 @@ namespace Editor::UI
         void draw() override;
 
         // 依存関係設定
-        void setTextureManager(Engine::Graphics::TextureManager* textureManager);
-        void setMaterialManager(Engine::Graphics::MaterialManager* materialManager) { m_materialManager = materialManager; }
+        void setTextureManager(Renderer::TextureManager* textureManager);
+        void setMaterialManager(Renderer::MaterialManager* materialManager) { m_materialManager = materialManager; }
 
         // プロジェクトパス設定
         void setProjectPath(const std::string& path);
@@ -77,16 +77,16 @@ namespace Editor::UI
         void setImGuiManager(ImGuiManager* manager) { m_imguiManager = manager; }
 
     private:
-        Engine::Graphics::TextureManager* m_textureManager = nullptr;
-        Engine::Graphics::MaterialManager* m_materialManager = nullptr;
+        Renderer::TextureManager* m_textureManager = nullptr;
+        Renderer::MaterialManager* m_materialManager = nullptr;
 
         ImGuiManager* m_imguiManager = nullptr;
 
         std::string m_projectPath = "assets";
         std::vector<AssetInfo> m_assets;
         AssetInfo* m_selectedAsset = nullptr;
-        std::shared_ptr<Engine::Graphics::Texture> m_folderIcon;
-        std::shared_ptr<Engine::Graphics::Texture> m_luaIcon;
+        std::shared_ptr<Renderer::Texture> m_folderIcon;
+        std::shared_ptr<Renderer::Texture> m_luaIcon;
 
         ImTextureID m_folderIconID = 0;
         ImTextureID m_luaIconID = 0;

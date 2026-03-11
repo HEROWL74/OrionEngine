@@ -12,19 +12,19 @@
 #include <imgui_internal.h>
 #include "../engine/Core/Window.hpp"
 #include "../engine/Core/ProjectSettings.hpp"
-#include "../engine/Graphics/Device.hpp"
-#include "../engine/Graphics/Camera.hpp"
+#include "../renderer/Device.hpp"
+#include "../engine/World/Camera.hpp"
 #include "../engine/Input/InputManager.hpp"
 #include "../engine/Utils/Common.hpp"
 #include "UI/ImGuiManager.hpp"
-#include "../engine/Graphics/ShaderManager.hpp"
+#include "../renderer/ShaderManager.hpp"
 #include "UI/ProjectWindow.hpp"
 #include "UI/ContextMenu.hpp"
 #include "../engine/Scripting/ScriptManager.hpp"
 #include "../engine/Scripting/LuaBindings.hpp"
-#include "../engine/Graphics/Scene.hpp"
-#include "../engine/Graphics/Skybox.hpp"
-#include "../engine/Graphics/SceneSerializer.hpp"
+#include "../engine/World/Scene.hpp"
+#include "../renderer/Skybox.hpp"
+#include "../engine/World/SceneSerializer.hpp"
 #include "Views/GameView.hpp"
 #include "Views/EditorView.hpp"
 #include "UI/EditorViewWindow.hpp"
@@ -35,8 +35,8 @@
 #include "Core/PlayModeController.hpp"
 #include "../engine/Input/InputSystem.hpp"
 #include "../engine/UI/UIComponent.hpp"
-#include "../engine/UI/UITextRenderer.hpp"
-#include "../engine/Graphics/ActiveScene.hpp"
+#include "../renderer/UITextRenderer.hpp"
+#include "../engine/World/ActiveScene.hpp"
 
 using Microsoft::WRL::ComPtr;
 
@@ -60,23 +60,23 @@ namespace Editor
     private:
         // ウィンドウとデバイス管理
         Engine::Core::Window m_window;
-        Engine::Graphics::Device m_device;
-        Engine::Graphics::CubeRenderer m_cubeRenderer;
-        std::vector<Engine::Graphics::CubeRenderer> m_cubes;
+        Renderer::Device m_device;
+        Renderer::CubeRenderer m_cubeRenderer;
+        std::vector<Renderer::CubeRenderer> m_cubes;
 
         // カメラ
-        Engine::Graphics::Camera m_editorCamera;
-        Engine::Graphics::Camera m_gameCamera;
-        std::unique_ptr<Engine::Graphics::FPSCameraController> m_cameraController;
+        Engine::World::Camera m_editorCamera;
+        Engine::World::Camera m_gameCamera;
+        std::unique_ptr<Engine::World::FPSCameraController> m_cameraController;
         Engine::Input::InputManager m_inputManager;
 
         // PipelineStateCacje
-        Engine::Graphics::PipelineStateCache m_psoCache;
+        Renderer::PipelineStateCache m_psoCache;
 
         // Scene & Views
-        Engine::Graphics::Scene m_scene;
-        Engine::Graphics::Skybox m_editorSkybox;
-        Engine::Graphics::Skybox m_gameSkybox;
+        Engine::World::Scene m_scene;
+        Renderer::Skybox m_editorSkybox;
+        Renderer::Skybox m_gameSkybox;
         UI::EditorView m_editorView;
         UI::GameView m_gameView;
 
@@ -93,7 +93,7 @@ namespace Editor
         bool m_dockNeedsRebuild = true;
 
         // Serializer
-        Engine::Graphics::SceneSerializer m_sceneSerializer;
+        Engine::World::SceneSerializer m_sceneSerializer;
         std::string m_currentScenePath = "";
 
         // スワップチェーン関係
@@ -141,17 +141,17 @@ namespace Editor
         std::unique_ptr<UI::BuildWindow>    m_buildWindow;
 
         // マテリアル関係
-        Engine::Graphics::MaterialManager             m_materialManager;
-        Engine::Graphics::TextureManager              m_textureManager;
-        std::unique_ptr<Engine::Graphics::ShaderManager> m_shaderManager;
+        Renderer::MaterialManager             m_materialManager;
+        Renderer::TextureManager              m_textureManager;
+        std::unique_ptr<Renderer::ShaderManager> m_shaderManager;
 
         // コンテキストメニュー関係
         Engine::Core::GameObject* createPrimitiveObject(UI::PrimitiveType type, const std::string& name);
         void deleteGameObject(Engine::Core::GameObject* object);
         Engine::Core::GameObject* duplicateGameObject(Engine::Core::GameObject* original);
         void renameGameObject(Engine::Core::GameObject* object, const std::string& newName);
-        Engine::Graphics::RenderableType primitiveToRenderableType(UI::PrimitiveType type);
-        UI::PrimitiveType renderableToPrimitiveType(Engine::Graphics::RenderableType renderType);
+        Renderer::RenderableType primitiveToRenderableType(UI::PrimitiveType type);
+        UI::PrimitiveType renderableToPrimitiveType(Renderer::RenderableType renderType);
         std::string generateUniqueName(const std::string& baseName);
         Engine::EngineUI::UIText* createUIElement(UI::UIElementType type, const std::string& name);
         void deleteUIText(Engine::EngineUI::UIText* text);

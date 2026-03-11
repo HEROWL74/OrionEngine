@@ -6,7 +6,7 @@ namespace Engine::EngineUI
 	// ====================================
 	// UIComponent Base Class
 	// ====================================
-	Utils::VoidResult UIComponent::initialize(Graphics::Device* device, Graphics::ShaderManager* shaderManager)
+	Utils::VoidResult UIComponent::initialize(Device* device, ShaderManager* shaderManager)
 	{
 		CHECK_CONDITION(device != nullptr, Utils::ErrorType::Unknown, "Device is null");
 		CHECK_CONDITION(shaderManager != nullptr, Utils::ErrorType::Unknown, "ShaderManager is null");

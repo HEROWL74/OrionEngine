@@ -3,17 +3,17 @@
 #include <d3d12.h>
 #include <memory>
 #include <vector>
-#include "../engine/Graphics/Camera.hpp"
-#include "../engine/Graphics/Scene.hpp"
-#include "../engine/Graphics/RenderTarget.hpp"
-#include "../engine/Graphics/FXAARenderer.hpp"
-#include "../engine/Graphics/Device.hpp"
+#include "../engine/World/Camera.hpp"
+#include "../engine/World/Scene.hpp"
+#include "../renderer/RenderTarget.hpp"
+#include "../renderer/FXAARenderer.hpp"
+#include "../renderer/Device.hpp"
 #include "../UI/ImGuiManager.hpp"
-#include "../engine/Graphics/Skybox.hpp"
-#include "../engine/Graphics/PipelineStateCache.hpp"
+#include "../renderer/Skybox.hpp"
+#include "../renderer/PipelineStateCache.hpp"
 #include "Gizmo.hpp"
 #include "../engine/UI/UIComponent.hpp"
-#include "../engine/UI/UITextRenderer.hpp"
+#include "../renderer/UITextRenderer.hpp"
 
 namespace Editor::UI
 {
@@ -23,19 +23,19 @@ namespace Editor::UI
 		EditorView() = default;
 		~EditorView() = default;
 
-		[[nodiscard]] Engine::Utils::VoidResult initialize(Graphics::Device* device, uint32_t width, uint32_t height, Graphics::ShaderManager* shaderManager
-			, Graphics::PipelineStateCache* psoCache);
+		[[nodiscard]] Engine::Utils::VoidResult initialize(Renderer::Device* device, uint32_t width, uint32_t height, Renderer::ShaderManager* shaderManager, 
+			Renderer::PipelineStateCache* psoCache);
 
-		void render(Graphics::Scene& scene,
+		void render(World::Scene& scene,
 			ID3D12GraphicsCommandList* commandList,
-			const Graphics::Camera& camera,
+			const World::Camera& camera,
 			UINT frameIndex);
 
 		void renderEditorElements(ID3D12GraphicsCommandList* commandList,
-			const Graphics::Camera& camera,
+			const World::Camera& camera,
 			UINT frameIndex);
 
-		Graphics::RenderTarget* getRenderTarget() const
+		Renderer::RenderTarget* getRenderTarget() const
 		{
 			if (m_enableFXAA && m_fxaaOutputTarget)
 			{
@@ -44,7 +44,7 @@ namespace Editor::UI
 			return m_renderTarget.get();
 		}
 
-		Graphics::FXAARenderer* getFXAARenderer() const
+		Renderer::FXAARenderer* getFXAARenderer() const
 		{
 			return m_fxaaRenderer.get();
 		}
@@ -61,8 +61,8 @@ namespace Editor::UI
 
 		void setSelectedObject(Core::GameObject* object) { m_selectedObject = object; }
 		Core::GameObject* getSelectedObject() const { return m_selectedObject; }
-		void setSkybox(Graphics::Skybox* skybox) { m_skybox = skybox; }
-		void setPSOCache(Graphics::PipelineStateCache* psoCache) { m_psoCache = psoCache; }
+		void setSkybox(Renderer::Skybox* skybox) { m_skybox = skybox; }
+		void setPSOCache(Renderer::PipelineStateCache* psoCache) { m_psoCache = psoCache; }
 
 		// Gizmo関連
 		Gizmo* getGizmo() { return m_gizmo.get(); }
@@ -77,14 +77,14 @@ namespace Editor::UI
 			}
 		}
 
-		void setScene(Graphics::Scene* scene) { m_scene = scene; }
+		void setScene(World::Scene* scene) { m_scene = scene; }
 		void setUITextRenderer(EngineUI::UITextRenderer* renderer) { m_uiTextRenderer = renderer; }
 	private:
-		Graphics::Device* m_device = nullptr;
+		Renderer::Device* m_device = nullptr;
 		UI::ImGuiManager* m_imguiManager = nullptr;
-		std::unique_ptr<Graphics::RenderTarget> m_renderTarget;
-		Graphics::Skybox* m_skybox = nullptr;
-		Graphics::PipelineStateCache* m_psoCache = nullptr;
+		std::unique_ptr<Renderer::RenderTarget> m_renderTarget;
+		Renderer::Skybox* m_skybox = nullptr;
+		Renderer::PipelineStateCache* m_psoCache = nullptr;
 		bool m_initialized = false;
 		uint32_t m_width = 0;
 		uint32_t m_height = 0;
@@ -93,20 +93,20 @@ namespace Editor::UI
 		bool m_showGizmos = true;
 		Core::GameObject* m_selectedObject = nullptr;
 
-		Graphics::Scene* m_scene;
+		World::Scene* m_scene;
 		EngineUI::UITextRenderer* m_uiTextRenderer = nullptr;
 
 		// FXAA
-		std::unique_ptr<Graphics::FXAARenderer> m_fxaaRenderer;
-		std::unique_ptr<Graphics::RenderTarget> m_fxaaOutputTarget;
+		std::unique_ptr<Renderer::FXAARenderer> m_fxaaRenderer;
+		std::unique_ptr<Renderer::RenderTarget> m_fxaaOutputTarget;
 		bool m_enableFXAA = true; //比較用
 
 		// Gizmo
 		std::unique_ptr<Gizmo> m_gizmo;
 
-		void renderGrid(ID3D12GraphicsCommandList* commandList, const Graphics::Camera& camera);
+		void renderGrid(ID3D12GraphicsCommandList* commandList, const World::Camera& camera);
 		void renderSelectionOutline(ID3D12GraphicsCommandList* commandList,
-			const Graphics::Camera& camera,
+			const World::Camera& camera,
 			Core::GameObject* object);
 
 	private:
@@ -134,9 +134,9 @@ namespace Editor::UI
 
 	private:
 		// Grid 関連の関数
-		[[nodiscard]] Engine::Utils::VoidResult initializeGrid(Graphics::ShaderManager* shaderManager);
+		[[nodiscard]] Engine::Utils::VoidResult initializeGrid(Renderer::ShaderManager* shaderManager);
 		[[nodiscard]] Engine::Utils::VoidResult createGridGeometry();
 		[[nodiscard]] Engine::Utils::VoidResult createGridRootSignature();
-		[[nodiscard]] Engine::Utils::VoidResult createGridPipelineState(Graphics::ShaderManager* shaderManager);
+		[[nodiscard]] Engine::Utils::VoidResult createGridPipelineState(Renderer::ShaderManager* shaderManager);
 	};
 }

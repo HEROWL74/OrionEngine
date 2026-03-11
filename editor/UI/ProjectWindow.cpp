@@ -727,7 +727,7 @@ namespace Editor::UI
         return folderPath.string();
     }
 
-    void ProjectWindow::setTextureManager(Engine::Graphics::TextureManager* textureManager)
+    void ProjectWindow::setTextureManager(Renderer::TextureManager* textureManager)
     {
         m_textureManager = textureManager;
 

@@ -164,7 +164,7 @@ namespace Editor
     {
         Utils::log_info("Initializing DirectX 12...");
 
-        Graphics::DeviceSettings deviceSettings{
+        Renderer::DeviceSettings deviceSettings{
             .enableDebugLayer = true,
             .enableGpuValidation = false,
             .minFeatureLevel = D3D_FEATURE_LEVEL_11_0,
@@ -202,7 +202,7 @@ namespace Editor
         );
 
         Utils::log_info("Initializing ShaderManager...");
-        m_shaderManager = std::make_unique<Graphics::ShaderManager>();
+        m_shaderManager = std::make_unique<Renderer::ShaderManager>();
         auto shaderManagerResult = m_shaderManager->initialize(&m_device);
         if (!shaderManagerResult) {
             Utils::log_error(shaderManagerResult.error());
@@ -234,7 +234,7 @@ namespace Editor
         auto sceneResult = m_scene.initialize(&m_device, m_shaderManager.get());
         if (!sceneResult) return sceneResult;
 
-        Engine::Graphics::setActiveScene(&m_scene);
+        Engine::World::setActiveScene(&m_scene);
         Utils::log_info("Active scene set in EditorApp");
 
         Utils::log_info("Initializing UITextRenderer...");
@@ -402,7 +402,7 @@ namespace Editor
         m_gameCamera.setPosition({ 0.0f, 5.0f, 8.0f });
         m_gameCamera.lookAt({ 0.0f, 0.0f, 0.0f });
 
-        m_cameraController = std::make_unique<Graphics::FPSCameraController>(&m_editorCamera);
+        m_cameraController = std::make_unique<World::FPSCameraController>(&m_editorCamera);
         m_cameraController->setMovementSpeed(5.0f);
         m_cameraController->setMouseSensitivity(0.1f);
 
@@ -1246,12 +1246,12 @@ namespace Editor
         Math::Vector3 cameraForward = m_gameCamera.getForward();
         newObject->getTransform()->setPosition(cameraPos + cameraForward * 3.0f);
 
-        Graphics::RenderableType renderType = primitiveToRenderableType(type);
+        Renderer::RenderableType renderType = primitiveToRenderableType(type);
 
         auto material = m_materialManager.createMaterial(name + "_Material");
         if (material)
         {
-            Graphics::MaterialProperties props;
+            Renderer::MaterialProperties props;
             switch (type)
             {
             case UI::PrimitiveType::Cube:     props.albedo = Math::Vector3(0.8f, 0.8f, 0.8f); break;
@@ -1413,23 +1413,23 @@ namespace Editor
         Utils::log_info(std::format("Renamed object: {} -> {}", oldName, newName));
     }
 
-    Graphics::RenderableType EditorApp::primitiveToRenderableType(UI::PrimitiveType type)
+    Renderer::RenderableType EditorApp::primitiveToRenderableType(UI::PrimitiveType type)
     {
         switch (type)
         {
-        case UI::PrimitiveType::Cube:     return Graphics::RenderableType::Cube;
-        case UI::PrimitiveType::Sphere:   return Graphics::RenderableType::Cube;
+        case UI::PrimitiveType::Cube:     return Renderer::RenderableType::Cube;
+        case UI::PrimitiveType::Sphere:   return Renderer::RenderableType::Cube;
         case UI::PrimitiveType::Plane:  
-        case UI::PrimitiveType::Cylinder: return Graphics::RenderableType::Cube;
-        default:                          return Graphics::RenderableType::Cube;
+        case UI::PrimitiveType::Cylinder: return Renderer::RenderableType::Cube;
+        default:                          return Renderer::RenderableType::Cube;
         }
     }
 
-    UI::PrimitiveType EditorApp::renderableToPrimitiveType(Graphics::RenderableType renderType)
+    UI::PrimitiveType EditorApp::renderableToPrimitiveType(Renderer::RenderableType renderType)
     {
         switch (renderType)
         {
-        case Graphics::RenderableType::Cube:     return UI::PrimitiveType::Cube;
+        case Renderer::RenderableType::Cube:     return UI::PrimitiveType::Cube;
         return UI::PrimitiveType::Plane;
         default:                                 return UI::PrimitiveType::Cube;
         }
@@ -1446,14 +1446,14 @@ namespace Editor
         auto cubeTexMat = m_materialManager.createMaterial("CubeWithTexture_Material");
         if (cubeTexMat)
         {
-            Graphics::MaterialProperties props;
+            Renderer::MaterialProperties props;
             props.metallic = 0.0f;
             props.roughness = 0.5f;
             cubeTexMat->setProperties(props);
 
             auto baseColorTex = m_textureManager.loadTexture(texturePath, true, true);
             if (baseColorTex)
-                cubeTexMat->setTexture(Graphics::TextureType::Albedo, baseColorTex);
+                cubeTexMat->setTexture(Renderer::TextureType::Albedo, baseColorTex);
         }
 
         Utils::log_info("Initial scene created successfully");

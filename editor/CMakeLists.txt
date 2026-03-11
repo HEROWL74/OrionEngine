@@ -17,6 +17,7 @@ if(WIN32)
 
     target_link_libraries(OrionEditor
         PRIVATE OrionEngine
+        PRIVATE OrionRenderer
         PRIVATE OrionBuildSystem
         PRIVATE imgui::imgui
     )

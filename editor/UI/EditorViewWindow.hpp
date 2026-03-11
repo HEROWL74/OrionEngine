@@ -3,7 +3,7 @@
 #include "../Views/EditorView.hpp"
 #include "../Views/Gizmo.hpp"
 #include "../engine/Input/InputManager.hpp"
-#include "../engine/Graphics/Scene.hpp"
+#include "../engine/World/Scene.hpp"
 
 namespace Editor::UI
 {
@@ -17,8 +17,8 @@ namespace Editor::UI
 		bool isHovered() const { return m_isHovered; }
 		bool isCameraControlRequested() const { return m_cameraControlRequested; }
 
-		void setCamera(Graphics::Camera* camera) { m_camera = camera; }
-		void setScene(Graphics::Scene* scene) { m_scene = scene; }
+		void setCamera(Engine::World::Camera* camera) { m_camera = camera; }
+		void setScene(Engine::World::Scene* scene) { m_scene = scene; }
 		void processResize();
 
 		// カメラ感度設定
@@ -28,8 +28,8 @@ namespace Editor::UI
 	private:
 		ImGuiManager* m_imgui = nullptr;
 		EditorView* m_view = nullptr;
-		Graphics::Camera* m_camera = nullptr;
-		Graphics::Scene* m_scene = nullptr;
+		Engine::World::Camera* m_camera = nullptr;
+		Engine::World::Scene* m_scene = nullptr;
 		Engine::Input::InputManager* m_inputManager = nullptr;
 		ImTextureID m_texture = {};
 

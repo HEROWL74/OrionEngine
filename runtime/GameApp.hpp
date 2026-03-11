@@ -6,19 +6,19 @@
 #include "../engine/Utils/Common.hpp"
 #include "../engine/Core/Window.hpp"
 #include "../engine/Core/ProjectSettings.hpp"
-#include "../engine/Graphics/Device.hpp"
-#include "../engine/Graphics/Scene.hpp"
-#include "../engine/Graphics/Camera.hpp"
-#include "../engine/Graphics/Skybox.hpp"
-#include "../engine/Graphics/ShaderManager.hpp"
-#include "../engine/Graphics/SceneSerializer.hpp"
-#include "../engine/Graphics/Material.hpp"
-#include "../engine/Graphics/Texture.hpp"
-#include "../engine/Graphics/SplashScreen.hpp"
+#include "../renderer/Device.hpp"
+#include "../engine/World/Scene.hpp"
+#include "../engine/World/Camera.hpp"
+#include "../renderer/Skybox.hpp"
+#include "../renderer/ShaderManager.hpp"
+#include "../engine/World/SceneSerializer.hpp"
+#include "../renderer/Material.hpp"
+#include "../renderer/Texture.hpp"
+#include "../engine/World/SplashScreen.hpp"
 #include "../engine/Scripting/ScriptManager.hpp"
 #include "../engine/Scripting/LuaBindings.hpp"
 #include "../engine/Input/InputSystem.hpp"
-#include "../engine/UI/UITextRenderer.hpp"
+#include "../renderer/UITextRenderer.hpp"
 #include <wrl.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -43,25 +43,25 @@ namespace Runtime
 
         // ウィンドウとデバイス
         Engine::Core::Window     m_window;
-        Engine::Graphics::Device m_device;
+        Renderer::Device m_device;
 
         // シーンとカメラ
-        Engine::Graphics::Scene        m_scene;
-        Engine::Graphics::Camera       m_camera;
-        Engine::Graphics::Skybox       m_skybox;
-        Engine::Graphics::SplashScreen m_splashScreen;
+        Engine::World::Scene        m_scene;
+        Engine::World::Camera       m_camera;
+        Renderer::Skybox       m_skybox;
+        Engine::World::SplashScreen m_splashScreen;
 
         // UIText
-        std::unique_ptr<Engine::EngineUI::UITextRenderer> m_uiTextRenderer;
+        std::unique_ptr<Renderer::UITextRenderer> m_uiTextRenderer;
 
         // Luabind
         std::unique_ptr<Engine::Scripting::LuaBindings> m_luaBindings;
 
         // マネージャー類
-        std::unique_ptr<Engine::Graphics::ShaderManager> m_shaderManager;
-        Engine::Graphics::MaterialManager m_materialManager;
-        Engine::Graphics::TextureManager  m_textureManager;
-        Engine::Graphics::SceneSerializer m_sceneSerializer;
+        std::unique_ptr<Renderer::ShaderManager> m_shaderManager;
+        Renderer::MaterialManager m_materialManager;
+        Renderer::TextureManager  m_textureManager;
+        Engine::World::SceneSerializer m_sceneSerializer;
 
         // DirectX リソース
         ComPtr<ID3D12CommandQueue>        m_commandQueue;

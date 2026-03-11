@@ -1,9 +1,9 @@
 ﻿// src/editor/Utils/RayPicking.hpp
 #pragma once
 #include "../engine/Math/Math.hpp"
-#include "../engine/Graphics/Camera.hpp"
+#include "../engine/World/Camera.hpp"
 #include "../engine/Core/GameObject.hpp"
-#include "../engine/Graphics/RenderBatchSystem.hpp"
+#include "../renderer/RenderBatchSystem.hpp"
 #include <vector>
 
 namespace Editor::EditorUtils
@@ -28,7 +28,7 @@ namespace Editor::EditorUtils
         static void screenToWorldRay(
             float screenX, float screenY,
             float screenWidth, float screenHeight,
-            const Graphics::Camera& camera,
+            const World::Camera& camera,
             Math::Vector3& outOrigin,
             Math::Vector3& outDirection);
 
@@ -59,12 +59,12 @@ namespace Editor::EditorUtils
             const Math::Vector3& rayOrigin,
             const Math::Vector3& rayDirection,
             const std::vector<std::unique_ptr<Core::GameObject>>& objects,
-            const Graphics::RenderBatchSystem* renderBatch = nullptr);
+            const Renderer::RenderBatchSystem* renderBatch = nullptr);
 
     private:
         static bool getObjectBounds(
             Core::GameObject* object,
-            const Graphics::RenderBatchSystem* renderBatch,
+            const Renderer::RenderBatchSystem* renderBatch,
             Math::Vector3& outMin,
             Math::Vector3& outMax);
     };

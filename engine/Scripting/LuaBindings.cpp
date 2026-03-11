@@ -19,7 +19,7 @@ namespace Engine::Scripting
 
 	void LuaBindings::bindCamera(sol::state& lua)
 	{
-		using namespace Graphics;
+		using namespace World;
 
 		lua.new_usertype<Camera>("Camera",
 			sol::constructors<Camera()>(),

@@ -9,7 +9,7 @@ namespace Editor::EditorUtils
     void RayPicking::screenToWorldRay(
         float screenX, float screenY,
         float screenWidth, float screenHeight,
-        const Graphics::Camera& camera,
+        const World::Camera& camera,
         Math::Vector3& outOrigin,
         Math::Vector3& outDirection)
     {
@@ -108,7 +108,7 @@ namespace Editor::EditorUtils
         const Math::Vector3& rayOrigin,
         const Math::Vector3& rayDirection,
         const std::vector<std::unique_ptr<Core::GameObject>>& objects,
-        const Graphics::RenderBatchSystem* renderBatch)
+        const Renderer::RenderBatchSystem* renderBatch)
     {
         RaycastHit closest;
         closest.hit = false;
@@ -139,7 +139,7 @@ namespace Editor::EditorUtils
 
     bool RayPicking::getObjectBounds(
         Core::GameObject* object,
-        const Graphics::RenderBatchSystem* renderBatch,
+        const Renderer::RenderBatchSystem* renderBatch,
         Math::Vector3& outMin,
         Math::Vector3& outMax)
     {
@@ -161,7 +161,7 @@ namespace Editor::EditorUtils
             {
                 switch (entry->type)
                 {
-                case Engine::Graphics::RenderableType::Cube:
+                case Renderer::RenderableType::Cube:
                     halfExtents = Math::Vector3(0.5f, 0.5f, 0.5f);
                     break;
                 default:

@@ -29,6 +29,7 @@ endforeach()
 # ---------------------------------------------------------
 
 add_subdirectory(engine)
+add_subdirectory(renderer)
 add_subdirectory(engine-assets)
 add_subdirectory(tools/buildworker)
 

@@ -4,14 +4,14 @@
 #include "../engine/Scripting/LuaScriptComponent.hpp"
 #include "../engine/Scripting/ScriptManager.hpp"
 #include "../engine/Audio/AudioComponent.hpp"
-#include "../engine/Graphics/ActiveScene.hpp"
+#include "../engine/World/ActiveScene.hpp"
 
 namespace Editor::EditorCore
 {
-    void PlayModeController::initialize(Engine::Graphics::Scene* scene)
+    void PlayModeController::initialize(Engine::World::Scene* scene)
     {
         m_scene = scene;
-        Engine::Graphics::setActiveScene(scene);
+        Engine::World::setActiveScene(scene);
         Engine::Utils::log_info("PlayModeController initialized");
         m_initialized = true;
     }
@@ -36,7 +36,7 @@ namespace Editor::EditorCore
             Engine::Utils::log_info("Entering Play mode...");
 
             // ActiveSceneを確実に設定
-            Engine::Graphics::setActiveScene(m_scene);
+            Engine::World::setActiveScene(m_scene);
             Engine::Utils::log_info(std::format("ActiveScene set to: {}", (void*)m_scene));
 
             // シーンの状態を保存（新しいGameObjectsが作られた後）
@@ -247,7 +247,7 @@ namespace Editor::EditorCore
         Engine::Scripting::ScriptManager::get().reloadAll();
 
         Engine::Utils::log_info(std::format("Reloading scene from: {}", m_scenePath));
-        Engine::Graphics::SceneSerializer serializer;
+        Engine::World::SceneSerializer serializer;
         auto result = serializer.loadScene(
             *m_scene,
             m_device,
@@ -266,7 +266,7 @@ namespace Editor::EditorCore
 
         Engine::Utils::log_info("Scene reloaded successfully");
 
-        Engine::Graphics::setActiveScene(m_scene);
+        Engine::World::setActiveScene(m_scene);
         Engine::Utils::log_info(std::format("ActiveScene reset to: {}", (void*)m_scene));
 
         // リスタート処理完了
@@ -276,10 +276,10 @@ namespace Editor::EditorCore
     }
 
     void PlayModeController::setSceneLoadContext(
-        Engine::Graphics::Device* device,
-        Engine::Graphics::ShaderManager* shaderManager,
-        Engine::Graphics::MaterialManager* materialManager,
-        Engine::Graphics::TextureManager* textureManager,
+        Renderer::Device* device,
+        Renderer::ShaderManager* shaderManager,
+        Renderer::MaterialManager* materialManager,
+        Renderer::TextureManager* textureManager,
         const std::string& scenePath
     )
     {

@@ -23,6 +23,7 @@ add_executable(OrionGame WIN32
 
 target_link_libraries(OrionGame
     PRIVATE OrionEngine
+    PRIVATE OrionRenderer
 )
 
 # ---------------------------------------------------------
@@ -48,6 +49,7 @@ target_compile_definitions(${RUNTIME_PROJECT_NAME} PRIVATE
 
 target_link_libraries(${RUNTIME_PROJECT_NAME}
     PRIVATE OrionEngine
+    PRIVATE OrionRenderer
 )
 
 # ---------------------------------------------------------

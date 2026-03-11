@@ -4,8 +4,8 @@
 namespace Editor::UI
 {
     Utils::VoidResult GameView::initialize(
-        Graphics::Device* device, uint32_t width, uint32_t height,
-        Graphics::PipelineStateCache* psoCache)
+        Renderer::Device* device, uint32_t width, uint32_t height,
+        Renderer::PipelineStateCache* psoCache)
     {
         CHECK_CONDITION(device, Utils::ErrorType::Unknown, "Device is null");
         m_device = device;
@@ -13,7 +13,7 @@ namespace Editor::UI
         m_height = height;
         m_psoCache = psoCache;
 
-        m_renderTarget = std::make_unique<Graphics::RenderTarget>();
+        m_renderTarget = std::make_unique<Renderer::RenderTarget>();
         auto result = m_renderTarget->initialize(device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
         if (!result) return result;
 
@@ -22,9 +22,9 @@ namespace Editor::UI
     }
 
     void GameView::render(
-        Graphics::Scene& scene,
+        World::Scene& scene,
         ID3D12GraphicsCommandList* commandList,
-        const Graphics::Camera& camera,
+        const World::Camera& camera,
         UINT frameIndex)
     {
         if (!m_initialized) return;
@@ -79,11 +79,11 @@ namespace Editor::UI
         m_width = width;
         m_height = height;
         m_renderTarget.reset();
-        m_renderTarget = std::make_unique<Graphics::RenderTarget>();
+        m_renderTarget = std::make_unique<Renderer::RenderTarget>();
         m_renderTarget->initialize(m_device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
     }
 
-    Graphics::RenderTarget* GameView::getRenderTarget() const
+    Renderer::RenderTarget* GameView::getRenderTarget() const
     {
         return m_renderTarget.get();
     }

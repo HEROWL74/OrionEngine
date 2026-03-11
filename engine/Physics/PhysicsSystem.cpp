@@ -5,11 +5,10 @@
 
 namespace Engine::Physics
 {
-	void PhysicsSystem::update(Graphics::Scene& scene)
+	void PhysicsSystem::update(World::Scene& scene)
 	{
 		auto& gameObjects = scene.getGameObjects();
 
-		// 繝・ヰ繝・げ繝ｭ繧ｰ霑ｽ蜉
 		static int frameCount = 0;
 		if (frameCount < 5) {
 			Utils::log_info(std::format("=== PhysicsSystem Update Frame {} === GameObject count: {}",
@@ -17,13 +16,11 @@ namespace Engine::Physics
 			frameCount++;
 		}
 
-		// 迴ｾ蝨ｨ繝輔Ξ繝ｼ繝縺ｮ陦晉ｪ√・繧｢
 		std::unordered_set<
 			std::pair<Core::GameObject*, Core::GameObject*>,
 			CollisionPairHash
 		> currentCollisions;
 
-		// 蜈ｨ縺ｦ縺ｮ繧ｳ繝ｩ繧､繝繝ｼ繝壹い繧偵メ繧ｧ繝・け
 		for (size_t i = 0; i < gameObjects.size(); ++i)
 		{
 			auto* objA = gameObjects[i].get();
@@ -48,7 +45,6 @@ namespace Engine::Physics
 				auto* colliderB = objB->getComponent<BoxCollider>();
 				if (!colliderB || !colliderB->isEnabled())continue;
 
-				// 陦晉ｪ∝愛螳・
 				if (colliderA->intersects(colliderB))
 				{
 					Utils::log_info(std::format("Collision detected: {} <-> {}",
@@ -57,10 +53,9 @@ namespace Engine::Physics
 					auto pair = makePair(objA, objB);
 					currentCollisions.insert(pair);
 
-					// 蜑阪ヵ繝ｬ繝ｼ繝縺ｧ陦晉ｪ√＠縺ｦ縺・↑縺代ｌ縺ｰEnter
 					if (m_previousCollisions.find(pair) == m_previousCollisions.end())
 					{
-						Utils::log_info(std::format("  竊・Calling triggerCollisionEnter"));
+						Utils::log_info(std::format("Calling triggerCollisionEnter"));
 						triggerCollisionEnter(objA, objB);
 					}
 				}
@@ -77,7 +72,6 @@ namespace Engine::Physics
 			}
 		}
 
-		// 譖ｴ譁ｰ
 		m_previousCollisions = std::move(currentCollisions);
 	}
 
@@ -86,18 +80,17 @@ namespace Engine::Physics
 		Utils::log_info(std::format("triggerCollisionEnter: {} vs {}",
 			a->getName(), b->getName()));
 
-		// LuaScriptComponent繧呈爾縺励※繧､繝吶Φ繝育匱轣ｫ
 		auto* scriptA = a->getComponent<Scripting::LuaScriptComponent>();
 		if (scriptA && scriptA->isEnabled())
 		{
-			Utils::log_info(std::format("  竊・{} has LuaScript: {}",
+			Utils::log_info(std::format("{} has LuaScript: {}",
 				a->getName(), scriptA->getScriptPath()));
 
 			auto& mgr = Scripting::ScriptManager::get();
 			auto func = mgr.getFunction(scriptA->getScriptPath(), "onCollisionEnter");
 			if (func.valid())
 			{
-				Utils::log_info("  竊・Calling Lua onCollisionEnter");
+				Utils::log_info("Calling Lua onCollisionEnter");
 				try
 				{
 					func(a, b);
@@ -110,25 +103,25 @@ namespace Engine::Physics
 			}
 			else
 			{
-				Utils::log_warning("  竊・onCollisionEnter function not found in Lua script");
+				Utils::log_warning("onCollisionEnter function not found in Lua script");
 			}
 		}
 		else
 		{
-			Utils::log_info(std::format("  竊・{} has no LuaScript", a->getName()));
+			Utils::log_info(std::format("} has no LuaScript", a->getName()));
 		}
 
 		auto* scriptB = b->getComponent<Scripting::LuaScriptComponent>();
 		if (scriptB && scriptB->isEnabled())
 		{
-			Utils::log_info(std::format("  竊・{} has LuaScript: {}",
+			Utils::log_info(std::format("} has LuaScript: {}",
 				b->getName(), scriptB->getScriptPath()));
 
 			auto& mgr = Scripting::ScriptManager::get();
 			auto func = mgr.getFunction(scriptB->getScriptPath(), "onCollisionEnter");
 			if (func.valid())
 			{
-				Utils::log_info("  竊・Calling Lua onCollisionEnter");
+				Utils::log_info("Calling Lua onCollisionEnter");
 				try
 				{
 					func(b, a);
@@ -141,18 +134,17 @@ namespace Engine::Physics
 			}
 			else
 			{
-				Utils::log_warning("  竊・onCollisionEnter function not found in Lua script");
+				Utils::log_warning("onCollisionEnter function not found in Lua script");
 			}
 		}
 		else
 		{
-			Utils::log_info(std::format("  竊・{} has no LuaScript", b->getName()));
+			Utils::log_info(std::format("{} has no LuaScript", b->getName()));
 		}
 	}
 
 	void PhysicsSystem::triggerCollisionExit(Core::GameObject* a, Core::GameObject* b)
 	{
-		// 蜷梧ｧ倥↓繧､繝吶Φ繝育匱轣ｫ
 		auto* scriptA = a->getComponent<Scripting::LuaScriptComponent>();
 		if (scriptA && scriptA->isEnabled())
 		{

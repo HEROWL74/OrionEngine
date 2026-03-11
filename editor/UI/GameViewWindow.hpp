@@ -9,13 +9,13 @@ namespace Editor::UI
 	public:
 		void initialize(ImGuiManager* imgui, GameView* view);
 		void draw();
-		void setCamera(Graphics::Camera* camera) { m_camera = camera; }
+		void setCamera(World::Camera* camera) { m_camera = camera; }
 		void processResize();
 
 	private:
 		ImGuiManager* m_imgui = nullptr;
 		GameView* m_view = nullptr;
-		Graphics::Camera* m_camera = nullptr;
+		World::Camera* m_camera = nullptr;
 		ImTextureID m_texture = {};
 
 		ImVec2 m_lastSize = { 0, 0 };

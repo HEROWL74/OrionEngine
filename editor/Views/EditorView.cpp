@@ -8,9 +8,9 @@ namespace Editor::UI
     using namespace Engine;
 
     Utils::VoidResult EditorView::initialize(
-        Graphics::Device* device, uint32_t width, uint32_t height,
-        Graphics::ShaderManager* shaderManager,
-        Graphics::PipelineStateCache* psoCache)
+        Renderer::Device* device, uint32_t width, uint32_t height,
+        Renderer::ShaderManager* shaderManager,
+        Renderer::PipelineStateCache* psoCache)
     {
         CHECK_CONDITION(device != nullptr, Utils::ErrorType::Unknown, "Device is null");
         CHECK_CONDITION(device->isValid(), Utils::ErrorType::Unknown, "Device is not valid");
@@ -23,20 +23,20 @@ namespace Editor::UI
 
         Utils::log_info(std::format("EditorView::initialize - Creating RenderTarget {}x{}", width, height));
 
-        m_renderTarget = std::make_unique<Graphics::RenderTarget>();
+        m_renderTarget = std::make_unique<Renderer::RenderTarget>();
         auto result = m_renderTarget->initialize(device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
         if (!result)
             return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown,
                 "Failed to create EditorView render target"));
 
-        m_fxaaRenderer = std::make_unique<Graphics::FXAARenderer>();
+        m_fxaaRenderer = std::make_unique<Renderer::FXAARenderer>();
         if (!m_fxaaRenderer->initialize(m_device, shaderManager, width, height))
         {
             Utils::log_warning("Failed to initialize FXAA - antialiasing disabled");
             m_fxaaRenderer.reset();
         }
 
-        m_fxaaOutputTarget = std::make_unique<Graphics::RenderTarget>();
+        m_fxaaOutputTarget = std::make_unique<Renderer::RenderTarget>();
         if (!m_fxaaOutputTarget->initialize(device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM))
         {
             Utils::log_warning("Failed to initialize FXAA output target");
@@ -67,9 +67,9 @@ namespace Editor::UI
     }
 
     void EditorView::render(
-        Graphics::Scene& scene,
+        World::Scene& scene,
         ID3D12GraphicsCommandList* commandList,
-        const Graphics::Camera& camera,
+        const World::Camera& camera,
         UINT frameIndex)
     {
         if (!m_initialized || !m_renderTarget || !commandList) return;
@@ -152,7 +152,7 @@ namespace Editor::UI
 
     void EditorView::renderEditorElements(
         ID3D12GraphicsCommandList* commandList,
-        const Graphics::Camera& camera, UINT frameIndex)
+        const World::Camera& camera, UINT frameIndex)
     {
         if (!commandList) return;
         if (m_showGizmos && m_selectedObject && m_gizmo)
@@ -163,7 +163,7 @@ namespace Editor::UI
 
     void EditorView::renderGrid(
         ID3D12GraphicsCommandList* commandList,
-        const Graphics::Camera& camera)
+        const World::Camera& camera)
     {
         if (!m_gridInitialized || !m_gridVertexBuffer || !m_gridCameraBuffer) return;
         if (m_gridCameraMapped)
@@ -182,7 +182,7 @@ namespace Editor::UI
 
     void EditorView::renderSelectionOutline(
         ID3D12GraphicsCommandList* commandList,
-        const Graphics::Camera& camera,
+        const World::Camera& camera,
         Core::GameObject* object) {
     }
 
@@ -203,11 +203,11 @@ namespace Editor::UI
             m_fxaaOutputTarget->initialize(m_device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
         }
 
-        m_renderTarget = std::make_unique<Graphics::RenderTarget>();
+        m_renderTarget = std::make_unique<Renderer::RenderTarget>();
         m_renderTarget->initialize(m_device, width, height, DXGI_FORMAT_R8G8B8A8_UNORM);
     }
 
-    Utils::VoidResult EditorView::initializeGrid(Graphics::ShaderManager* shaderManager)
+    Utils::VoidResult EditorView::initializeGrid(Renderer::ShaderManager* shaderManager)
     {
         if (!m_device || !shaderManager)
             return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown, "Device or ShaderManager is null"));
@@ -291,24 +291,24 @@ namespace Editor::UI
         return {};
     }
 
-    Utils::VoidResult EditorView::createGridPipelineState(Graphics::ShaderManager* shaderManager)
+    Utils::VoidResult EditorView::createGridPipelineState(Renderer::ShaderManager* shaderManager)
     {
         auto dev = m_device->getDevice();
         auto& settings = Engine::Core::ProjectSettings::get();
 
-        Graphics::ShaderCompileDesc vsDesc;
+        Renderer::ShaderCompileDesc vsDesc;
         vsDesc.filePath = settings.getEngineAssetPath("shaders/GridVS.cso").string();
         vsDesc.entryPoint = "main";
-        vsDesc.type = Graphics::ShaderType::Vertex;
+        vsDesc.type = Renderer::ShaderType::Vertex;
         vsDesc.enableDebug = true;
         auto vs = shaderManager->loadShader(vsDesc);
         if (!vs) return std::unexpected(Utils::make_error(
             Utils::ErrorType::ShaderCompilation, "Failed to load grid vertex shader"));
 
-        Graphics::ShaderCompileDesc psDesc;
+        Renderer::ShaderCompileDesc psDesc;
         psDesc.filePath = settings.getEngineAssetPath("shaders/GridPS.cso").string();
         psDesc.entryPoint = "main";
-        psDesc.type = Graphics::ShaderType::Pixel;
+        psDesc.type = Renderer::ShaderType::Pixel;
         psDesc.enableDebug = true;
         auto ps = shaderManager->loadShader(psDesc);
         if (!ps) return std::unexpected(Utils::make_error(

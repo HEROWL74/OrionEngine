@@ -8,12 +8,12 @@
 #include <memory>
 #include <functional>
 #include <directx/d3dx12.h>
-#include "../engine/Graphics/Device.hpp"
+#include "../renderer/Device.hpp"
 #include "../engine/Utils/Common.hpp"
 #include "../engine/Core/GameObject.hpp"
-#include "../engine/Graphics/Material.hpp"
-#include "../engine/Graphics/Texture.hpp"
-#include "../engine/Graphics/Scene.hpp"
+#include "../renderer/Material.hpp"
+#include "../renderer/Texture.hpp"
+#include "../engine/World/Scene.hpp"
 #include "ContextMenu.hpp"
 #include "../Core/PlayModeController.hpp"
 #include "../engine/Scripting/IScript.hpp"
@@ -34,6 +34,7 @@ namespace Engine::Scripting
 namespace Editor::UI
 {
 	using namespace Engine;
+	using namespace Renderer;
 
 	//======================================================================
 	// ImGuiマネージャークラス
@@ -50,7 +51,7 @@ namespace Editor::UI
 		ImGuiManager& operator=(ImGuiManager&&) = delete;
 
 		[[nodiscard]] Utils::VoidResult initialize(
-			Graphics::Device* device,
+			Device* device,
 			HWND hwnd,
 			ID3D12CommandQueue* commandQueue,
 			DXGI_FORMAT rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -69,13 +70,13 @@ namespace Editor::UI
 		void createDeviceObjects();
 		void clearRenderTargetDescriptors();
 		void createGUIStyle();
-		ImTextureID registerTexture(Graphics::Texture* tex);
+		ImTextureID registerTexture(Texture* tex);
 		ImTextureID registerRenderTarget(ID3D12Resource* resource, DXGI_FORMAT format);
 
 	private:
 		bool m_initialized = false;
 		ImGuiContext* m_context = nullptr;
-		Graphics::Device* m_device = nullptr;
+		Device* m_device = nullptr;
 		HWND m_hwnd = nullptr;
 		DXGI_FORMAT m_rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
@@ -151,7 +152,7 @@ namespace Editor::UI
 		void draw() override;
 
 		// Sceneの設定（選択状態もSceneから取得）
-		void setScene(Graphics::Scene* scene) { m_scene = scene; }
+		void setScene(World::Scene* scene) { m_scene = scene; }
 
 		// 選択変更コールバック（Inspectorへの通知用）
 		void setSelectionChangedCallback(std::function<void(Core::GameObject*)> callback);
@@ -182,7 +183,7 @@ namespace Editor::UI
 
 	private:
 
-		Graphics::Scene* m_scene = nullptr;
+		World::Scene* m_scene = nullptr;
 		std::function<void(Core::GameObject*)> m_onSelectionChanged;
 
 		std::unique_ptr<ContextMenu> m_contextMenu;
@@ -230,19 +231,19 @@ namespace Editor::UI
 
 		Engine::EngineUI::UIText* getSelectedUIText() const { return m_selectedUIText; }
 
-		void setScene(Graphics::Scene* scene) { m_scene = scene; }
-		void setMaterialManager(Graphics::MaterialManager* manager) { m_materialManager = manager; }
-		void setTextureManager(Graphics::TextureManager* manager) { m_textureManager = manager; }
+		void setScene(World::Scene* scene) { m_scene = scene; }
+		void setMaterialManager(MaterialManager* manager) { m_materialManager = manager; }
+		void setTextureManager(TextureManager* manager) { m_textureManager = manager; }
 
 	private:
-		Graphics::Scene* m_scene = nullptr;
-		Graphics::MaterialManager* m_materialManager = nullptr;
-		Graphics::TextureManager* m_textureManager = nullptr;
+		World::Scene* m_scene = nullptr;
+		MaterialManager* m_materialManager = nullptr;
+		TextureManager* m_textureManager = nullptr;
 
 		void drawTransformComponent(Core::Transform* transform);
 		// void drawScriptComponent(Scripting::LuaScriptComponent* luaScriptComponent);
-		void drawTextureSlot(const char* name, Graphics::TextureType textureType,
-			std::shared_ptr<Graphics::Material> material);
+		void drawTextureSlot(const char* name, TextureType textureType,
+			std::shared_ptr<Material> material);
 		void drawBoxColliderComponent(Physics::BoxCollider* collider);
 		void drawAudioComponent(Audio::AudioComponent* audioComponent);
 

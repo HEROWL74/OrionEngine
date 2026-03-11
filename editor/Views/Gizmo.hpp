@@ -2,9 +2,9 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <memory>
-#include "../engine/Graphics/Device.hpp"
-#include "../engine/Graphics/ShaderManager.hpp"
-#include "../engine/Graphics/Camera.hpp"
+#include "../renderer/Device.hpp"
+#include "../renderer/ShaderManager.hpp"
+#include "../engine/World/Camera.hpp"
 #include "../engine/Core/GameObject.hpp"
 #include "../engine/Math/Math.hpp"
 #include "../engine/Utils/Common.hpp"
@@ -40,10 +40,10 @@ namespace Editor::UI
 		~Gizmo() = default;
 
 		[[nodiscard]]
-		Engine::Utils::VoidResult initialize(Engine::Graphics::Device* device, Engine::Graphics::ShaderManager* shaderManager);
+		Engine::Utils::VoidResult initialize(Renderer::Device* device, Renderer::ShaderManager* shaderManager);
 		void shutdown();
 
-		void render(ID3D12GraphicsCommandList* commandList, const Engine::Graphics::Camera& camera, Engine::
+		void render(ID3D12GraphicsCommandList* commandList, const Engine::World::Camera& camera, Engine::
 			Core::GameObject* targetObject);
 
 		GizmoAxis hitTest(const Math::Vector3& rayOrigin,
@@ -65,8 +65,8 @@ namespace Editor::UI
 		GizmoAxis getSelectedAxis() const { return m_selectedAxis; }
 
 	private:
-		Engine::Graphics::Device* m_device = nullptr;
-		Engine::Graphics::ShaderManager* m_shaderManager = nullptr;
+		Renderer::Device* m_device = nullptr;
+		Renderer::ShaderManager* m_shaderManager = nullptr;
 
 		GizmoType m_type = GizmoType::Translation;
 		GizmoAxis m_selectedAxis = GizmoAxis::None;
@@ -108,14 +108,14 @@ namespace Editor::UI
 		[[nodiscard]] Engine::Utils::VoidResult createConstantBuffer();
 
 		void renderTranslationGizmo(ID3D12GraphicsCommandList* commandList,
-			const Engine::Graphics::Camera& camera,
+			const Engine::World::Camera& camera,
 			const Math::Vector3& position);
 
 		Math::Vector3 projectPointOnAxis(const Math::Vector3& point,
 			const Math::Vector3& axisOrigin,
 			const Math::Vector3& axisDirection) const;
 
-		float calculateGizmoScale(const Engine::Graphics::Camera& camera, const Math::Vector3& position);
+		float calculateGizmoScale(const Engine::World::Camera& camera, const Math::Vector3& position);
 	};
 }
 

@@ -4,17 +4,17 @@
 #include "EditorState.hpp"
 #include "../engine/Utils/Common.hpp"
 #include "../engine/Math/Math.hpp"
-#include "../engine/Graphics/Scene.hpp"
-#include "../engine/Graphics/SceneSerializer.hpp"
-#include "../engine/Graphics/ShaderManager.hpp"
-#include "../engine/Graphics/Material.hpp"
-#include "../engine/Graphics/Texture.hpp"
+#include "../engine/World/Scene.hpp"
+#include "../engine/World/SceneSerializer.hpp"
+#include "../renderer/ShaderManager.hpp"
+#include "../renderer/Material.hpp"
+#include "../renderer/Texture.hpp"
 #include <vector>
 #include <functional>
 #include <memory>
 #include <unordered_map>
 
-namespace Engine::Graphics { class Scene; }
+namespace Engine::World { class Scene; }
 
 namespace Editor::EditorCore
 {
@@ -42,7 +42,7 @@ namespace Editor::EditorCore
         ~PlayModeController() = default;
 
         // 初期化
-        void initialize(Engine::Graphics::Scene* scene);
+        void initialize(Engine::World::Scene* scene);
 
         // Play Mode制御
         void play();
@@ -61,10 +61,10 @@ namespace Editor::EditorCore
         void addStateChangedCallback(EditorStateChangedCallback callback);
 
         void setSceneLoadContext(
-            Engine::Graphics::Device* device,
-            Engine::Graphics::ShaderManager* shaderManager,
-            Engine::Graphics::MaterialManager* materialManager,
-            Engine::Graphics::TextureManager* textureManager,
+            Renderer::Device* device,
+            Renderer::ShaderManager* shaderManager,
+            Renderer::MaterialManager* materialManager,
+            Renderer::TextureManager* textureManager,
             const std::string& scenePath
         );
 
@@ -81,7 +81,7 @@ namespace Editor::EditorCore
 
     private:
         EditorState m_currentState = EditorState::Edit;
-        Engine::Graphics::Scene* m_scene = nullptr;
+        Engine::World::Scene* m_scene = nullptr;
 
         std::vector<EditorStateChangedCallback> m_stateChangedCallbacks;
 
@@ -99,10 +99,10 @@ namespace Editor::EditorCore
         void performRestart();
 
     private:
-        Engine::Graphics::Device* m_device = nullptr;
-        Engine::Graphics::ShaderManager* m_shaderManager = nullptr;
-        Engine::Graphics::MaterialManager* m_materialManager = nullptr;
-        Engine::Graphics::TextureManager* m_textureManager = nullptr;
+        Renderer::Device* m_device = nullptr;
+        Renderer::ShaderManager* m_shaderManager = nullptr;
+        Renderer::MaterialManager* m_materialManager = nullptr;
+        Renderer::TextureManager* m_textureManager = nullptr;
         Engine::Scripting::ScriptManager* m_scriptManager = nullptr;
 
         std::string m_scenePath;

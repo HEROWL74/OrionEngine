@@ -1,9 +1,9 @@
 ﻿// src/runtime/GameApp.cpp
 #include "GameApp.hpp"
-#include "../engine/Utils/RenderContext.hpp"
+#include "../renderer/RenderContext.hpp"
 #include "../engine/Core/Window.hpp"
 #include "../engine/Core/ProjectSettings.hpp"
-#include "../engine/Graphics/ActiveScene.hpp"
+#include "../engine/World/ActiveScene.hpp"
 #include <format>
 
 namespace Runtime
@@ -203,7 +203,7 @@ namespace Runtime
         Engine::Utils::log_info("Initializing DirectX 12...");
 
         // デバイス初期化
-        Engine::Graphics::DeviceSettings deviceSettings{
+        Renderer::DeviceSettings deviceSettings{
             .enableDebugLayer = false,
             .enableGpuValidation = false,
             .minFeatureLevel = D3D_FEATURE_LEVEL_11_0,
@@ -232,7 +232,7 @@ namespace Runtime
         if (!syncResult) return syncResult;
 
         // ShaderManager 初期化
-        m_shaderManager = std::make_unique<Engine::Graphics::ShaderManager>();
+        m_shaderManager = std::make_unique<Renderer::ShaderManager>();
         auto shaderResult = m_shaderManager->initialize(&m_device);
         if (!shaderResult) return shaderResult;
 
@@ -261,7 +261,7 @@ namespace Runtime
         auto sceneResult = m_scene.initialize(&m_device, m_shaderManager.get());
         if (!sceneResult) return sceneResult;
 
-        Engine::Graphics::setActiveScene(&m_scene);
+        Engine::World::setActiveScene(&m_scene);
         Engine::Utils::log_info("Active scene set in GameApp");
 
         // UITextRenderer 初期化

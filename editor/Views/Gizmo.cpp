@@ -5,7 +5,7 @@
 
 namespace Editor::UI
 {
-	Engine::Utils::VoidResult Gizmo::initialize(Engine::Graphics::Device* device, Engine::Graphics::ShaderManager* shaderManager)
+	Engine::Utils::VoidResult Gizmo::initialize(Renderer::Device* device, Renderer::ShaderManager* shaderManager)
 	{
 		CHECK_CONDITION(device != nullptr, Engine::Utils::ErrorType::Unknown, "Device is null");
 		CHECK_CONDITION(shaderManager != nullptr, Engine::Utils::ErrorType::Unknown, "ShaderManager is null");
@@ -47,7 +47,7 @@ namespace Editor::UI
 		m_shaderManager = nullptr;
 	}
 
-	void Gizmo::render(ID3D12GraphicsCommandList* commandList, const Engine::Graphics::Camera& camera, Core::GameObject* targetObject)
+	void Gizmo::render(ID3D12GraphicsCommandList* commandList, const Engine::World::Camera& camera, Core::GameObject* targetObject)
 	{
 		if (!targetObject || !m_device || !m_rootSig || !m_pso || targetObject->isDestroyed())
 			return;
@@ -175,7 +175,7 @@ namespace Editor::UI
 	}
 
 	void Gizmo::renderTranslationGizmo(ID3D12GraphicsCommandList* commandList,
-		const Engine::Graphics::Camera& camera,
+		const Engine::World::Camera& camera,
 		const Math::Vector3& position)
 	{
 		if (!commandList || !m_vertexBuffer || !m_indexBuffer || !m_constantBuffer)
@@ -205,7 +205,7 @@ namespace Editor::UI
 		commandList->DrawIndexedInstanced(m_indexCount, 1, 0, 0, 0);
 	}
 
-	float Gizmo::calculateGizmoScale(const Engine::Graphics::Camera& camera, const Math::Vector3& position)
+	float Gizmo::calculateGizmoScale(const Engine::World::Camera& camera, const Math::Vector3& position)
 	{
 		float distance = Math::Vector3::distance(camera.getPosition(), position);
 		float fov = camera.getFov();
@@ -238,10 +238,10 @@ namespace Editor::UI
 		auto dev = m_device->getDevice();
 		auto& settings = Engine::Core::ProjectSettings::get();
 
-		Engine::Graphics::ShaderCompileDesc vsDesc;
+		Renderer::ShaderCompileDesc vsDesc;
 		vsDesc.filePath = settings.getEngineAssetPath("shaders/GizmoVS.cso").string();
 		vsDesc.entryPoint = "main";
-		vsDesc.type = Engine::Graphics::ShaderType::Vertex;
+		vsDesc.type = Renderer::ShaderType::Vertex;
 		vsDesc.enableDebug = true;
 
 		auto vertexShaderResult = m_shaderManager->loadShader(vsDesc);
@@ -250,10 +250,10 @@ namespace Editor::UI
 			return std::unexpected(Engine::Utils::make_error(Engine::Utils::ErrorType::ShaderCompilation, "Failed to load Gizmo vertex shader"));
 		}
 
-		Engine::Graphics::ShaderCompileDesc psDesc;
+		Renderer::ShaderCompileDesc psDesc;
 		psDesc.filePath = settings.getEngineAssetPath("shaders/GizmoPS.cso").string();
 		psDesc.entryPoint = "main";
-		psDesc.type = Engine::Graphics::ShaderType::Pixel;
+		psDesc.type = Renderer::ShaderType::Pixel;
 		psDesc.enableDebug = true;
 
 		auto pixelShaderResult = m_shaderManager->loadShader(psDesc);
