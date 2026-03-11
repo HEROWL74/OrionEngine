@@ -17,24 +17,20 @@ jobs:
           - os: windows-latest
             preset: x64-release-ci
             build-preset: editor-release-ci
+            use_sccache: true
           - os: ubuntu-latest
             preset: linux-release-ci
             build-preset: linux-editor-release-ci
-
-    env:
-      # sccacheをCMakeのコンパイララウンチャーとして指定
-      CMAKE_C_COMPILER_LAUNCHER: sccache
-      CMAKE_CXX_COMPILER_LAUNCHER: sccache
-      # GitHub Actions専用の高速化フラグ
-      SCCACHE_GHA_ENABLED: "true"
+            use_sccache: false
 
     steps:
       - uses: actions/checkout@v4
         with:
           lfs: true
 
-      # --- sccache Setup (GitHub Actions専用ツール) ---
+      # --- Windows専用: sccache セットアップ ---
       - name: Run sccache-cache
+        if: matrix.use_sccache
         uses: mozilla/sccache-action@v0.0.5
 
       # --- Windows Setup ---
@@ -52,7 +48,6 @@ jobs:
             libglfw3-dev \
             libvulkan-dev \
             vulkan-tools \
-            vulkan-validationlayers \
             libx11-dev \
             libxrandr-dev \
             libxinerama-dev \
@@ -62,43 +57,38 @@ jobs:
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
 
-      # --- vcpkg & sccache Cache ---
-      # sccache自体のキャッシュとvcpkgのアーカイブをまとめて管理
-      - name: Restore Caches
+      # --- vcpkg Cache ---
+      - name: Restore vcpkg Cache
         uses: actions/cache@v4
         with:
           path: |
             ${{ github.workspace }}/vcpkg_installed
             ~/.cache/vcpkg
             ${{ env.LOCALAPPDATA }}/vcpkg/archives
-            ${{ runner.os == 'Windows' && '~/AppData/Local/Mozilla/sccache/cache' || '~/.cache/sccache' }}
-          key: build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json', '**/CMakeLists.txt') }}-${{ github.sha }}
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: |
-            build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json', '**/CMakeLists.txt') }}-
-            build-cache-${{ runner.os }}-
+            vcpkg-${{ runner.os }}-
 
       - name: Configure
         shell: bash
+        env:
+          # Windowsかつsccacheを使う場合のみ環境変数をセット
+          CMAKE_C_COMPILER_LAUNCHER: ${{ matrix.use_sccache && 'sccache' || '' }}
+          CMAKE_CXX_COMPILER_LAUNCHER: ${{ matrix.use_sccache && 'sccache' || '' }}
+          SCCACHE_GHA_ENABLED: ${{ matrix.use_sccache && 'true' || 'false' }}
+          MSYS_NO_PATHCONV: 1 # Windowsのパス変換バグ防止
         run: |
-          # MSVCでのキャッシュヒット率を上げるための追加フラグ
-          # /Z7 (埋め込みデバッグ情報) を強制してキャッシュを共有可能にする
-          EXTRA_FLAGS=""
           if [ "${{ runner.os }}" == "Windows" ]; then
-            EXTRA_FLAGS="-DCMAKE_CXX_FLAGS=/Z7 -DCMAKE_C_FLAGS=/Z7"
-          fi
-
-          if [ "${{ runner.os }}" == "Linux" ]; then
-            export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
-            cmake --preset ${{ matrix.preset }} \
-              -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
-              $EXTRA_FLAGS
+            # Windows側は /Z7 を付与してビルド
+            cmake --preset ${{ matrix.preset }} -DCMAKE_CXX_FLAGS="/Z7" -DCMAKE_C_FLAGS="/Z7"
           else
-            cmake --preset ${{ matrix.preset }} $EXTRA_FLAGS
+            export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
+            cmake --preset ${{ matrix.preset }} -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
           fi
 
       - name: Build
         run: cmake --build --preset ${{ matrix.build-preset }}
 
-      # 最後にsccacheの統計を表示（ログでヒット率を確認するため）
       - name: Show sccache stats
+        if: matrix.use_sccache
         run: sccache --show-stats
