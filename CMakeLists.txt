@@ -6,6 +6,20 @@ else()
     project(Orion LANGUAGES CXX)
 endif()
 
+# sccacheの設定
+find_program(SCCACHE_EXE sccache)
+if(SCCACHE_EXE)
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${SCCACHE_EXE})
+    set(CMAKE_C_COMPILER_LAUNCHER   ${SCCACHE_EXE})
+    message(STATUS "OrionEngine: sccache enabled")
+    
+    # MSVCの場合、sccacheを正しく動作させるためにPDBの共有を無効化する
+    if(MSVC)
+        add_compile_options($<$<CONFIG:Debug>:/Z7>)
+        add_compile_options($<$<CONFIG:RelWithDebInfo>:/Z7>)
+    endif()
+endif()
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 

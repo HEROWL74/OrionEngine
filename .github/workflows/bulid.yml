@@ -11,6 +11,7 @@ jobs:
     name: ${{ matrix.os }} Build
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -20,10 +21,21 @@ jobs:
             preset: linux-release-ci
             build-preset: linux-editor-release-ci
 
+    env:
+      # sccacheをCMakeのコンパイララウンチャーとして指定
+      CMAKE_C_COMPILER_LAUNCHER: sccache
+      CMAKE_CXX_COMPILER_LAUNCHER: sccache
+      # GitHub Actions専用の高速化フラグ
+      SCCACHE_GHA_ENABLED: "true"
+
     steps:
       - uses: actions/checkout@v4
         with:
           lfs: true
+
+      # --- sccache Setup (GitHub Actions専用ツール) ---
+      - name: Run sccache-cache
+        uses: mozilla/sccache-action@v0.0.5
 
       # --- Windows Setup ---
       - name: Set up MSVC
@@ -50,28 +62,43 @@ jobs:
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
 
-      # --- vcpkg Setup (Unified) ---
-      - name: Restore vcpkg
+      # --- vcpkg & sccache Cache ---
+      # sccache自体のキャッシュとvcpkgのアーカイブをまとめて管理
+      - name: Restore Caches
         uses: actions/cache@v4
         with:
           path: |
             ${{ github.workspace }}/vcpkg_installed
-            ~/.cache/vcpkg # Linux用
-            ${{ env.LOCALAPPDATA }}/vcpkg/archives # Windows用
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: vcpkg-${{ runner.os }}-
+            ~/.cache/vcpkg
+            ${{ env.LOCALAPPDATA }}/vcpkg/archives
+            ${{ runner.os == 'Windows' && '~/AppData/Local/Mozilla/sccache/cache' || '~/.cache/sccache' }}
+          key: build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json', '**/CMakeLists.txt') }}-${{ github.sha }}
+          restore-keys: |
+            build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json', '**/CMakeLists.txt') }}-
+            build-cache-${{ runner.os }}-
 
       - name: Configure
         shell: bash
         run: |
-          # Linuxの場合、VCPKG_ROOTを標準の場所かカスタムパスに設定
+          # MSVCでのキャッシュヒット率を上げるための追加フラグ
+          # /Z7 (埋め込みデバッグ情報) を強制してキャッシュを共有可能にする
+          EXTRA_FLAGS=""
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            EXTRA_FLAGS="-DCMAKE_CXX_FLAGS=/Z7 -DCMAKE_C_FLAGS=/Z7"
+          fi
+
           if [ "${{ runner.os }}" == "Linux" ]; then
-            export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT # GitHub標準のvcpkgを使用
-            cmake --preset ${{ matrix.preset }} -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+            export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
+            cmake --preset ${{ matrix.preset }} \
+              -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+              $EXTRA_FLAGS
           else
-            # Windowsはプリセット内の C:/vcpkg/... が生きていればそのまま
-            cmake --preset ${{ matrix.preset }}
+            cmake --preset ${{ matrix.preset }} $EXTRA_FLAGS
           fi
 
       - name: Build
         run: cmake --build --preset ${{ matrix.build-preset }}
+
+      # 最後にsccacheの統計を表示（ログでヒット率を確認するため）
+      - name: Show sccache stats
+        run: sccache --show-stats
