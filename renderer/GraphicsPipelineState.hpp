@@ -36,7 +36,9 @@ namespace Renderer
 		std::string debugName;
 	};
 
-
+    // =================================
+	// GraphicsPipelineState PSO Settings
+	// =================================
 	class GraphicsPipelineState
 	{
 	public:
