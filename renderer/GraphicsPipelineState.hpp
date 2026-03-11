@@ -74,6 +74,7 @@ namespace Renderer
 		RootSignature m_rootSignature;
 		ComPtr<ID3D12PipelineState> m_pipelineState;
 
+		// PSO作成
 		[[nodiscard]] Utils::VoidResult createPSO(
 			Device* device,
 			const GraphicsPipelineStateDesc& desc
