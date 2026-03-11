@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [develop, main]
 
+env:
+  VCPKG_BINARY_SOURCES: 'clear;files,D:/vcpkg_cache,readwrite'
+
 jobs:
   build:
     name: ${{ matrix.os }} Build
@@ -28,31 +31,13 @@ jobs:
         with:
           lfs: true
 
-      # --- sccache Binary Setup ---
       - name: Run sccache-cache
         if: matrix.use_sccache
         uses: mozilla/sccache-action@v0.0.5
 
-      # --- Windows Setup ---
       - name: Set up MSVC
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
-
-      # --- Linux Setup ---
-      - name: Install system dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            ninja-build \
-            libglfw3-dev \
-            libvulkan-dev \
-            vulkan-tools \
-            libx11-dev \
-            libxrandr-dev \
-            libxinerama-dev \
-            libxcursor-dev \
-            libxi-dev
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -63,8 +48,7 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/vcpkg_installed
-            ~/.cache/vcpkg
-            ${{ env.LOCALAPPDATA }}/vcpkg/archives
+            D:/vcpkg_cache
             ${{ github.workspace }}/.sccache_storage
           key: build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: |
@@ -80,10 +64,9 @@ jobs:
           MSYS_NO_PATHCONV: 1
         run: |
           mkdir -p "$SCCACHE_DIR"
+          mkdir -p "D:/vcpkg_cache"
           if [ "${{ runner.os }}" == "Windows" ]; then
-            cmake --preset ${{ matrix.preset }} \
-              -DCMAKE_CXX_FLAGS="/Z7" \
-              -DCMAKE_C_FLAGS="/Z7"
+            cmake --preset ${{ matrix.preset }} -DCMAKE_CXX_FLAGS="/Z7" -DCMAKE_C_FLAGS="/Z7"
           else
             export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
             cmake --preset ${{ matrix.preset }} -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
