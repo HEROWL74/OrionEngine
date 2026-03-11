@@ -28,7 +28,7 @@ jobs:
         with:
           lfs: true
 
-      # --- Windows専用: sccache セットアップ ---
+      # --- sccache Binary Setup ---
       - name: Run sccache-cache
         if: matrix.use_sccache
         uses: mozilla/sccache-action@v0.0.5
@@ -43,43 +43,36 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            ninja-build \
-            libglfw3-dev \
-            libvulkan-dev \
-            vulkan-tools \
-            libx11-dev \
-            libxrandr-dev \
-            libxinerama-dev \
-            libxcursor-dev \
-            libxi-dev
+          sudo apt-get install -y ninja-build libglfw3-dev libvulkan-dev vulkan-tools libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
 
-      # --- vcpkg Cache ---
-      - name: Restore vcpkg Cache
+      # --- Restore Caches ---
+      - name: Restore Caches
         uses: actions/cache@v4
         with:
           path: |
             ${{ github.workspace }}/vcpkg_installed
             ~/.cache/vcpkg
             ${{ env.LOCALAPPDATA }}/vcpkg/archives
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+            ${{ github.workspace }}/.sccache_storage
+          key: build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-${{ github.run_id }}
           restore-keys: |
-            vcpkg-${{ runner.os }}-
+            build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-
+            build-cache-${{ runner.os }}-
 
       - name: Configure
         shell: bash
         env:
-          # Windowsかつsccacheを使う場合のみ環境変数をセット
           CMAKE_C_COMPILER_LAUNCHER: ${{ matrix.use_sccache && 'sccache' || '' }}
           CMAKE_CXX_COMPILER_LAUNCHER: ${{ matrix.use_sccache && 'sccache' || '' }}
-          SCCACHE_GHA_ENABLED: ${{ matrix.use_sccache && 'true' || 'false' }}
-          MSYS_NO_PATHCONV: 1 # Windowsのパス変換バグ防止
+          SCCACHE_GHA_ENABLED: "false"
+          SCCACHE_DIR: ${{ github.workspace }}/.sccache_storage
+          MSYS_NO_PATHCONV: 1
         run: |
+          mkdir -p "$SCCACHE_DIR"
           if [ "${{ runner.os }}" == "Windows" ]; then
-            # Windows側は /Z7 を付与してビルド
             cmake --preset ${{ matrix.preset }} -DCMAKE_CXX_FLAGS="/Z7" -DCMAKE_C_FLAGS="/Z7"
           else
             export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
@@ -91,4 +84,6 @@ jobs:
 
       - name: Show sccache stats
         if: matrix.use_sccache
+        env:
+          SCCACHE_DIR: ${{ github.workspace }}/.sccache_storage
         run: sccache --show-stats
