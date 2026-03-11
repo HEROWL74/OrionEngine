@@ -43,7 +43,16 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libglfw3-dev libvulkan-dev vulkan-tools libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+          sudo apt-get install -y \
+            ninja-build \
+            libglfw3-dev \
+            libvulkan-dev \
+            vulkan-tools \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -57,9 +66,8 @@ jobs:
             ~/.cache/vcpkg
             ${{ env.LOCALAPPDATA }}/vcpkg/archives
             ${{ github.workspace }}/.sccache_storage
-          key: build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-${{ github.run_id }}
+          key: build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: |
-            build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-
             build-cache-${{ runner.os }}-
 
       - name: Configure
@@ -73,14 +81,16 @@ jobs:
         run: |
           mkdir -p "$SCCACHE_DIR"
           if [ "${{ runner.os }}" == "Windows" ]; then
-            cmake --preset ${{ matrix.preset }} -DCMAKE_CXX_FLAGS="/Z7" -DCMAKE_C_FLAGS="/Z7"
+            cmake --preset ${{ matrix.preset }} \
+              -DCMAKE_CXX_FLAGS="/Z7" \
+              -DCMAKE_C_FLAGS="/Z7"
           else
             export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
             cmake --preset ${{ matrix.preset }} -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
           fi
 
       - name: Build
-        run: cmake --build --preset ${{ matrix.build-preset }}
+        run: cmake --build --preset ${{ matrix.build-preset }} --parallel
 
       - name: Show sccache stats
         if: matrix.use_sccache
