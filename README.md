@@ -20,6 +20,10 @@ Microsoftのリファレンスページや、サンプルコードを見なが�
 ## ✨ 現在の進捗 OrionEngine 第一作ミニゲーム完成
 https://github.com/HEROWL74/OrionEngine/releases/tag/GameVol.1
 
+### エディタ画像
+![image](https://github.com/user-attachments/assets/66efdfdc-a671-4e18-ba63-b5c6466276ba)
+### 作成したミニゲームスクリーンショット
+![image](https://github.com/user-attachments/assets/e82ae3d1-695b-499d-b06b-5fa8d6067d2e)
 
 -✅ 完成済み
 
