@@ -10,7 +10,9 @@
 
 namespace Renderer
 {
+	// ============================
 	// PipelineStateCache
+	// ============================
 	class PipelineStateCache
 	{
 	public:
