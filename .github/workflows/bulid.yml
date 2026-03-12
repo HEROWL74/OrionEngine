@@ -40,6 +40,13 @@ jobs:
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
 
+      # --- Linux環境
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config libxrandr-dev libxi-dev
+
       # --- Restore Caches ---
       - name: Restore Caches
         uses: actions/cache@v4
