@@ -39,6 +39,23 @@ namespace Editor::UI
         commandList->ClearRenderTargetView(rtv, clear, 0, nullptr);
         commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
+        D3D12_VIEWPORT viewport{};
+        viewport.TopLeftX = 0.0f;
+        viewport.TopLeftY = 0.0f;
+        viewport.Width = static_cast<float>(m_width);
+        viewport.Height = static_cast<float>(m_height);
+        viewport.MinDepth = 0.0f;
+        viewport.MaxDepth = 1.0f;
+
+        D3D12_RECT scissorRect{};
+        scissorRect.left = 0;
+        scissorRect.top = 0;
+        scissorRect.right = static_cast<LONG>(m_width);
+        scissorRect.bottom = static_cast<LONG>(m_height);
+
+        commandList->RSSetViewports(1, &viewport);
+        commandList->RSSetScissorRects(1, &scissorRect);
+
         if (m_skybox)
             m_skybox->render(commandList, camera);
 

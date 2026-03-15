@@ -177,6 +177,9 @@ namespace Editor::UI
 		void setDeleteUITextCallback(std::function<void(Engine::EngineUI::UIText*)> callback);
 		void setRenameUITextCallback(std::function<void(Engine::EngineUI::UIText*, const std::string&)> callback);
 
+		// GameCameraコールバック
+		void setCreateGameCameraCallback(std::function<Core::GameObject* (const std::string&)> callback);
+
 		// UI選択状態
 		Engine::EngineUI::UIText* getSelectedUIText() const { return m_selectedUIText; }
 		void clearUISelection() { m_selectedUIText = nullptr; }
@@ -222,7 +225,7 @@ namespace Editor::UI
 		void setSelectedUIText(Engine::EngineUI::UIText* text)
 		{
 			m_selectedUIText = text;
-			
+
 			if (text)
 			{
 				m_selectedObject = nullptr;
@@ -255,7 +258,7 @@ namespace Editor::UI
 		void drawMaterialEditor(Core::GameObject* gameObject);
 		void drawUITextInspector();
 		void drawGameObjectInspector();
+		void drawCameraComponent(World::CameraComponent* cameraComponent);
 		// void drawRenderComponentInspector(Graphics::RenderComponent* component);
 	};
 }
-

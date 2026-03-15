@@ -55,7 +55,10 @@ namespace Engine::World
         T* addComponent(Core::GameObject* obj, Args&&... args)
         {
             if (!obj) return nullptr;
-            return m_componentBatch.add<T>(obj->getId(), std::forward<Args>(args)...);
+            T* comp = m_componentBatch.add<T>(obj->getId(), std::forward<Args>(args)...);
+            if (comp)
+                comp->setGameObject(obj);
+            return comp;
         }
 
         template<typename T>

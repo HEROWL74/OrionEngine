@@ -36,6 +36,7 @@ namespace Editor::UI
 		CreatePlane,
 		CreateCylinder,
 		CreateUIText,
+		CreateGameCamera,
 		DeleteObject,
 		DuplicateObject,
 		RenameObject
@@ -89,6 +90,12 @@ namespace Editor::UI
 			m_renameUITextCallback = callback;
 		}
 
+		// GameCameraコールバック設定
+		void setCreateGameCameraCallback(std::function<Engine::Core::GameObject* (const std::string&)> callback)
+		{
+			m_createGameCameraCallback = callback;
+		}
+
 		auto getCreateUIElementCallback() const { return m_createUIElementCallback; }
 		auto getDeleteUITextCallback() const { return m_deleteUITextCallback; }
 
@@ -105,6 +112,8 @@ namespace Editor::UI
 		std::function<Engine::Core::GameObject* (Engine::Core::GameObject*)> m_duplicateObjectCallback;
 		std::function<void(Engine::Core::GameObject*, const std::string&)> m_renameObjectCallback;
 		std::function<void(Engine::EngineUI::UIText*, const std::string&)> m_renameUITextCallback;
+		// GameCameraコールバック
+		std::function<Engine::Core::GameObject* (const std::string&)> m_createGameCameraCallback;
 
 		//内部メソッド
 		void draw3DObjectMenu();
@@ -124,4 +133,3 @@ namespace Editor::UI
 		Engine::EngineUI::UIText* m_uiTextDeleteTarget = nullptr;
 	};
 }
-

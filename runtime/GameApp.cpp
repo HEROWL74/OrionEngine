@@ -8,12 +8,15 @@
 
 namespace Runtime
 {
+    // ============================================================
+    // resolveEngineRoot
+    // EditorApp.cpp にも同じ実装がある。
+    // 将来的には AppUtils などの共通ユーティリティへ移動が望ましい。
+    // ============================================================
     static std::filesystem::path GetExeDir()
     {
         wchar_t path[MAX_PATH]{};
-
         GetModuleFileNameW(nullptr, path, MAX_PATH);
-
         return std::filesystem::path(path).parent_path();
     }
 
@@ -21,49 +24,42 @@ namespace Runtime
     {
         auto exeDir = GetExeDir();
 
-        // exe と同階層に engine-assets/ があればそこ
         if (std::filesystem::exists(exeDir / "engine-assets"))
             return exeDir;
 
-        // 上の階層を探す（開発ビルド）
         auto current = exeDir;
-
         while (current.has_parent_path() && current != current.parent_path())
         {
             if (std::filesystem::exists(current / "engine-assets"))
                 return current;
-
             current = current.parent_path();
         }
 
-        return exeDir;  // フォールバック
+        return exeDir;
     }
 
+    // ============================================================
+    // initialize
+    // ============================================================
     Engine::Utils::VoidResult GameApp::initialize(HINSTANCE hInstance, int nCmdShow,
         const std::filesystem::path& projectPath)
     {
         Engine::Utils::log_info("Initializing Runtime Game...");
 
-        // ============================================================
-        // ProjectSettings を読み込む（assets/ 直下を優先して自動探索）
-        // ============================================================
         auto& settings = Engine::Core::ProjectSettings::get();
 
         if (!projectPath.empty())
         {
-            // --project 引数あり
             settings.load(projectPath / "ProjectSettings.json");
         }
         else
         {
-            // 従来の自動探索（配布パッケージ向け）
             settings.loadForRuntime();
         }
 
-        // engineRoot を解決して注入
         Engine::Core::EnginePaths paths;
         paths.projectRoot = settings.getProjectRootDir();
-        paths.engineRoot = resolveEngineRoot();  // exe 基準で engine-assets/ を探す
+        paths.engineRoot = resolveEngineRoot();
         settings.setPaths(paths);
 
         const auto& wincfg = settings.getWindowConfig();
@@ -71,9 +67,8 @@ namespace Runtime
         Engine::Utils::log_info("ProjectName : " + settings.getProjectName());
         Engine::Utils::log_info("DefaultScene: " + settings.getDefaultScene());
 
-        // ウィンドウの作成
         Engine::Core::WindowSettings windowSettings{};
-        windowSettings.title = settings.getProjectNameW();   // ProjectName をタイトルに
+        windowSettings.title = settings.getProjectNameW();
         windowSettings.width = wincfg.width;
         windowSettings.height = wincfg.height;
         windowSettings.resizable = true;
@@ -92,7 +87,6 @@ namespace Runtime
 
         m_window.show(nCmdShow);
 
-        // DirectX 初期化
         auto d3dResult = initD3D();
         if (!d3dResult)
         {
@@ -104,6 +98,9 @@ namespace Runtime
         return {};
     }
 
+    // ============================================================
+    // run
+    // ============================================================
     int GameApp::run()
     {
         Engine::Utils::log_info("Starting main loop...");
@@ -118,91 +115,13 @@ namespace Runtime
         return 0;
     }
 
-    void GameApp::onWindowResize(int width, int height)
-    {
-        Engine::Utils::log_info(std::format("App::onWindowResize called: {}x{}", width, height));
-
-        if (width <= 0 || height <= 0)
-        {
-            Engine::Utils::log_warning(std::format("Invalid resize dimensions: {}x{}", width, height));
-            return;
-        }
-
-        if (!m_commandQueue || !m_swapChain || !m_fence)
-        {
-            Engine::Utils::log_info("DirectX 12 not initialized yet");
-            if (height > 0)
-            {
-                m_camera.updateAspect(static_cast<float>(width) / height);
-            }
-            return;
-        }
-
-        Engine::Utils::log_info("Starting safe DirectX resize process...");
-
-        try
-        {
-            waitForPreviousFrame();
-
-            const UINT64 flushFence = m_fenceValue;
-            m_commandQueue->Signal(m_fence.Get(), flushFence);
-            m_fenceValue++;
-
-            if (m_fence->GetCompletedValue() < flushFence)
-            {
-                m_fence->SetEventOnCompletion(flushFence, m_fenceEvent);
-                WaitForSingleObject(m_fenceEvent, INFINITE);
-            }
-
-            for (UINT i = 0; i < 2; i++)
-            {
-                if (m_renderTargets[i]) m_renderTargets[i].Reset();
-            }
-            if (m_depthStencilBuffer) m_depthStencilBuffer.Reset();
-
-            HRESULT hr = m_swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
-            if (FAILED(hr))
-            {
-                Engine::Utils::log_error(Engine::Utils::make_error(
-                    Engine::Utils::ErrorType::SwapChainCreation,
-                    std::format("Failed to resize swap chain: 0x{:08x}", static_cast<unsigned>(hr)), hr));
-                return;
-            }
-
-            auto renderTargetResult = createRenderTargets();
-            if (!renderTargetResult) { Engine::Utils::log_error(renderTargetResult.error()); return; }
-
-            auto depthStencilResult = createDepthStencilBuffer();
-            if (!depthStencilResult) { Engine::Utils::log_error(depthStencilResult.error()); return; }
-
-            m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
-            m_camera.updateAspect(static_cast<float>(width) / height);
-
-            Engine::Utils::log_info("DirectX resize completed successfully");
-        }
-        catch (const std::exception& e)
-        {
-            Engine::Utils::log_error(Engine::Utils::make_error(
-                Engine::Utils::ErrorType::Unknown,
-                std::format("Exception during resize: {}", e.what())));
-        }
-        catch (...)
-        {
-            Engine::Utils::log_error(Engine::Utils::make_error(
-                Engine::Utils::ErrorType::Unknown, "Unknown exception during resize"));
-        }
-    }
-
-    void GameApp::onWindowClose()
-    {
-        Engine::Utils::log_info("Window close requested.");
-    }
-
+    // ============================================================
+    // initD3D
+    // ============================================================
     Engine::Utils::VoidResult GameApp::initD3D()
     {
         Engine::Utils::log_info("Initializing DirectX 12...");
 
-        // デバイス初期化
         Renderer::DeviceSettings deviceSettings{
             .enableDebugLayer = false,
             .enableGpuValidation = false,
@@ -312,11 +231,24 @@ namespace Runtime
         auto loadResult = loadScene();
         if (!loadResult) return loadResult;
 
+        // ============================================================
         // カメラ初期化
+        // シーンにMainCameraがいればそのCameraComponentを使う。
+        // いない場合はデフォルト位置にフォールバック（後方互換）。
+        // ============================================================
         const auto [width, height] = m_window.getClientSize();
-        m_camera.setPerspective(45.0f, static_cast<float>(width) / height, 0.1f, 100.0f);
-        m_camera.setPosition({ 0.0f, 5.0f, 8.0f });
-        m_camera.lookAt({ 0.0f, 0.0f, 0.0f });
+        float aspect = (height > 0) ? static_cast<float>(width) / height : 1.0f;
+
+        syncCameraFromScene();
+
+        if (m_mainCameraObject == nullptr)
+        {
+            // MainCameraなし：デフォルト位置
+            m_camera.setPerspective(45.0f, aspect, 0.1f, 100.0f);
+            m_camera.setPosition({ 0.0f, 5.0f, 8.0f });
+            m_camera.lookAt({ 0.0f, 0.0f, 0.0f });
+            Engine::Utils::log_info("No MainCamera in scene, using default camera position");
+        }
 
         m_scene.start();
 
@@ -324,6 +256,9 @@ namespace Runtime
         return {};
     }
 
+    // ============================================================
+    // loadScene
+    // ============================================================
     Engine::Utils::VoidResult GameApp::loadScene()
     {
         Engine::Utils::log_info("Loading scene...");
@@ -363,6 +298,341 @@ namespace Runtime
         return {};
     }
 
+    // ============================================================
+    // syncCameraFromScene
+    // シーンに "MainCamera" という名前のGameObjectがあり、
+    // CameraComponentを持っていればm_cameraに同期する。
+    // ============================================================
+    void GameApp::syncCameraFromScene()
+    {
+        m_mainCameraObject = nullptr;
+
+        auto* go = m_scene.findGameObject("MainCamera");
+        if (!go)
+        {
+            Engine::Utils::log_info("No MainCamera found in scene");
+            return;
+        }
+
+        auto* camComp = go->getComponent<Engine::World::CameraComponent>();
+        if (!camComp)
+        {
+            Engine::Utils::log_warning("MainCamera found but has no CameraComponent");
+            return;
+        }
+
+        camComp->syncFromTransform();
+        m_camera = camComp->getCamera();
+        m_mainCameraObject = go;
+
+        Engine::Utils::log_info(std::format(
+            "Camera synced from MainCamera (pos: {:.2f}, {:.2f}, {:.2f})",
+            m_camera.getPosition().x,
+            m_camera.getPosition().y,
+            m_camera.getPosition().z));
+    }
+
+    // ============================================================
+    // update
+    // ============================================================
+    void GameApp::update()
+    {
+        updateDeltaTime();
+
+        if (m_showingSplash)
+        {
+            m_showingSplash = m_splashScreen.update(m_deltaTime);
+            return;
+        }
+
+        if (m_pendingReloadScene)
+        {
+            m_pendingReloadScene = false;
+            Engine::Utils::log_info("Executing pending reloadScene...");
+            m_isRestarting = true;
+
+            m_device.waitForGpu();
+            m_scene.clear();
+            m_device.waitForGpu();
+
+            m_mainCameraObject = nullptr;
+
+            Engine::Scripting::ScriptManager::get().reloadAll();
+
+            auto result = loadScene();
+            if (result)
+            {
+                Engine::Utils::log_info("Scene reloaded successfully");
+                syncCameraFromScene();
+                m_scene.start();
+            }
+            else
+            {
+                Engine::Utils::log_error(result.error());
+            }
+
+            m_isRestarting = false;
+            return;
+        }
+
+        // MainCameraが存在する場合はTransformからm_cameraへ毎フレーム同期
+        if (m_mainCameraObject && !m_mainCameraObject->isDestroyed())
+        {
+            auto* camComp = m_mainCameraObject->getComponent<Engine::World::CameraComponent>();
+            if (camComp)
+            {
+                // CameraComponent::update() が syncFromTransform を呼ぶが、
+                // scene.update() より前にカメラを確定させたい場合はここで明示的に同期する
+                camComp->syncFromTransform();
+                m_camera = camComp->getCamera();
+            }
+        }
+
+        Engine::Scripting::ScriptManager::get().checkForUpdates();
+        m_scene.update(m_deltaTime);
+        m_scene.lateUpdate(m_deltaTime);
+    }
+
+    // ============================================================
+    // render
+    // ============================================================
+    void GameApp::render()
+    {
+        if (m_isRestarting) return;
+
+        if (m_uiTextRenderer) m_uiTextRenderer->beginFrame();
+
+        m_commandAllocator->Reset();
+        m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+
+        D3D12_RESOURCE_BARRIER barrier{};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = m_renderTargets[m_frameIndex].Get();
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_commandList->ResourceBarrier(1, &barrier);
+
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle =
+            m_rtvHeap->GetCPUDescriptorHandleForHeapStart();
+        const UINT rtvDescriptorSize =
+            m_device.getDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        rtvHandle.ptr += m_frameIndex * rtvDescriptorSize;
+
+        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle =
+            m_dsvHeap->GetCPUDescriptorHandleForHeapStart();
+
+        m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+        const float clearColor[] = { 0.1f, 0.1f, 0.15f, 1.0f };
+        m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+        m_commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+        const auto [width, height] = m_window.getClientSize();
+        D3D12_VIEWPORT viewport{};
+        viewport.Width = static_cast<float>(width);
+        viewport.Height = static_cast<float>(height);
+        viewport.MinDepth = 0.0f;
+        viewport.MaxDepth = 1.0f;
+
+        D3D12_RECT scissorRect{};
+        scissorRect.right = width;
+        scissorRect.bottom = height;
+
+        m_commandList->RSSetViewports(1, &viewport);
+        m_commandList->RSSetScissorRects(1, &scissorRect);
+
+        if (m_showingSplash)
+        {
+            m_splashScreen.render(m_commandList.Get());
+        }
+        else
+        {
+            Engine::Utils::RenderContext context;
+            context.commandList = m_commandList.Get();
+            context.frameIndex = m_frameIndex;
+
+            m_skybox.render(m_commandList.Get(), m_camera);
+
+            if (m_uiTextRenderer)
+            {
+                for (auto* text : m_scene.getUITexts())
+                {
+                    if (text && text->isVisible())
+                    {
+                        m_uiTextRenderer->draw(context, *text, width, height, &m_camera);
+                    }
+                }
+            }
+        }
+
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+        m_commandList->ResourceBarrier(1, &barrier);
+        m_commandList->Close();
+
+        ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
+        m_commandQueue->ExecuteCommandLists(1, ppCommandLists);
+
+        const bool vsync = Engine::Core::ProjectSettings::get().getWindowConfig().vsync;
+        m_swapChain->Present(vsync ? 1 : 0, 0);
+
+        waitForPreviousFrame();
+    }
+
+    // ============================================================
+    // updateDeltaTime
+    // ============================================================
+    void GameApp::updateDeltaTime()
+    {
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        if (m_lastFrameTime.time_since_epoch().count() == 0)
+        {
+            m_lastFrameTime = currentTime;
+        }
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - m_lastFrameTime);
+        m_deltaTime = duration.count() / 1000000.0f;
+        m_lastFrameTime = currentTime;
+    }
+
+    // ============================================================
+    // waitForPreviousFrame
+    // ============================================================
+    void GameApp::waitForPreviousFrame()
+    {
+        const UINT64 fence = m_fenceValue;
+        m_commandQueue->Signal(m_fence.Get(), fence);
+        m_fenceValue++;
+
+        if (m_fence->GetCompletedValue() < fence)
+        {
+            m_fence->SetEventOnCompletion(fence, m_fenceEvent);
+            WaitForSingleObject(m_fenceEvent, INFINITE);
+        }
+        m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+    }
+
+    // ============================================================
+    // cleanup
+    // ============================================================
+    void GameApp::cleanup()
+    {
+        waitForPreviousFrame();
+        if (m_fenceEvent)
+        {
+            CloseHandle(m_fenceEvent);
+            m_fenceEvent = nullptr;
+        }
+        Engine::Utils::log_info("Runtime cleaned up.");
+    }
+
+    // ============================================================
+    // onWindowResize
+    // ============================================================
+    void GameApp::onWindowResize(int width, int height)
+    {
+        Engine::Utils::log_info(std::format("App::onWindowResize called: {}x{}", width, height));
+
+        if (width <= 0 || height <= 0)
+        {
+            Engine::Utils::log_warning(std::format("Invalid resize dimensions: {}x{}", width, height));
+            return;
+        }
+
+        if (!m_commandQueue || !m_swapChain || !m_fence)
+        {
+            Engine::Utils::log_info("DirectX 12 not initialized yet");
+            if (height > 0)
+            {
+                float aspect = static_cast<float>(width) / height;
+                m_camera.updateAspect(aspect);
+
+                // MainCameraのCameraComponentにも伝える
+                if (m_mainCameraObject && !m_mainCameraObject->isDestroyed())
+                {
+                    auto* camComp = m_mainCameraObject->getComponent<Engine::World::CameraComponent>();
+                    if (camComp) camComp->updateAspect(aspect);
+                }
+            }
+            return;
+        }
+
+        Engine::Utils::log_info("Starting safe DirectX resize process...");
+
+        try
+        {
+            waitForPreviousFrame();
+
+            const UINT64 flushFence = m_fenceValue;
+            m_commandQueue->Signal(m_fence.Get(), flushFence);
+            m_fenceValue++;
+
+            if (m_fence->GetCompletedValue() < flushFence)
+            {
+                m_fence->SetEventOnCompletion(flushFence, m_fenceEvent);
+                WaitForSingleObject(m_fenceEvent, INFINITE);
+            }
+
+            for (UINT i = 0; i < 2; i++)
+            {
+                if (m_renderTargets[i]) m_renderTargets[i].Reset();
+            }
+            if (m_depthStencilBuffer) m_depthStencilBuffer.Reset();
+
+            HRESULT hr = m_swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+            if (FAILED(hr))
+            {
+                Engine::Utils::log_error(Engine::Utils::make_error(
+                    Engine::Utils::ErrorType::SwapChainCreation,
+                    std::format("Failed to resize swap chain: 0x{:08x}", static_cast<unsigned>(hr)), hr));
+                return;
+            }
+
+            auto renderTargetResult = createRenderTargets();
+            if (!renderTargetResult) { Engine::Utils::log_error(renderTargetResult.error()); return; }
+
+            auto depthStencilResult = createDepthStencilBuffer();
+            if (!depthStencilResult) { Engine::Utils::log_error(depthStencilResult.error()); return; }
+
+            m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+
+            float aspect = static_cast<float>(width) / height;
+            m_camera.updateAspect(aspect);
+
+            // MainCameraのCameraComponentにも伝える
+            if (m_mainCameraObject && !m_mainCameraObject->isDestroyed())
+            {
+                auto* camComp = m_mainCameraObject->getComponent<Engine::World::CameraComponent>();
+                if (camComp) camComp->updateAspect(aspect);
+            }
+
+            Engine::Utils::log_info("DirectX resize completed successfully");
+        }
+        catch (const std::exception& e)
+        {
+            Engine::Utils::log_error(Engine::Utils::make_error(
+                Engine::Utils::ErrorType::Unknown,
+                std::format("Exception during resize: {}", e.what())));
+        }
+        catch (...)
+        {
+            Engine::Utils::log_error(Engine::Utils::make_error(
+                Engine::Utils::ErrorType::Unknown, "Unknown exception during resize"));
+        }
+    }
+
+    // ============================================================
+    // onWindowClose
+    // ============================================================
+    void GameApp::onWindowClose()
+    {
+        Engine::Utils::log_info("Window close requested.");
+    }
+
+    // ============================================================
+    // createCommandQueue / createSwapChain / createRenderTargets
+    // createDepthStencilBuffer / createCommandObjects / createSyncObjects
+    // ============================================================
     Engine::Utils::VoidResult GameApp::createCommandQueue()
     {
         D3D12_COMMAND_QUEUE_DESC queueDesc{};
@@ -498,169 +768,4 @@ namespace Runtime
         return {};
     }
 
-    void GameApp::update()
-    {
-        updateDeltaTime();
-
-        if (m_showingSplash)
-        {
-            m_showingSplash = m_splashScreen.update(m_deltaTime);
-            return;
-        }
-
-        if (m_pendingReloadScene)
-        {
-            m_pendingReloadScene = false;
-            Engine::Utils::log_info("Executing pending reloadScene...");
-            m_isRestarting = true;
-
-            m_device.waitForGpu();
-            m_scene.clear();
-            m_device.waitForGpu();
-
-            Engine::Scripting::ScriptManager::get().reloadAll();
-
-            auto result = loadScene();
-            if (result)
-            {
-                Engine::Utils::log_info("Scene reloaded successfully");
-                m_scene.start();
-            }
-            else
-            {
-                Engine::Utils::log_error(result.error());
-            }
-
-            m_isRestarting = false;
-            return;
-        }
-
-        Engine::Scripting::ScriptManager::get().checkForUpdates();
-        m_scene.update(m_deltaTime);
-        m_scene.lateUpdate(m_deltaTime);
-    }
-
-    void GameApp::render()
-    {
-        if (m_isRestarting) return;
-
-        if (m_uiTextRenderer) m_uiTextRenderer->beginFrame();
-
-        m_commandAllocator->Reset();
-        m_commandList->Reset(m_commandAllocator.Get(), nullptr);
-
-        D3D12_RESOURCE_BARRIER barrier{};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Transition.pResource = m_renderTargets[m_frameIndex].Get();
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-        m_commandList->ResourceBarrier(1, &barrier);
-
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle =
-            m_rtvHeap->GetCPUDescriptorHandleForHeapStart();
-        const UINT rtvDescriptorSize =
-            m_device.getDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-        rtvHandle.ptr += m_frameIndex * rtvDescriptorSize;
-
-        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle =
-            m_dsvHeap->GetCPUDescriptorHandleForHeapStart();
-
-        m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
-        const float clearColor[] = { 0.1f, 0.1f, 0.15f, 1.0f };
-        m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-        m_commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-        const auto [width, height] = m_window.getClientSize();
-        D3D12_VIEWPORT viewport{};
-        viewport.Width = static_cast<float>(width);
-        viewport.Height = static_cast<float>(height);
-        viewport.MinDepth = 0.0f;
-        viewport.MaxDepth = 1.0f;
-
-        D3D12_RECT scissorRect{};
-        scissorRect.right = width;
-        scissorRect.bottom = height;
-
-        m_commandList->RSSetViewports(1, &viewport);
-        m_commandList->RSSetScissorRects(1, &scissorRect);
-
-        if (m_showingSplash)
-        {
-            m_splashScreen.render(m_commandList.Get());
-        }
-        else
-        {
-            Engine::Utils::RenderContext context;
-            context.commandList = m_commandList.Get();
-            context.frameIndex = m_frameIndex;
-
-            m_skybox.render(m_commandList.Get(), m_camera);
-
-            if (m_uiTextRenderer)
-            {
-                for (auto* text : m_scene.getUITexts())
-                {
-                    if (text && text->isVisible())
-                    {
-                        m_uiTextRenderer->draw(context, *text, width, height, &m_camera);
-                    }
-                }
-            }
-        }
-
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-        m_commandList->ResourceBarrier(1, &barrier);
-        m_commandList->Close();
-
-        ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
-        m_commandQueue->ExecuteCommandLists(1, ppCommandLists);
-
-        // VSync は ProjectSettings に従う
-        const bool vsync = Engine::Core::ProjectSettings::get().getWindowConfig().vsync;
-        m_swapChain->Present(vsync ? 1 : 0, 0);
-
-        waitForPreviousFrame();
-    }
-
-    void GameApp::updateDeltaTime()
-    {
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        if (m_lastFrameTime.time_since_epoch().count() == 0)
-        {
-            m_lastFrameTime = currentTime;
-        }
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - m_lastFrameTime);
-        m_deltaTime = duration.count() / 1000000.0f;
-        m_lastFrameTime = currentTime;
-    }
-
-    void GameApp::waitForPreviousFrame()
-    {
-        const UINT64 fence = m_fenceValue;
-        m_commandQueue->Signal(m_fence.Get(), fence);
-        m_fenceValue++;
-
-        if (m_fence->GetCompletedValue() < fence)
-        {
-            m_fence->SetEventOnCompletion(fence, m_fenceEvent);
-            WaitForSingleObject(m_fenceEvent, INFINITE);
-        }
-        m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
-    }
-
-    void GameApp::cleanup()
-    {
-        waitForPreviousFrame();
-        if (m_fenceEvent)
-        {
-            CloseHandle(m_fenceEvent);
-            m_fenceEvent = nullptr;
-        }
-        Engine::Utils::log_info("Runtime cleaned up.");
-    }
-
 } // namespace Runtime
-

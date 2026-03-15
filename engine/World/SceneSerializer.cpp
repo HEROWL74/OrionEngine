@@ -149,6 +149,10 @@ namespace Engine::World
         if (auto* audio = batch.get<Audio::AudioComponent>(gameObject->getId()))
             j["audioComponent"] = serializeAudioComponent(audio);
 
+        // CameraComponent
+        if (auto* camComp = batch.get<Engine::World::CameraComponent>(gameObject->getId()))
+            j["cameraComponent"] = serializeCameraComponent(camComp);
+
         return j;
     }
 
@@ -177,6 +181,7 @@ namespace Engine::World
         Renderer::TextureManager* textureManager,
         const nlohmann::json& json)
     {
+        Utils::log_info(std::format("[DEBUG] json keys: {}", json.dump()));
         std::string name = json.value("name", "GameObject");
         Utils::log_info(std::format("Loading GameObject: {}", name));
 
@@ -260,9 +265,60 @@ namespace Engine::World
             }
         }
 
+        // CameraComponent
+        if (json.contains("cameraComponent"))
+        {
+            Utils::log_info(std::format("  [DEBUG] cameraComponent key found for {}", name));
+            deserializeCameraComponent(scene, gameObject, json["cameraComponent"]);
+
+            // 追加直後に取得できるか確認
+            auto* check = scene.getComponentBatch().get<Engine::World::CameraComponent>(gameObject->getId());
+            Utils::log_info(std::format("  [DEBUG] CameraComponent after deserialize: {}",
+                check ? "OK" : "NULL"));
+        }
+
         gameObject->setActive(json.value("active", true));
         Utils::log_info(std::format("GameObject {} created successfully", name));
         return {};
+    }
+
+    nlohmann::json SceneSerializer::serializeCameraComponent(
+        const Engine::World::CameraComponent* camComp)
+    {
+        nlohmann::json json;
+        json["fov"] = camComp->getFov();
+        json["near"] = camComp->getNearPlane();
+        json["far"] = camComp->getFarPlane();
+        return json;
+    }
+
+    void SceneSerializer::deserializeCameraComponent(
+        Scene& scene,
+        Core::GameObject* gameObject,
+        const nlohmann::json& json)
+    {
+        Utils::log_info(std::format("[DEBUG] deserializeCameraComponent called for id=({},{})",
+            gameObject->getId().index, gameObject->getId().generation));
+
+        auto* camComp = scene.addComponent<Engine::World::CameraComponent>(gameObject);
+
+        Utils::log_info(std::format("[DEBUG] scene.addComponent result: {}",
+            camComp ? "OK" : "NULL"));
+
+        // addComponent直後にbatchから取得できるか確認
+        auto* check = scene.getComponentBatch()
+            .get<Engine::World::CameraComponent>(gameObject->getId());
+        Utils::log_info(std::format("[DEBUG] batch.get immediately after add: {}",
+            check ? "OK" : "NULL"));
+
+        if (!camComp) return;
+
+        float fov = json.value("fov", 45.0f);
+        float nearPlane = json.value("near", 0.1f);
+        float farPlane = json.value("far", 100.0f);
+
+        camComp->setPerspective(fov, 16.0f / 9.0f, nearPlane, farPlane);
+        camComp->syncFromTransform();
     }
 
     Utils::VoidResult SceneSerializer::deserializeRenderComponent(
@@ -327,7 +383,7 @@ namespace Engine::World
     }
 
     // -------------------------------------------------------
-    // 以下は変更なし
+    // SerializeUITextComponent
     // -------------------------------------------------------
 
     nlohmann::json SceneSerializer::serializeUITextComponent(const EngineUI::UIText* text)

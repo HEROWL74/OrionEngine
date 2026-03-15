@@ -169,7 +169,7 @@ namespace Editor::UI
 				IID_PPV_ARGS(&commandList)),
 				Utils::ErrorType::ResourceCreation, "Failed to create font command list");
 
-			
+
 			if (!m_commandQueue)
 			{
 				return std::unexpected(Utils::make_error(Utils::ErrorType::Unknown, "CommandQueue became null before CreateDeviceObjects"));
@@ -262,13 +262,13 @@ namespace Editor::UI
 		{
 			Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
 				std::format("Exception in ImGui newFrame: {}", e.what())));
-			throw; 
+			throw;
 		}
 		catch (...)
 		{
 			Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
 				"Unknown exception in ImGui newFrame"));
-			throw; 
+			throw;
 		}
 	}
 
@@ -313,7 +313,7 @@ namespace Editor::UI
 		}
 
 		m_srvDescHeap.Reset();
-		m_commandQueue = nullptr; 
+		m_commandQueue = nullptr;
 		m_device = nullptr;
 		m_hwnd = nullptr;
 		m_initialized = false;
@@ -444,7 +444,7 @@ namespace Editor::UI
 
 		Utils::log_info("Reinitializing ImGui for resize...");
 
-	    ImGui::SetCurrentContext(m_context);
+		ImGui::SetCurrentContext(m_context);
 
 
 		ImGui_ImplDX12_Shutdown();
@@ -719,7 +719,7 @@ namespace Editor::UI
 			const auto& gameObjects = m_scene->getGameObjects();
 			for (const auto& gameObject : gameObjects)
 			{
-				if (gameObject && gameObject->isActive() && !gameObject->isDestroyed())
+				if (gameObject && !gameObject->isDestroyed())
 				{
 					drawGameObject(gameObject.get(), currentSelection);
 				}
@@ -905,7 +905,7 @@ namespace Editor::UI
 		{
 			for (const auto& child : gameObject->getChildren())
 			{
-				if (child && child->isActive() && !child->isDestroyed())
+				if (child && !child->isDestroyed())
 				{
 					drawGameObject(child.get(), currentSelection);
 				}
@@ -950,6 +950,14 @@ namespace Editor::UI
 		if (m_contextMenu)
 		{
 			m_contextMenu->setRenameObjectCallback(callback);
+		}
+	}
+
+	void SceneHierarchyWindow::setCreateGameCameraCallback(std::function<Core::GameObject* (const std::string&)> callback)
+	{
+		if (m_contextMenu)
+		{
+			m_contextMenu->setCreateGameCameraCallback(callback);
 		}
 	}
 
@@ -1164,6 +1172,11 @@ namespace Editor::UI
 		ImGui::PopStyleColor();
 	}
 
+	void InspectorWindow::drawCameraComponent(World::CameraComponent* cameraComponent)
+	{
+
+	}
+
 	void InspectorWindow::drawUITextInspector()
 	{
 		if (!m_selectedUIText) return;
@@ -1375,8 +1388,8 @@ namespace Editor::UI
 
 		ImGui::SeparatorText("UIText Properties");
 
-		
-		ImGui::PushID(text); 
+
+		ImGui::PushID(text);
 
 		// Name
 		char nameBuffer[256];
@@ -1495,7 +1508,7 @@ namespace Editor::UI
 			}
 		}
 
-		ImGui::PopID(); 
+		ImGui::PopID();
 
 		ImGui::Spacing();
 		ImGui::TextWrapped("Note: UIText is a 3D object in world space. "
@@ -1714,7 +1727,7 @@ namespace Editor::UI
 					drawTextureSlot("Albedo", TextureType::Albedo, currentMaterial);
 					drawTextureSlot("Normal", TextureType::Normal, currentMaterial);
 					drawTextureSlot("Metallic", TextureType::Metallic, currentMaterial);
-					drawTextureSlot("Roughness",TextureType::Roughness, currentMaterial);
+					drawTextureSlot("Roughness", TextureType::Roughness, currentMaterial);
 					drawTextureSlot("AO", TextureType::AO, currentMaterial);
 					drawTextureSlot("Emissive", TextureType::Emissive, currentMaterial);
 					drawTextureSlot("Height", TextureType::Height, currentMaterial);
@@ -2052,4 +2065,3 @@ namespace Editor::UI
 
 
 }
-

@@ -14,6 +14,7 @@
 #include "../engine/Core/ProjectSettings.hpp"
 #include "../renderer/Device.hpp"
 #include "../engine/World/Camera.hpp"
+#include "../engine/World/CameraComponent.hpp"
 #include "../engine/Input/InputManager.hpp"
 #include "../engine/Utils/Common.hpp"
 #include "UI/ImGuiManager.hpp"
@@ -157,6 +158,10 @@ namespace Editor
         void deleteUIText(Engine::EngineUI::UIText* text);
         void renameUIText(Engine::EngineUI::UIText* text, const std::string& newName);
 
+        // GameCameraをHierarchyから作成する（UnityのMainCameraに相当）
+        // CameraComponentをaddComponentしてm_gameCameraに同期する
+        Engine::Core::GameObject* createGameCamera(const std::string& name);
+
         EditorCore::PlayModeController m_playModeController;
 
         // 初期化処理
@@ -205,4 +210,3 @@ namespace Editor
         void onMouseButtonReleased(Engine::Input::MouseButton button, int x, int y);
     };
 }
-

@@ -45,7 +45,7 @@ namespace Engine::Core
 		// 有効チェックと有効セット
 		bool isEnabled() const { return m_enabled; }
 		void setEnabled(bool enabled) { m_enabled = enabled; }
-
+		void setGameObject(GameObject* go) { m_gameObject = go; }
 	protected:
 		GameObject* m_gameObject = nullptr;
 		bool m_enabled = true;

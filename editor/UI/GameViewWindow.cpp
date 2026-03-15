@@ -62,23 +62,28 @@ namespace Editor::UI
 		if (m_needsResize && m_view)
 		{
 			m_view->resize(m_pendingWidth, m_pendingHeight);
-			if (m_camera)
+			float aspect = static_cast<float>(m_pendingWidth) / m_pendingHeight;
+
+			// CameraComponentにだけアスペクトを伝える
+			if (m_gameCameraObject && !m_gameCameraObject->isDestroyed())
 			{
-				m_camera->updateAspect(static_cast<float>(m_pendingWidth) / m_pendingHeight);
+				auto* camComp = m_gameCameraObject->getComponent<Engine::World::CameraComponent>();
+				if (camComp)
+					camComp->updateAspect(aspect);
 			}
 
-			// テクスチャを再登録
+			// ★ resize後は必ずgetRenderTarget()で新しいリソースを取得して再登録
 			auto* rt = m_view->getRenderTarget();
 			if (rt && m_imgui)
 			{
+				// ★ 古いテクスチャIDを無効化してから再登録
+				m_texture = NULL;
 				m_texture = m_imgui->registerRenderTarget(
 					rt->getColorResource(),
 					rt->getFormat()
 				);
 			}
-
 			m_needsResize = false;
 		}
 	}
 }
-

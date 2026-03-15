@@ -361,32 +361,34 @@ namespace Editor::UI
             }
 
             // UIサブメニュー
-            if (ImGui::MenuItem("Text"))
+            if (ImGui::BeginMenu("UI"))
             {
-               Engine::Utils::log_info("ContextMenu: 'Text' menu item clicked");
-
-                if (m_createUIElementCallback)
+                if (ImGui::MenuItem("Text"))
                 {
-                    std::string name = generateUniqueName("UIText");
-                    Engine::Utils::log_info(std::format("ContextMenu: Calling createUIElementCallback with name '{}'", name));
+                    Engine::Utils::log_info("ContextMenu: 'Text' menu item clicked");
 
-                    auto* result = m_createUIElementCallback(UIElementType::Text, name);
-
-                    if (result)
+                    if (m_createUIElementCallback)
                     {
-                        Engine::Utils::log_info(std::format("ContextMenu: UIText created successfully: '{}'", result->getName()));
+                        std::string name = generateUniqueName("UIText");
+                        Engine::Utils::log_info(std::format("ContextMenu: Calling createUIElementCallback with name '{}'", name));
+
+                        auto* result = m_createUIElementCallback(UIElementType::Text, name);
+
+                        if (result)
+                        {
+                            Engine::Utils::log_info(std::format("ContextMenu: UIText created successfully: '{}'", result->getName()));
+                        }
+                        else
+                        {
+                            Engine::Utils::log_error(Engine::Utils::make_error(Engine::Utils::ErrorType::Unknown, "Failed to create UIText"));
+                        }
                     }
                     else
                     {
-                        Engine::Utils::log_error(Engine::Utils::make_error(Engine::Utils::ErrorType::Unknown, "Failed to create UIText"));
+                        Engine::Utils::log_error(Engine::Utils::make_error(Engine::Utils::ErrorType::Unknown, "createUIElementCallback is NULL!"));
                     }
                 }
-                else
-                {
-                    Engine::Utils::log_error(Engine::Utils::make_error(Engine::Utils::ErrorType::Unknown, "createUIElementCallback is NULL!"));
-                }
-                }
- 
+
                 if (ImGui::MenuItem("Image"))
                 {
                     Engine::Utils::log_info("UI Image creation not yet implemented");
@@ -398,7 +400,7 @@ namespace Editor::UI
                 }
 
                 ImGui::EndMenu();
-            
+            }
 
             ImGui::Separator();
 
@@ -414,13 +416,30 @@ namespace Editor::UI
                 ImGui::EndMenu();
             }
 
+            // Cameraサブメニュー
             if (ImGui::BeginMenu("Camera"))
             {
-                if (ImGui::MenuItem("Camera"))
+                if (ImGui::MenuItem("Game Camera"))
                 {
+                    if (m_createGameCameraCallback)
+                    {
+                        // "MainCamera" がすでに存在する場合はナンバリング
+                        std::string name = generateUniqueName("MainCamera");
+                        auto* newObject = m_createGameCameraCallback(name);
+                        if (newObject)
+                        {
+                            Engine::Utils::log_info(std::format("Created Game Camera: {}", name));
+                        }
+                    }
+                    else
+                    {
+                        Engine::Utils::log_error(Engine::Utils::make_error(Engine::Utils::ErrorType::Unknown, "createGameCameraCallback is NULL!"));
+                    }
                 }
                 ImGui::EndMenu();
             }
+
+            ImGui::EndMenu();
         }
     }
 
@@ -539,4 +558,3 @@ namespace Editor::UI
         return baseName + "_" + std::to_string(globalCounter);
     }
 }
-

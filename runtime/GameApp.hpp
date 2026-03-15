@@ -9,6 +9,7 @@
 #include "../renderer/Device.hpp"
 #include "../engine/World/Scene.hpp"
 #include "../engine/World/Camera.hpp"
+#include "../engine/World/CameraComponent.hpp"
 #include "../renderer/Skybox.hpp"
 #include "../renderer/ShaderManager.hpp"
 #include "../engine/World/SceneSerializer.hpp"
@@ -46,13 +47,17 @@ namespace Runtime
         Renderer::Device m_device;
 
         // シーンとカメラ
+        // m_camera はゲームカメラ。シーンに MainCamera という名前の
+        // GameObject がいればその CameraComponent から毎フレーム同期する。
+        // いない場合はデフォルト値（後方互換）を使用する。
         Engine::World::Scene        m_scene;
         Engine::World::Camera       m_camera;
-        Renderer::Skybox       m_skybox;
+        Engine::Core::GameObject* m_mainCameraObject = nullptr; // MainCameraへの参照（nullable）
+        Renderer::Skybox            m_skybox;
         Engine::World::SplashScreen m_splashScreen;
 
         // UIText
-        std::unique_ptr<Renderer::UITextRenderer> m_uiTextRenderer;
+        std::unique_ptr<Engine::EngineUI::UITextRenderer> m_uiTextRenderer;
 
         // Luabind
         std::unique_ptr<Engine::Scripting::LuaBindings> m_luaBindings;
@@ -91,6 +96,9 @@ namespace Runtime
         [[nodiscard]] Engine::Utils::VoidResult createSyncObjects();
         [[nodiscard]] Engine::Utils::VoidResult loadScene();
 
+        // シーンのMainCameraをm_cameraに同期する
+        void syncCameraFromScene();
+
         // 更新・描画
         void update();
         void render();
@@ -101,4 +109,3 @@ namespace Runtime
         void onWindowClose();
     };
 }
-

@@ -48,7 +48,7 @@ namespace Editor
         // project-templates/3d/ProjectSettings.json を参照
         // ============================================================
         auto& settings = Engine::Core::ProjectSettings::get();
-        auto engineRoot = resolveEngineRoot(); 
+        auto engineRoot = resolveEngineRoot();
 
         if (!projectPath.empty() && std::filesystem::exists(projectPath / "ProjectSettings.json"))
         {
@@ -313,30 +313,10 @@ namespace Editor
 
         Utils::log_info(std::format("Checking for default scene: {}", defaultScenePath.string()));
 
-        if (std::filesystem::exists(defaultScenePath))
-        {
-            auto loadResult = m_sceneSerializer.loadScene(
-                m_scene, &m_device, m_shaderManager.get(),
-                &m_materialManager, &m_textureManager,
-                defaultScenePath
-            );
-
-            if (loadResult)
-            {
-                m_currentScenePath = defaultScenePath.string();
-                Utils::log_info("Default scene loaded: " + m_currentScenePath);
-            }
-            else
-            {
-                Utils::log_warning("Failed to load default scene, creating initial scene");
-                createInitialScene();
-            }
-        }
-        else
-        {
-            createInitialScene();
-        }
-
+        // シーンにすでにMainCameraが存在する場合（保存済みシーンをロードした場合）、
+        // GameViewWindowにGameObjectを通知してリサイズ時のCameraComponent同期を有効にする
+        // （m_gameViewWindowはこの時点ではまだ未作成のため、後で initD3D末尾で行う。
+        //   → openScene/loadScene時は都度通知する）
 
         // ============================================================
         // PlayModeController
@@ -439,7 +419,19 @@ namespace Editor
 
         m_gameViewWindow = std::make_unique<UI::GameViewWindow>();
         m_gameViewWindow->initialize(&m_imguiManager, &m_gameView);
-        m_gameViewWindow->setCamera(&m_gameCamera);
+
+        if (auto* mainCamObj = m_scene.findGameObject("MainCamera"))
+        {
+            Utils::log_info("[DEBUG] MainCamera found after loadScene");
+            auto* camComp = m_scene.getComponentBatch()
+                .get<Engine::World::CameraComponent>(mainCamObj->getId());
+            Utils::log_info(std::format("[DEBUG] CameraComponent via batch: {}",
+                camComp ? "OK" : "NULL"));
+            // 念のり旧系統も確認
+            auto* camCompOld = mainCamObj->getComponent<Engine::World::CameraComponent>();
+            Utils::log_info(std::format("[DEBUG] CameraComponent via getComponent: {}",
+                camCompOld ? "OK" : "NULL"));
+        }
 
         Utils::log_info("Initializing BuildSystem...");
         m_buildWindow = std::make_unique<UI::BuildWindow>();
@@ -490,6 +482,11 @@ namespace Editor
                 text ? text->getName() : "null"));
             m_inspectorWindow->setSelectedUIText(text);
             if (text) m_editorView.setSelectedObject(nullptr);
+            });
+
+        // GameCameraをHierarchyのコンテキストメニュー（Create > Camera > Game Camera）から作成するコールバック
+        m_hierarchyWindow->setCreateGameCameraCallback([this](const std::string& name) -> Core::GameObject* {
+            return createGameCamera(name);
             });
 
         m_inspectorWindow->setMaterialManager(&m_materialManager);
@@ -680,18 +677,10 @@ namespace Editor
         m_playModeController.update();
 
         if (m_playModeController.isRestarting())
-        {
             return;
-        }
 
         if (m_playModeController.isPlaying())
         {
-            static int updateCount = 0;
-            if (updateCount < 5) {
-                Utils::log_info(std::format("Scene update called, frame: {}", updateCount));
-                updateCount++;
-            }
-
             Scripting::ScriptManager::get().checkForUpdates();
             m_scene.update(m_deltaTime);
             m_scene.lateUpdate(m_deltaTime);
@@ -699,10 +688,22 @@ namespace Editor
         }
         else
         {
-            // エディタモードでもTransform更新とpending削除は毎フレーム必要
             m_scene.getTransformStorage().flushDirty();
-            m_scene.processPendingDestroy(); 
+            m_scene.processPendingDestroy();
         }
+
+        // CameraComponentのTransformを毎フレーム同期（Play/Editor両対応）
+        if (auto* camObj = m_scene.findGameObject("MainCamera"))
+        {
+            auto* camComp = m_scene.getComponentBatch()
+                .get<Engine::World::CameraComponent>(camObj->getId());
+            if (camComp)
+            {
+                camComp->syncFromTransform();
+                m_gameCamera = camComp->getCamera();
+            }
+        }
+
         m_debugWindow->setFPS(m_currentFPS);
         m_debugWindow->setFrameTime(m_deltaTime);
         m_debugWindow->setObjectCount(m_scene.getGameObjects().size());
@@ -736,7 +737,24 @@ namespace Editor
         m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
         m_editorView.render(m_scene, m_commandList.Get(), m_editorCamera, m_frameIndex);
-        m_gameView.render(m_scene, m_commandList.Get(), m_gameCamera, m_frameIndex);
+
+        const World::Camera* gameCamera = &m_gameCamera;
+
+        if (auto* camObj = m_scene.findGameObject("MainCamera"))
+        {
+            Utils::log_info(std::format("[DEBUG] render: MainCamera id=({},{})",
+                camObj->getId().index, camObj->getId().generation));
+            auto* camComp = m_scene.getComponentBatch()
+                .get<Engine::World::CameraComponent>(camObj->getId());
+            Utils::log_info(std::format("[DEBUG] render: CameraComponent via batch: {}",
+                camComp ? "OK" : "NULL"));
+        }
+        else
+        {
+            Utils::log_warning("MainCamera found but NO CameraComponent!");
+        }
+  
+        m_gameView.render(m_scene, m_commandList.Get(), *gameCamera, m_frameIndex);
 
         HRESULT hrClose = m_commandList->Close();
         if (FAILED(hrClose))
@@ -1056,7 +1074,6 @@ namespace Editor
             if (height > 0)
             {
                 m_editorCamera.updateAspect(static_cast<float>(width) / height);
-                m_gameCamera.updateAspect(static_cast<float>(width) / height);
             }
             return;
         }
@@ -1242,8 +1259,9 @@ namespace Editor
         auto* newObject = m_scene.createGameObject(name);
         if (!newObject) return nullptr;
 
-        Math::Vector3 cameraPos = m_gameCamera.getPosition();
-        Math::Vector3 cameraForward = m_gameCamera.getForward();
+        // プリミティブはエディタカメラの前方に配置する（GameCameraではなくEditorCamera基準）
+        Math::Vector3 cameraPos = m_editorCamera.getPosition();
+        Math::Vector3 cameraForward = m_editorCamera.getForward();
         newObject->getTransform()->setPosition(cameraPos + cameraForward * 3.0f);
 
         Renderer::RenderableType renderType = primitiveToRenderableType(type);
@@ -1405,6 +1423,44 @@ namespace Editor
         return candidateName;
     }
 
+    Core::GameObject* EditorApp::createGameCamera(const std::string& name)
+    {
+        if (m_scene.findGameObject(name) != nullptr)
+        {
+            Utils::log_warning(std::format("GameCamera '{}' already exists in scene", name));
+            return nullptr;
+        }
+
+        auto* go = m_scene.createGameObject(name);
+        if (!go) return nullptr;
+
+        // gameObject->addComponent ではなく scene.addComponent に変更
+        auto* camComp = m_scene.addComponent<Engine::World::CameraComponent>(go);
+        if (!camComp)
+        {
+            m_scene.destroyGameObject(go);
+            Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
+                "Failed to addComponent<CameraComponent>"));
+            return nullptr;
+        }
+
+        const auto [w, h] = m_window.getClientSize();
+        float aspect = h > 0 ? static_cast<float>(w) / h : 1.0f;
+        camComp->setPerspective(45.0f, aspect, 0.1f, 100.0f);
+
+        go->getTransform()->setPosition({ 0.0f, 1.0f, -10.0f });
+        go->getTransform()->setRotation({ 0.0f, 0.0f, 0.0f });
+
+        camComp->syncFromTransform();
+        m_gameCamera = camComp->getCamera();
+
+        if (m_gameViewWindow)
+            m_gameViewWindow->setGameCameraObject(go);
+
+        Utils::log_info(std::format("Created GameCamera: {}", name));
+        return go;
+    }
+
     void EditorApp::renameGameObject(Core::GameObject* object, const std::string& newName)
     {
         if (!object) return;
@@ -1419,7 +1475,7 @@ namespace Editor
         {
         case UI::PrimitiveType::Cube:     return Renderer::RenderableType::Cube;
         case UI::PrimitiveType::Sphere:   return Renderer::RenderableType::Cube;
-        case UI::PrimitiveType::Plane:  
+        case UI::PrimitiveType::Plane:
         case UI::PrimitiveType::Cylinder: return Renderer::RenderableType::Cube;
         default:                          return Renderer::RenderableType::Cube;
         }
@@ -1430,7 +1486,7 @@ namespace Editor
         switch (renderType)
         {
         case Renderer::RenderableType::Cube:     return UI::PrimitiveType::Cube;
-        return UI::PrimitiveType::Plane;
+            return UI::PrimitiveType::Plane;
         default:                                 return UI::PrimitiveType::Cube;
         }
     }
@@ -1565,12 +1621,31 @@ namespace Editor
             m_currentScenePath = filepath;
             Utils::log_info(std::format("Scene loaded successfully. Object count: {}",
                 m_scene.getGameObjects().size()));
+
+            // ロードしたシーンにMainCameraがあればGameViewWindowに通知する
+            if (auto* mainCamObj = m_scene.findGameObject("MainCamera"))
+            {
+                if (auto* camComp = mainCamObj->getComponent<Engine::World::CameraComponent>())
+                {
+                    camComp->syncFromTransform();
+                    m_gameCamera = camComp->getCamera();
+                    if (m_gameViewWindow)
+                        m_gameViewWindow->setGameCameraObject(mainCamObj);
+                    Utils::log_info("MainCamera synced after scene load");
+                }
+            }
+            else
+            {
+                // MainCameraなし：GameViewWindowのGameObject参照をリセット
+                if (m_gameViewWindow)
+                    m_gameViewWindow->setGameCameraObject(nullptr);
+            }
         }
         else
         {
             Utils::log_error(result.error());
         }
     }
+    
 
 }
-

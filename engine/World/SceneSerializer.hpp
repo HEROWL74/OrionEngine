@@ -7,6 +7,7 @@
 #include "../Scripting/LuaScriptComponent.hpp"
 #include "../Physics/BoxCollider.hpp"
 #include "../Audio/AudioComponent.hpp"
+#include "../World/CameraComponent.hpp"
 #include "../UI/UIComponent.hpp"
 
 namespace Engine::World
@@ -34,6 +35,13 @@ namespace Engine::World
 
     private:
         json serializeGameObject(const Scene& scene, const Core::GameObject* gameObject);
+
+        // CameraComponent
+        json serializeCameraComponent(const Engine::World::CameraComponent* camComp);
+        void deserializeCameraComponent(
+            Scene& scene,
+            Core::GameObject* gameObject,
+            const nlohmann::json& json);
 
         [[nodiscard]] Utils::VoidResult deserializeGameObject(
             Scene& scene,
