@@ -27,11 +27,11 @@ https://github.com/HEROWL74/OrionEngine/releases/tag/GameVol.1
 
 -✅ 完成済み
 
-- レンダリング基盤
-- ウィンドウ管理
+- 最低限のレンダリング基盤
+- BoxCollider, InputSystem, AudioComponent, のLuaスクリプトでの制御
 - シェーダーシステム
-- 基本図形描画 (三角形)
-- キーボード、マウスインプット機能（将来はゲームパッドも視野に入れている）
+- EditorGUIでのオブジェクト操作
+- 制作したゲームのリリースビルド期の王
 
 ---
 
