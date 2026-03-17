@@ -35,14 +35,28 @@ https://github.com/HEROWL74/OrionEngine/releases/tag/GameVol.1
 
 ---
 
-## 🧱 構成
+## 🎯 プロジェクトの核となる方針
 
-- `engine/Core` : エンジン本体（Application、GameObject、Windowなど）
-- `renderer/Graphics/` : DirectX12ラッパー（Device、SwapChain、Commandなど）
-- `runtime/` : ゲームリリース用&差し替えDLL生成実装
-- `editor/` : EditorGUIやEditor専用描画オブジェクト
-- `engine-assets` : エンジン内蔵のシェーダーや画像格納フォルダ
-- `assets/` : 実際にユーザーが編集するフォルダ
+1. **DX12の抽象化**: PSOやRootSignatureを構造化し、低レイヤの複雑さをカプセル化した使いやすいレンダリング基盤の構築。
+2. **スクリプト駆動**: Luaを採用し、コンパイル不要でゲームロジック（Collider, Audio等）を高速に反復開発できる仕組み。
+3. **開発者体験（DX）**: 自作エディタによるパラメータ編集と、即時のリリースビルド機能の統合。
+---
+
+## 🧱 ディレクトリ構造と設計意図
+
+プロジェクト全体の責務を明確に分けるため、以下のディレクトリ設計を採用しています。
+
+```text
+OrionEngine/
+├── engine/             # エンジンコア・フレームワーク層
+│   ├── Core/           # アプリケーション基盤・GameObject・Scene管理
+├── renderer/           # DirectX12 ラッパー (Device, SwapChain, PSO管理)
+├── runtime/            # ゲーム実行用バイナリ & DLL差替システムの実装
+├── editor/             # ImGuiベースのエディタ機能と専用描画ロジック
+├── tools/              # ビルド支援ツール (BuildWorker等)
+├── assets/             # ユーザー資産 (モデル、テクスチャ、Luaスクリプト)
+└── engine-assets/      # エンジン内蔵資産 (標準シェーダー、ビルド済みUI素材)
+```
 
 ---
 
