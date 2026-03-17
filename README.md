@@ -31,7 +31,7 @@ https://github.com/HEROWL74/OrionEngine/releases/tag/GameVol.1
 - BoxCollider, InputSystem, AudioComponent, のLuaスクリプトでの制御
 - シェーダーシステム
 - EditorGUIでのオブジェクト操作
-- 制作したゲームのリリースビルド期の王
+- 制作したゲームのリリースビルド機能
 
 ---
 
