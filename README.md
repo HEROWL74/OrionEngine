@@ -35,11 +35,12 @@ https://github.com/HEROWL74/OrionEngine/releases/tag/GameVol.1
 
 ---
 
-## 🧱 構成（予定）
+## 🧱 構成
 
-- `src/engine/Core` : エンジン本体（Application、GameObject、Windowなど）
-- `src/engine/Graphics/` : DirectX12ラッパー（Device、SwapChain、Commandなど）
-- `src/engine/` : 実際のゲームロジックやオブジェクト
+- `engine/Core` : エンジン本体（Application、GameObject、Windowなど）
+- `renderer/Graphics/` : DirectX12ラッパー（Device、SwapChain、Commandなど）
+- `runtime/` : ゲームリリース用&差し替えDLL生成実装
+- `editor/` : EditorGUIやEditor専用描画オブジェクト
 - `engine-assets` : エンジン内蔵のシェーダーや画像格納フォルダ
 - `assets/` : 実際にユーザーが編集するフォルダ
 
