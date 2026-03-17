@@ -2,9 +2,9 @@
 
 [![Build OrionEngine](https://github.com/HEROWL74/OrionEngine/actions/workflows/bulid.yml/badge.svg?branch=develop)](https://github.com/HEROWL74/OrionEngine/actions/workflows/bulid.yml)
 
-このプロジェクトは、高校生が独学で開発している**GameEngine**のプロトタイプです。  
-C++ と DirectX12 を使って、エンジン内部の仕組みを一から学びながら構築しています。
-Microsoftのリファレンスページや、サンプルコードを見ながら勉強しながらコーディングしています。
+自作ゲームエンジン「OrionEngine」の開発プロジェクトです。  
+DirectX12とC++を用いて、レンダリング・UI・スクリプト実行基盤までを一貫して設計・実装しています。  
+実際に本エンジン上でミニゲームを制作し、リリースビルドまで行っています。
 ---
 
 ## 🎯 目的とビジョン
