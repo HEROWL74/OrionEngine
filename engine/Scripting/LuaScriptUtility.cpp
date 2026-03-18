@@ -30,14 +30,20 @@ namespace Engine::Scripting
 
 	void LuaScriptUtility::openInVSCode(const std::string& path)
 	{
-		std::filesystem::path scriptPath(path);
+		std::filesystem::path scriptPath = std::filesystem::absolute(path);
+
+		// フォルダ（ワークスペース） + --goto でファイルを指定
 		std::string folder = scriptPath.parent_path().parent_path().string();
+		std::string args = "\"" + folder + "\" --goto \"" + scriptPath.string() + "\"";
+
+		// cmd.exe 経由で実行することでPATHが解決される
+		std::string cmdArgs = "/c code " + args;
 
 		ShellExecuteA(
 			nullptr,
 			"open",
-			"code",
-			folder.c_str(),
+			"cmd.exe",       // cmd経由でPATHを解決
+			cmdArgs.c_str(),
 			nullptr,
 			SW_HIDE
 		);
