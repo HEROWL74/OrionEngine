@@ -390,6 +390,7 @@ namespace Editor
         m_debugWindow = std::make_unique<UI::DebugWindow>();
         m_hierarchyWindow = std::make_unique<UI::SceneHierarchyWindow>();
         m_inspectorWindow = std::make_unique<UI::InspectorWindow>();
+        m_gameLogicConsole = std::make_unique<UI::GameLogicConsoleWindow>();
         m_toolbarWindow = std::make_unique<UI::ToolbarWindow>();
         m_toolbarWindow->setPlayModeController(&m_playModeController);
 
@@ -880,6 +881,7 @@ namespace Editor
         m_gameViewWindow->draw();
         m_hierarchyWindow->draw();
         m_inspectorWindow->draw();
+        m_gameLogicConsole->draw();
         m_debugWindow->draw();
         m_projectWindow->draw();
         m_buildWindow->draw();
@@ -1194,6 +1196,7 @@ namespace Editor
 
             ImGui::DockBuilderDockWindow("Scene Hierarchy", dockLeft);
             ImGui::DockBuilderDockWindow("Inspector", dockRight);
+            ImGui::DockBuilderDockWindow("Game Logic Console", dockRight);
             ImGui::DockBuilderDockWindow("Scene", dockCenter);
             ImGui::DockBuilderDockWindow("Game", dockCenter);
             ImGui::DockBuilderDockWindow("Project", dockBottom);

@@ -25,7 +25,7 @@ namespace Editor::UI
 	private:
 		std::string m_consoleLog{};
 		LogType m_logType = LogType::None;
-		std::unordered_map<std::string , std::vector<std::string>> m_consoleLogStacks;
+		std::unordered_map<std::string , std::vector<LogType>> m_consoleLogStacks;
 	};
 }
 
