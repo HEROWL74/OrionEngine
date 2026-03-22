@@ -58,14 +58,12 @@
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
 * text=auto
-
 src/engine/**/*.cpp    text eol=crlf
 src/engine/**/*.hpp    text eol=crlf
 src/editor/**/*.cpp    text eol=crlf
 src/editor/**/*.hpp    text eol=crlf
 src/runtime/**/*.cpp   text eol=crlf
 src/runtime/**/*.hpp   text eol=crlf
-
 *.dds binary
 *.png binary
 *.jpg binary
@@ -73,5 +71,7 @@ src/runtime/**/*.hpp   text eol=crlf
 *.cso binary
 engine-assets/**/*.hlsl  text eol=crlf
 engine-assets/**/*.hlsli text eol=crlf
-
 *.dds filter=lfs diff=lfs merge=lfs -text
+tools/**/*.exe filter=lfs diff=lfs merge=lfs -text
+tools/**/*.dll filter=lfs diff=lfs merge=lfs -text
+tools/**/*.lib filter=lfs diff=lfs merge=lfs -text

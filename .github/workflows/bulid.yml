@@ -2,50 +2,87 @@
 
 on:
   push:
-    branches: [develop, "feature/**"]
+    branches: [develop, "feature/**", "refactor/**", "fix/**"]
   pull_request:
     branches: [develop, main]
 
 jobs:
-  windows-build:
-    runs-on: windows-latest
+  build:
+    name: ${{ matrix.os }} Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            preset: x64-release-ci
+            build-preset: editor-release-ci
+            use_sccache: true
+            vcpkg_cache_path: "D:/vcpkg_cache"
+          - os: ubuntu-latest
+            preset: linux-release-ci
+            build-preset: linux-editor-release-ci
+            use_sccache: true
+            vcpkg_cache_path: "/home/runner/.cache/vcpkg_bin"
 
     steps:
       - uses: actions/checkout@v4
         with:
           lfs: true
 
-      # 1. MSVC環境とWindows SDKパスをセットアップ
+      - name: Run sccache-cache
+        uses: mozilla/sccache-action@v0.0.5
+
       - name: Set up MSVC
+        if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      # Ninjaをセットアップ
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
 
-      # 2. vcpkgのキャッシュ準備
-      # 警告対策: キャッシュ対象ディレクトリを事前に作成し、バイナリキャッシュのパスを環境変数で指定する
-      - name: Prepare vcpkg directories
-        shell: bash
+      # --- Linux環境
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
         run: |
-          mkdir -p "${{ github.workspace }}/vcpkg_installed"
-          mkdir -p "${{ github.workspace }}/vcpkg_cache"
-          echo "VCPKG_DEFAULT_BINARY_CACHE=${{ github.workspace }}/vcpkg_cache" >> $GITHUB_ENV
+          sudo apt-get update
+          sudo apt-get install -y libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config libxrandr-dev libxi-dev
 
-      - name: Restore vcpkg cache
+      # --- Restore Caches ---
+      - name: Restore Caches
         uses: actions/cache@v4
         with:
           path: |
             ${{ github.workspace }}/vcpkg_installed
-            ${{ github.workspace }}/vcpkg_cache
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+            ${{ matrix.vcpkg_cache_path }}
+            ${{ github.workspace }}/.sccache_storage
+          key: build-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: |
-            vcpkg-${{ runner.os }}-
+            build-cache-${{ runner.os }}-
 
-      # 3. Configure
       - name: Configure
-        run: cmake --preset x64-release-ci
+        shell: bash
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: sccache
+          CMAKE_CXX_COMPILER_LAUNCHER: sccache
+          SCCACHE_GHA_ENABLED: "false"
+          SCCACHE_DIR: ${{ github.workspace }}/.sccache_storage
+          VCPKG_BINARY_SOURCES: "clear;files,${{ matrix.vcpkg_cache_path }},readwrite"
+          MSYS_NO_PATHCONV: 1
+        run: |
+          mkdir -p "$SCCACHE_DIR"
+          mkdir -p "${{ matrix.vcpkg_cache_path }}"
+          
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            cmake --preset ${{ matrix.preset }} -DCMAKE_CXX_FLAGS="/Z7" -DCMAKE_C_FLAGS="/Z7"
+          else
+            export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
+            cmake --preset ${{ matrix.preset }} -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+          fi
 
-      # 4. Build
-      - name: Build Editor
-        run: cmake --build --preset editor-release-ci
+      - name: Build
+        run: cmake --build --preset ${{ matrix.build-preset }} --parallel
+
+      - name: Show sccache stats
+        env:
+          SCCACHE_DIR: ${{ github.workspace }}/.sccache_storage
+        run: sccache --show-stats

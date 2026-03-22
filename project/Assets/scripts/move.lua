@@ -8,13 +8,8 @@ function Script.onStart(obj)
 end
 
 function Script.onUpdate(obj, dt)
-    if not GameState.isPlaying or GameState.isGameOver then
-        return
-    end
-
     local input = InputSystem.get()
     local transform = obj:getTransform()
-    if transform == nil then return end
 
     local speed = 5.0
 
@@ -32,22 +27,6 @@ function Script.onUpdate(obj, dt)
     if pos.x > 5.0 then
         transform:setPosition(5.0, pos.y, pos.z)
     end
-end
-
-
-function Script.onCollisionEnter(obj, other)
-    if GameState.isGameOver then
-        return
-    end
-    print("Player hit: " .. other:getName())
-
-    if other:getName() == "Enemy" or other:getName() == "Obstacle" then
-        GameState.isGameOver = true
-        print("GAME OVER!")
-    end
-end
-
-function Script.onCollisionExit(obj, other)
 end
 
 return Script
