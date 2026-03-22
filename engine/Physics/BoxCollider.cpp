@@ -1,4 +1,4 @@
-﻿// src/engine/Physics/BoxCollider.cpp
+﻿// engine/Physics/BoxCollider.cpp
 #include "BoxCollider.hpp"
 
 namespace Engine::Physics

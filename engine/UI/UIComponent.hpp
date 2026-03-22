@@ -1,4 +1,4 @@
-﻿// src/engine/UI/UIComponent.hpp
+﻿// engine/UI/UIComponent.hpp
 #pragma once
 #include "../renderer/Device.hpp"
 #include "../renderer/ShaderManager.hpp"

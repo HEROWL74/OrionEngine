@@ -1,4 +1,4 @@
-﻿// src/Graphics/Scene.hpp
+﻿// engine/World/Scene.hpp
 #pragma once
 #include "../Core/GameObject.hpp"
 #include "../Core/EntityID.hpp"
@@ -73,6 +73,14 @@ namespace Engine::World
         {
             if (!obj) return false;
             return m_componentBatch.has<T>(obj->getId());
+        }
+
+        template<typename T>
+        void removeComponent(Core::GameObject* obj)
+        {
+            if (!obj) return;
+            auto* pool = m_componentBatch.getPool<T>();
+            if (pool) pool->destroyEntity(obj->getId());
         }
 
         // ComponentBatchSystemへの直接アクセス（型ごとのバッチ処理用）

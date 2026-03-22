@@ -1,4 +1,4 @@
-﻿// src/runtime/GameApp.cpp
+﻿// runtime/GameApp.cpp
 #include "GameApp.hpp"
 #include "../renderer/RenderContext.hpp"
 #include "../engine/Core/Window.hpp"

@@ -1,4 +1,4 @@
-﻿// src/editor/buildworker/BuildSystem.cpp
+﻿// editor/buildworker/BuildSystem.cpp
 #include "BuildSystem.hpp"
 
 #include <Windows.h>

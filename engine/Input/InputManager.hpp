@@ -1,4 +1,4 @@
-﻿// src/Input/InputManager.hpp
+﻿// engine/Input/InputManager.hpp
 #pragma once
 
 #include <Windows.h>

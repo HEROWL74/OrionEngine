@@ -1,4 +1,4 @@
-﻿// src/Graphics/Scene.cpp
+﻿// engine/World/Scene.cpp
 #include "Scene.hpp"
 #include "../Physics/PhysicsSystem.hpp"
 #include <chrono>

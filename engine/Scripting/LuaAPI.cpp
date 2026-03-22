@@ -1,4 +1,4 @@
-﻿// src/Scripting/LuaAPI.cpp
+﻿// engine/Scripting/LuaAPI.cpp
 #include "LuaAPI.hpp"
 #include "../World/ActiveScene.hpp"
 

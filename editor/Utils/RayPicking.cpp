@@ -1,4 +1,4 @@
-﻿// src/editor/Utils/RayPicking.cpp
+﻿// editor/Utils/RayPicking.cpp
 #define NOMINMAX
 #include "RayPicking.hpp"
 #include <algorithm>

@@ -1,4 +1,4 @@
-﻿// src/Graphics/CubeRenderer.hpp
+﻿// renderer/CubeRenderer.hpp
 #pragma once
 
 #include <Windows.h>

@@ -1,4 +1,4 @@
-﻿// src/Graphics/CubeRenderer.cpp
+﻿// renderer/CubeRenderer.cpp
 #include "CubeRenderer.hpp"
 #include "../engine/Core/ProjectSettings.hpp"
 #include <format>

@@ -1,4 +1,5 @@
-﻿#include "ActiveScene.hpp"
+﻿// engine/World/ActiveScene.cpp
+#include "ActiveScene.hpp"
 
 namespace Engine::World
 {

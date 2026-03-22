@@ -1,4 +1,4 @@
-﻿// src/editor/LinuxApp.cpp
+﻿// editor/LinuxApp.cpp
 
 #ifndef _WIN32
 

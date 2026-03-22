@@ -1,17 +1,71 @@
 {
     "gameObjects": [
         {
-            "name": "MainCamera",
             "active": true,
-            "transform": {
-                "position": [0.0, 1.0, -10.0],
-                "rotation": [0.0, 0.0, 0.0],
-                "scale":    [1.0, 1.0, 1.0]
-            },
             "cameraComponent": {
-                "fov":  45.0,
-                "near": 0.1,
-                "far":  100.0
+                "far": 100.0,
+                "fov": 45.0,
+                "near": 0.10000000149011612
+            },
+            "name": "MainCamera",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    7.0
+                ],
+                "rotation": [
+                    0.0,
+                    180.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "active": true,
+            "lua": {
+                "name": "Lua",
+                "scriptPath": "C:/Users/PC_User/source/repos/VS2022Project/OrionEngine/project/Assets/scripts/Player.lua"
+            },
+            "name": "Player",
+            "renderComponent": {
+                "material": {
+                    "name": "Material",
+                    "properties": {
+                        "albedo": [
+                            0.800000011920929,
+                            0.800000011920929,
+                            0.800000011920929
+                        ],
+                        "metallic": 0.0,
+                        "roughness": 0.5
+                    },
+                    "textures": {}
+                },
+                "renderableType": 0,
+                "visible": true
+            },
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
             }
         }
     ],

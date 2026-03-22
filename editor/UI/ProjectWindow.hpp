@@ -1,4 +1,4 @@
-﻿//src/UI/ProjectWindow.hpp
+﻿//editor/UI/ProjectWindow.hpp
 #pragma once
 
 #include <memory>

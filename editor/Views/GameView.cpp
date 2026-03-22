@@ -1,4 +1,4 @@
-﻿// src/editor/Views/GameView.cpp
+﻿// editor/Views/GameView.cpp
 #include "GameView.hpp"
 
 namespace Editor::UI

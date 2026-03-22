@@ -1,4 +1,4 @@
-﻿// src/Core/ComponentBatchSystem.hpp
+﻿// engine/Core/ComponentBatchSystem.hpp
 #pragma once
 
 #include "EntityID.hpp"
@@ -35,7 +35,15 @@ namespace Engine::Core
         template<typename... Args>
         T* add(EntityID id, Args&&... args)
         {
-            assert(!has(id) && "Component already exists for this entity");
+            // assertの代わりにログを出してリターン（Releaseでも検出できる）
+            if (has(id))
+            {
+                // どの型が2重登録されているか分かる
+                Utils::log_error(Utils::make_error(Utils::ErrorType::Unknown,
+                    std::format("ComponentPool::add duplicate! type={} id=({},{})",
+                        typeid(T).name(), id.index, id.generation)));
+                return get(id);  // クラッシュを防いで既存を返す
+            }
 
             uint32_t slot = static_cast<uint32_t>(m_components.size());
             m_components.push_back(std::make_unique<T>(std::forward<Args>(args)...));

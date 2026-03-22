@@ -1,4 +1,4 @@
-﻿// src/editor/Views/EditorView.cpp
+﻿// editor/Views/EditorView.cpp
 #include "EditorView.hpp"
 #include "../engine/Core/ProjectSettings.hpp"
 #include <directx/d3dx12.h>

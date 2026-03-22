@@ -1,4 +1,4 @@
-﻿// src/engine/UI/UITextRenderer.cpp
+﻿// engine/UI/UITextRenderer.cpp
 #include "UITextRenderer.hpp"
 #include "../engine/Core/ProjectSettings.hpp"
 #include <directx/d3dx12.h>

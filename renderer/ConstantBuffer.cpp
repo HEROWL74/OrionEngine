@@ -1,4 +1,4 @@
-﻿// src/Graphics/ConstantBuffer.cpp
+﻿// renderer/ConstantBuffer.cpp
 #include "ConstantBuffer.hpp"
 
 namespace Renderer

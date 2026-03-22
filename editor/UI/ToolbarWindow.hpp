@@ -1,4 +1,4 @@
-﻿// src/editor/UI/ToolbarWindow.hpp
+﻿// editor/UI/ToolbarWindow.hpp
 #pragma once
 #include "ImGuiManager.hpp"
 #include "../Core/PlayModeController.hpp"

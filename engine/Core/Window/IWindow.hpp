@@ -1,4 +1,4 @@
-﻿// src/engine/Core/Window/IWindow.hpp
+﻿// engine/Core/Window/IWindow.hpp
 #pragma once
 #include <cstdint>
 #include <string>

@@ -1,4 +1,4 @@
-﻿// src/editor/EditorApp.hpp
+﻿// editor/EditorApp.hpp
 #pragma once
 
 #include <Windows.h>
@@ -22,6 +22,8 @@
 #include "UI/ProjectWindow.hpp"
 #include "UI/ContextMenu.hpp"
 #include "UI/GameLogicConsoleWindow.hpp"
+#include "UI/GameLogicProfiler.hpp"
+#include "UI/ConsoleWindow.hpp"
 #include "../engine/Scripting/ScriptManager.hpp"
 #include "../engine/Scripting/LuaBindings.hpp"
 #include "../engine/World/Scene.hpp"
@@ -134,11 +136,14 @@ namespace Editor
         std::unique_ptr<UI::DebugWindow>            m_debugWindow;
         std::unique_ptr<UI::SceneHierarchyWindow>   m_hierarchyWindow;
         std::unique_ptr<UI::InspectorWindow>        m_inspectorWindow;
-        std::unique_ptr<UI::GameLogicConsoleWindow> m_gameLogicConsole;
         std::unique_ptr<UI::ProjectWindow>          m_projectWindow;
         std::unique_ptr<UI::EditorViewWindow>       m_editorViewWindow;
         std::unique_ptr<UI::GameViewWindow>         m_gameViewWindow;
 
+        // Console関連
+        std::unique_ptr<UI::GameLogicConsoleWindow> m_gameLogicConsole;
+        std::unique_ptr<UI::GameLogicProfiler> m_gameLogicProfiler;
+        std::unique_ptr<UI::ConsoleWindow> m_consoleWindow;
         // Build関連
         std::unique_ptr<Build::BuildSystem> m_buildSystem;
         std::unique_ptr<UI::BuildWindow>    m_buildWindow;

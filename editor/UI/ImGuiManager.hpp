@@ -1,4 +1,4 @@
-﻿//src/UI/ImGuiManager.hpp
+﻿// editor/UI/ImGuiManager.hpp
 #pragma once
 
 #include <imgui.h>

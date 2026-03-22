@@ -1,4 +1,4 @@
-﻿// src/Graphics/Camera.cpp
+﻿// engine/World/Camera.cpp
 #include "Camera.hpp"
 #include <algorithm>
 

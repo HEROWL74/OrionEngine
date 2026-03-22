@@ -1,4 +1,4 @@
-﻿// src/runtime/GameApp.hpp
+﻿// runtime/GameApp.hpp
 #pragma once
 
 #include <Windows.h>

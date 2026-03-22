@@ -1,4 +1,4 @@
-﻿//src/UI/ProjectWindow.cpp
+﻿// editor/UI/ProjectWindow.cpp
 #include "ProjectWindow.hpp"
 #include "../engine/Core/ProjectSettings.hpp"
 #include <format>

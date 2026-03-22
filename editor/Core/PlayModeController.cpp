@@ -35,12 +35,13 @@ namespace Editor::EditorCore
         {
             Engine::Utils::log_info("Entering Play mode...");
 
-            // ActiveSceneを確実に設定
             Engine::World::setActiveScene(m_scene);
             Engine::Utils::log_info(std::format("ActiveScene set to: {}", (void*)m_scene));
 
-            // シーンの状態を保存（新しいGameObjectsが作られた後）
             captureSceneState();
+
+            if (m_onPlayCallback)
+                m_onPlayCallback();
 
             m_scene->start();
         }
@@ -78,23 +79,35 @@ namespace Editor::EditorCore
         Engine::Utils::log_info("Stopping Play mode...");
         EditorState oldState = m_currentState;
 
-        // すべてのAudioComponentを停止
+        // ----------------------------------------------------------------
+        // Audio 停止
+        // ----------------------------------------------------------------
         if (m_scene)
         {
             for (auto& obj : m_scene->getGameObjects())
             {
-                if (obj)
-                {
-                    auto* audioComp = obj->getComponent<Engine::Audio::AudioComponent>();
-                    if (audioComp)
-                    {
-                        audioComp->stop();
-                    }
-                }
+                if (!obj) continue;
+                auto* audioComp = obj->getComponent<Engine::Audio::AudioComponent>();
+                if (audioComp) audioComp->stop();
             }
         }
 
-        // Lua VMリセットのみ実行
+        // ----------------------------------------------------------------
+        // 修正: Lua VM リセットより先に LuaScriptComponent を無効化する。
+        //
+        // 旧順序: reloadAll() → restoreSceneState()
+        //   reloadAll() 内の invalidateAllComponents() が sol::function を
+        //   sol::lua_nil にリセットするが、Release CI の最適化により
+        //   sol::function デストラクタが古い VM を参照してクラッシュする。
+        //
+        // 新順序:
+        //   1. invalidateAllComponents() で sol::function を先にクリア
+        //   2. reloadAll() で Lua VM をリセット（既にクリア済みなので安全）
+        //   3. restoreSceneState() でシーン状態を復元
+        // ----------------------------------------------------------------
+        Engine::Utils::log_info("Invalidating Lua components before VM reset...");
+        Engine::Scripting::ScriptManager::get().invalidateAllComponents();
+
         Engine::Utils::log_info("Reloading Lua VM...");
         Engine::Scripting::ScriptManager::get().reloadAll();
 
@@ -112,9 +125,6 @@ namespace Editor::EditorCore
             Engine::Utils::log_warning("Step is only available in Pause mode");
             return;
         }
-
-        float fixedDeltaTime = 1.0f / 60.0f; // 60FPS想定
-
         Engine::Utils::log_info("Stepped one frame");
     }
 
@@ -126,9 +136,7 @@ namespace Editor::EditorCore
     void PlayModeController::notifyStateChanged(EditorState oldState, EditorState newState)
     {
         for (const auto& callback : m_stateChangedCallbacks)
-        {
             callback(oldState, newState);
-        }
     }
 
     void PlayModeController::captureSceneState()
@@ -168,7 +176,6 @@ namespace Editor::EditorCore
 
     void PlayModeController::update()
     {
-        // 遅延実行されたリスタート処理を実行
         if (m_pendingRestart)
         {
             m_pendingRestart = false;
@@ -179,30 +186,21 @@ namespace Editor::EditorCore
     void PlayModeController::performRestart()
     {
         Engine::Utils::log_info(
-            std::format("performRestart() executing. isPlaying={}", isPlaying())
-        );
+            std::format("performRestart() executing. isPlaying={}", isPlaying()));
         Engine::Utils::log_info(std::format(
             "Restart context: device={}, shader={}, material={}, texture={}, path={}",
-            (void*)m_device,
-            (void*)m_shaderManager,
-            (void*)m_materialManager,
-            (void*)m_textureManager,
-            m_scenePath
-        ));
+            (void*)m_device, (void*)m_shaderManager,
+            (void*)m_materialManager, (void*)m_textureManager, m_scenePath));
 
-        if (!isPlaying())
-            return;
+        if (!isPlaying()) return;
 
         if (!m_scene)
         {
             Engine::Utils::log_error(Utils::make_error(
-                Utils::ErrorType::Unknown,
-                "performRestart(): m_scene is null"
-            ));
+                Utils::ErrorType::Unknown, "performRestart(): m_scene is null"));
             return;
         }
 
-        // リスタート処理中フラグをON（レンダリングをスキップさせる）
         m_isRestarting = true;
 
         Engine::Utils::log_info("Restarting game...");
@@ -214,34 +212,29 @@ namespace Editor::EditorCore
         Engine::Utils::log_info("Stopping all audio components...");
         for (auto& obj : m_scene->getGameObjects())
         {
-            if (obj)
-            {
-                auto* audioComp = obj->getComponent<Engine::Audio::AudioComponent>();
-                if (audioComp)
-                {
-                    audioComp->stop();
-                }
-            }
+            if (!obj) continue;
+            auto* audioComp = obj->getComponent<Engine::Audio::AudioComponent>();
+            if (audioComp) audioComp->stop();
         }
 
-        // GPU同期を確実に行う
-        Engine::Utils::log_info("Waiting for GPU...");
-        if (m_device)
-        {
-            m_device->waitForGpu();
-        }
+        if (m_device) m_device->waitForGpu();
 
         Engine::Utils::log_info("Clearing all snapshots...");
         m_sceneSnapshots.clear();
 
+        // ----------------------------------------------------------------
+        // restart でも同じ順序を守る:
+        //   1. invalidateAllComponents() で sol::function を先にクリア
+        //   2. scene clear
+        //   3. reloadAll()
+        // ----------------------------------------------------------------
+        Engine::Utils::log_info("Invalidating Lua components before VM reset...");
+        Engine::Scripting::ScriptManager::get().invalidateAllComponents();
+
         Engine::Utils::log_info("Clearing scene...");
         m_scene->clear();
 
-        // もう一度GPU同期
-        if (m_device)
-        {
-            m_device->waitForGpu();
-        }
+        if (m_device) m_device->waitForGpu();
 
         Engine::Utils::log_info("Reloading Lua VM...");
         Engine::Scripting::ScriptManager::get().reloadAll();
@@ -249,13 +242,8 @@ namespace Editor::EditorCore
         Engine::Utils::log_info(std::format("Reloading scene from: {}", m_scenePath));
         Engine::World::SceneSerializer serializer;
         auto result = serializer.loadScene(
-            *m_scene,
-            m_device,
-            m_shaderManager,
-            m_materialManager,
-            m_textureManager,
-            m_scenePath
-        );
+            *m_scene, m_device, m_shaderManager,
+            m_materialManager, m_textureManager, m_scenePath);
 
         if (!result)
         {
@@ -269,9 +257,7 @@ namespace Editor::EditorCore
         Engine::World::setActiveScene(m_scene);
         Engine::Utils::log_info(std::format("ActiveScene reset to: {}", (void*)m_scene));
 
-        // リスタート処理完了
         m_isRestarting = false;
-
         play();
     }
 
@@ -280,18 +266,14 @@ namespace Editor::EditorCore
         Renderer::ShaderManager* shaderManager,
         Renderer::MaterialManager* materialManager,
         Renderer::TextureManager* textureManager,
-        const std::string& scenePath
-    )
+        const std::string& scenePath)
     {
         m_device = device;
         m_shaderManager = shaderManager;
         m_materialManager = materialManager;
         m_textureManager = textureManager;
         m_scenePath = scenePath;
-
-        Engine::Utils::log_info(
-            std::format("Scene load context set: {}", scenePath)
-        );
+        Engine::Utils::log_info(std::format("Scene load context set: {}", scenePath));
     }
 
     void PlayModeController::restoreSceneState()
@@ -333,4 +315,3 @@ namespace Editor::EditorCore
         Engine::Utils::log_info("Scene state restored");
     }
 }
-

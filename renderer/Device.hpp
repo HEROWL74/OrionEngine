@@ -1,4 +1,4 @@
-﻿// src/Graphics/Device.hpp
+﻿// renderer/Device.hpp
 #pragma once
 
 #include <Windows.h>

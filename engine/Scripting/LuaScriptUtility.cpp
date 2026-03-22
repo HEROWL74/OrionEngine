@@ -49,6 +49,23 @@ namespace Engine::Scripting
 		);
 	}
 
+	void LuaScriptUtility::openInVSCode(const std::string& path, int line)
+	{
+		std::filesystem::path scriptPath = std::filesystem::absolute(path);
+
+		// フォルダ（ワークスペース） + --goto でファイルを指定
+		std::string folder = scriptPath.parent_path().parent_path().string();
+		// --goto "file:line" 形式で行番号指定
+		std::string goToTarget = line > 0
+			? "\"" + scriptPath.string() + ":" + std::to_string(line) + "\""
+			: "\"" + scriptPath.string() + "\"";
+
+		std::string args = "\"" + folder + "\" --goto " + goToTarget;
+		std::string cmdArgs = "/c code " + args;
+
+		ShellExecuteA(nullptr, "open", "cmd.exe", cmdArgs.c_str(), nullptr, SW_HIDE);
+	}
+
 	std::string LuaScriptUtility::normalizePath(const std::string& name) {
 		std::filesystem::path p(name);
 		p.replace_extension(".lua");

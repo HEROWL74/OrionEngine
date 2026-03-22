@@ -1,4 +1,4 @@
-﻿// src/Graphics/ConstantBuffer.hpp
+﻿// renderer/ConstantBuffer.hpp
 #pragma once
 
 #include <Windows.h>

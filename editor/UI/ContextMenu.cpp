@@ -1,4 +1,4 @@
-﻿// src/editor/UI/ContextMenu.cpp - UIText作成対応版
+﻿// editor/UI/ContextMenu.cpp - UIText作成対応版
 #include "ContextMenu.hpp"
 #include <imgui.h>
 #include "../engine/Utils/Common.hpp"

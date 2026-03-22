@@ -1,4 +1,4 @@
-﻿// src/editor/UI/BuildWindow.cpp
+﻿// editor/UI/BuildWindow.cpp
 
 #include "BuildWindow.hpp"
 #include <imgui.h>

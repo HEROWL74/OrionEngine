@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿// engine/World/ActiveScene.hpp
+#pragma once
 #include "Scene.hpp"
 
 namespace Engine::World

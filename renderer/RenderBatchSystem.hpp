@@ -1,4 +1,4 @@
-﻿// src/Graphics/RenderBatchSustem.hpp
+﻿// renderer/RenderBatchSustem.hpp
 #pragma once
 
 #include "../engine/Core/EntityID.hpp"

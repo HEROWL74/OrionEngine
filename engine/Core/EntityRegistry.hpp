@@ -1,4 +1,4 @@
-﻿// src/Core/EntityRegistry.hpp
+﻿// engine/Core/EntityRegistry.hpp
 #pragma once
 #include "EntityID.hpp"
 #include <vector>

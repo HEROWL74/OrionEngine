@@ -1,4 +1,4 @@
-﻿// src/editor/buildworker/BuildSystem.hpp
+﻿// editor/buildworker/BuildSystem.hpp
 #pragma once
 
 #include <string>

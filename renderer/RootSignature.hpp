@@ -1,4 +1,4 @@
-﻿// src/Graphics/RootSignature.hpp
+﻿// renderer/RootSignature.hpp
 #pragma once
 #include <d3d12.h>
 #include "../engine/Utils/Common.hpp"

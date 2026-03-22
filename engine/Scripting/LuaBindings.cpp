@@ -1,240 +1,294 @@
-﻿#include "LuaBindings.hpp"
+﻿// engine/Scripting/LuaBindings.cpp
+#include "LuaBindings.hpp"
 #include "LuaAPI.hpp"
+#include <chrono>
 
 namespace Engine::Scripting
 {
-	void LuaBindings::bindMath(sol::state& lua)
-	{
-		lua.new_usertype<Math::Vector3>("Vector3",
-			sol::constructors<Math::Vector3(), Math::Vector3(float, float, float)>(),
-			"x", &Math::Vector3::x,
-			"y", &Math::Vector3::y,
-			"z", &Math::Vector3::z,
-			"zero", &Math::Vector3::zero,
-			"up", &Math::Vector3::up,
-			"length", &Math::Vector3::length,
-			"normalized", &Math::Vector3::normalized
-		);
-	}
+    using Clock = std::chrono::high_resolution_clock;
 
-	void LuaBindings::bindCamera(sol::state& lua)
-	{
-		using namespace World;
+    static float elapsedMs(std::chrono::time_point<Clock> t0)
+    {
+        return std::chrono::duration<float, std::milli>(Clock::now() - t0).count();
+    }
 
-		lua.new_usertype<Camera>("Camera",
-			sol::constructors<Camera()>(),
-			"setPosition", &Camera::setPosition,
-			"setRotation", &Camera::setRotation,
-			"lookAt", &Camera::lookAt,
-			"moveForward", &Camera::moveForward,
-			"moveRight", &Camera::moveRight,
-			"moveUp", &Camera::moveUp
-		);
-	}
+    void LuaBindings::bindMath(sol::state& lua)
+    {
+        lua.new_usertype<Math::Vector3>("Vector3",
+            sol::constructors<Math::Vector3(), Math::Vector3(float, float, float)>(),
+            "x", &Math::Vector3::x,
+            "y", &Math::Vector3::y,
+            "z", &Math::Vector3::z,
+            "zero", &Math::Vector3::zero,
+            "up", &Math::Vector3::up,
+            "length", &Math::Vector3::length,
+            "normalized", &Math::Vector3::normalized
+        );
+    }
 
-	void LuaBindings::bindInput(sol::state& lua)
-	{
-		using namespace Input;
+    void LuaBindings::bindCamera(sol::state& lua)
+    {
+        using namespace World;
+        lua.new_usertype<Camera>("Camera",
+            sol::constructors<Camera()>(),
+            "setPosition", &Camera::setPosition,
+            "setRotation", &Camera::setRotation,
+            "lookAt", &Camera::lookAt,
+            "moveForward", &Camera::moveForward,
+            "moveRight", &Camera::moveRight,
+            "moveUp", &Camera::moveUp
+        );
+    }
 
-		lua.new_usertype<InputSystem>("InputSystem",
-			sol::no_constructor,
-			"get", &InputSystem::get,
+    void LuaBindings::bindInput(sol::state& lua)
+    {
+        using namespace Input;
+        lua.new_usertype<InputSystem>("InputSystem",
+            sol::no_constructor,
+            "get", &InputSystem::get,
+            "isKeyW", &InputSystem::isKeyW,
+            "isKeyS", &InputSystem::isKeyS,
+            "isKeyA", &InputSystem::isKeyA,
+            "isKeyD", &InputSystem::isKeyD,
+            "isKeySpace", &InputSystem::isKeySpace,
+            "isKeyWPressed", &InputSystem::isKeyWPressed,
+            "isKeySPressed", &InputSystem::isKeySPressed,
+            "isKeyAPressed", &InputSystem::isKeyAPressed,
+            "isKeyDPressed", &InputSystem::isKeyDPressed,
+            "isKeySpacePressed", &InputSystem::isKeySpacePressed,
+            "isKeyWReleased", &InputSystem::isKeyWReleased,
+            "isKeySReleased", &InputSystem::isKeySReleased,
+            "isKeyAReleased", &InputSystem::isKeyAReleased,
+            "isKeyDReleased", &InputSystem::isKeyDReleased,
+            "isKeySpaceReleased", &InputSystem::isKeySpaceReleased
+        );
+    }
 
-			// 押されている間ずっとtrue (連続入力用)
-			"isKeyW", &InputSystem::isKeyW,
-			"isKeyS", &InputSystem::isKeyS,
-			"isKeyA", &InputSystem::isKeyA,
-			"isKeyD", &InputSystem::isKeyD,
-			"isKeySpace", &InputSystem::isKeySpace,
+    void LuaBindings::bindPhysics(sol::state& lua)
+    {
+        using namespace Physics;
+        lua.new_usertype<BoxCollider>("BoxCollider",
+            sol::no_constructor,
+            "setSize", [](BoxCollider* bc, float x, float y, float z) {
+                bc->setSize(Math::Vector3(x, y, z));
+            },
+            "getSize", &BoxCollider::getSize,
+            "setCenter", [](BoxCollider* bc, float x, float y, float z) {
+                bc->setCenter(Math::Vector3(x, y, z));
+            },
+            "getCenter", &BoxCollider::getCenter,
+            "setTrigger", &BoxCollider::setTrigger,
+            "isTrigger", &BoxCollider::isTrigger
+        );
+    }
 
-			// 押された瞬間だけtrue (トグル用)
-			"isKeyWPressed", &InputSystem::isKeyWPressed,
-			"isKeySPressed", &InputSystem::isKeySPressed,
-			"isKeyAPressed", &InputSystem::isKeyAPressed,
-			"isKeyDPressed", &InputSystem::isKeyDPressed,
-			"isKeySpacePressed", &InputSystem::isKeySpacePressed,
+    void LuaBindings::bindAudio(sol::state& lua)
+    {
+        using namespace Audio;
+        lua.new_usertype<AudioComponent>("AudioComponent",
+            sol::no_constructor,
+            "setFilePath", &AudioComponent::setFilePath,
+            "getFilePath", &AudioComponent::getFilePath,
+            "play", &AudioComponent::play,
+            "stop", &AudioComponent::stop,
+            "pause", &AudioComponent::pause,
+            "resume", &AudioComponent::resume,
+            "setLoop", &AudioComponent::setLoop,
+            "isLoop", &AudioComponent::isLoop,
+            "setVolume", &AudioComponent::setVolume,
+            "getVolume", &AudioComponent::getVolume,
+            "isPlaying", &AudioComponent::isPlaying,
+            "isPaused", &AudioComponent::isPaused
+        );
+    }
 
-			// 離された瞬間だけtrue
-			"isKeyWReleased", &InputSystem::isKeyWReleased,
-			"isKeySReleased", &InputSystem::isKeySReleased,
-			"isKeyAReleased", &InputSystem::isKeyAReleased,
-			"isKeyDReleased", &InputSystem::isKeyDReleased,
-			"isKeySpaceReleased", &InputSystem::isKeySpaceReleased
-		);
-	}
+    void LuaBindings::bindUIText(sol::state& lua)
+    {
+        using namespace EngineUI;
+        lua.new_usertype<UIText>("UIText",
+            sol::no_constructor,
+            "getName", &UIText::getName,
+            "setName", &UIText::setName,
+            "getText", &UIText::getText,
+            "setText", &UIText::setText,
+            "isVisible", &UIText::isVisible,
+            "setVisible", &UIText::setVisible,
+            "getPosition", &UIText::getPosition,
+            "setPosition", &UIText::setPosition,
+            "getRotation", &UIText::getRotation,
+            "setRotation", &UIText::setRotation,
+            "getScale", &UIText::getScale,
+            "setScale", &UIText::setScale,
+            "setPositionXYZ", &UIText::setPositionXYZ,
+            "setRotationXYZ", &UIText::setRotationXYZ,
+            "setScaleXYZ", &UIText::setScaleXYZ,
+            "getFontSize", &UIText::getFontSize,
+            "setFontSize", &UIText::setFontSize,
+            "getColor", &UIText::getColor,
+            "setColor", &UIText::setColor,
+            "setColorRGB", &UIText::setColorRGB,
+            "getAlpha", &UIText::getAlpha,
+            "setAlpha", &UIText::setAlpha
+        );
+    }
 
-	void LuaBindings::bindPhysics(sol::state& lua)
-	{
-		using namespace Physics;
+    void LuaBindings::bindGameObjectHandle(sol::state& lua)
+    {
+        lua.new_usertype<GameObjectHandle>(
+            "GameObject",
+            sol::constructors<GameObjectHandle()>(),
+            "id", &GameObjectHandle::id
+        );
+    }
 
-		lua.new_usertype<BoxCollider>("BoxCollider",
-			sol::no_constructor,
-			"setSize", [](BoxCollider* bc, float x, float y, float z) {
-				bc->setSize(Math::Vector3(x, y, z));
-			},
-			"getSize", &BoxCollider::getSize,
-			"setCenter", [](BoxCollider* bc, float x, float y, float z) {
-				bc->setCenter(Math::Vector3(x, y, z));
-			},
-			"getCenter", &BoxCollider::getCenter,
-			"setTrigger", &BoxCollider::setTrigger,
-			"isTrigger", &BoxCollider::isTrigger
-		);
-	}
+    void LuaBindings::bindTransform(sol::state& lua)
+    {
+        LeafCallback cb = m_leafCallback;
 
-	void LuaBindings::bindAudio(sol::state& lua)
-	{
-		using namespace Audio;
+        // ---- デバッグ: cb が設定されているか確認 ----
+        Utils::log_info(std::format("[LuaBindings] bindTransform called. cb is {}",
+            cb ? "SET" : "NULL"));
 
-		lua.new_usertype<Audio::AudioComponent>("AudioComponent",
-			sol::no_constructor,
-			// ファイルパス設定（Inspector経由で設定）
-			"setFilePath", &AudioComponent::setFilePath,
-			"getFilePath", &AudioComponent::getFilePath,
+        using T = Core::Transform;
+        using V3 = Math::Vector3;
 
-			// 再生制御
-			"play", &AudioComponent::play,
-			"stop", &AudioComponent::stop,
-			"pause", &AudioComponent::pause,
-			"resume", &AudioComponent::resume,
+        lua.new_usertype<T>("Transform",
+            "getPosition", &T::getPosition,
+            "getRotation", &T::getRotation,
+            "getScale", &T::getScale,
 
-			// 設定
-			"setLoop", &AudioComponent::setLoop,
-			"isLoop", &AudioComponent::isLoop,
-			"setVolume", &AudioComponent::setVolume,
-			"getVolume", &AudioComponent::getVolume,
+            "setPosition", sol::overload(
+                [cb](T* t, const V3& v) {
+                    auto t0 = Clock::now();
+                    t->setPosition(v);
+                    if (cb) cb("Transform", "setPosition", elapsedMs(t0));
+                },
+                [cb](T* t, float x, float y, float z) {
+                    auto t0 = Clock::now();
+                    t->setPosition(V3(x, y, z));
+                    if (cb) cb("Transform", "setPosition", elapsedMs(t0));
+                }
+            ),
 
-			// 状態取得
-			"isPlaying", &AudioComponent::isPlaying,
-			"isPaused", &AudioComponent::isPaused
-		);
-	}
+            "setRotation", sol::overload(
+                [cb](T* t, const V3& v) {
+                    auto t0 = Clock::now();
+                    t->setRotation(v);
+                    if (cb) cb("Transform", "setRotation", elapsedMs(t0));
+                },
+                [cb](T* t, float x, float y, float z) {
+                    auto t0 = Clock::now();
+                    t->setRotation(V3(x, y, z));
+                    if (cb) cb("Transform", "setRotation", elapsedMs(t0));
+                }
+            ),
 
-	void LuaBindings::bindUIText(sol::state& lua)
-	{
-		using namespace EngineUI;
+            "setScale", sol::overload(
+                [cb](T* t, const V3& v) {
+                    auto t0 = Clock::now();
+                    t->setScale(v);
+                    if (cb) cb("Transform", "setScale", elapsedMs(t0));
+                },
+                [cb](T* t, float x, float y, float z) {
+                    auto t0 = Clock::now();
+                    t->setScale(V3(x, y, z));
+                    if (cb) cb("Transform", "setScale", elapsedMs(t0));
+                }
+            ),
 
-		lua.new_usertype<UIText>("UIText",
-			sol::no_constructor,
-			// 基本プロパティ
-			"getName", &UIText::getName,
-			"setName", &UIText::setName,
-			"getText", &UIText::getText,
-			"setText", &UIText::setText,
+            "translate", sol::overload(
+                [cb](T* t, const V3& v) {
+                    auto t0 = Clock::now();
+                    t->translate(v);
+                    if (cb) cb("Transform", "translate", elapsedMs(t0));
+                },
+                [cb](T* t, float x, float y, float z) {
+                    auto t0 = Clock::now();
+                    t->translate(V3(x, y, z));
+                    if (cb) cb("Transform", "translate", elapsedMs(t0));
+                }
+            ),
 
-			// 表示制御
-			"isVisible", &UIText::isVisible,
-			"setVisible", &UIText::setVisible,
+            "rotate", sol::overload(
+                [cb](T* t, const V3& v) {
+                    auto t0 = Clock::now();
+                    t->rotate(v);
+                    if (cb) cb("Transform", "rotate", elapsedMs(t0));
+                },
+                [cb](T* t, float x, float y, float z) {
+                    auto t0 = Clock::now();
+                    t->rotate(V3(x, y, z));
+                    if (cb) cb("Transform", "rotate", elapsedMs(t0));
+                }
+            ),
 
-			// Transform (Vector3版)
-			"getPosition", &UIText::getPosition,
-			"setPosition", &UIText::setPosition,
-			"getRotation", &UIText::getRotation,
-			"setRotation", &UIText::setRotation,
-			"getScale", &UIText::getScale,
-			"setScale", &UIText::setScale,
+            "move", [cb](T* t, float x, float y, float z) {
+                auto t0 = Clock::now();
+                t->translate(V3(x, y, z));
+                if (cb) cb("Transform", "move", elapsedMs(t0));
+            },
 
-			// Transform (float x, y, z版 - Luaから使いやすい)
-			"setPositionXYZ", &UIText::setPositionXYZ,
-			"setRotationXYZ", &UIText::setRotationXYZ,
-			"setScaleXYZ", &UIText::setScaleXYZ,
+            // moveX / moveY / moveZ: 毎フレーム呼ばれる可能性があるため
+            // デバッグログは static カウンタで最初の数回だけ出す
+            "moveX", [cb](T* t, float x) {
+                auto t0 = Clock::now();
+                auto p = t->getPosition();
+                t->setPosition(V3(p.x + x, p.y, p.z));
+                float ms = elapsedMs(t0);
 
-			// スタイル
-			"getFontSize", &UIText::getFontSize,
-			"setFontSize", &UIText::setFontSize,
-			"getColor", &UIText::getColor,
-			"setColor", &UIText::setColor,
-			"setColorRGB", &UIText::setColorRGB,
-			"getAlpha", &UIText::getAlpha,
-			"setAlpha", &UIText::setAlpha
-		);
-	}
+                static int dbgCount = 0;
+                if (dbgCount < 5) {
+                    Utils::log_info(std::format(
+                        "[LuaBindings] moveX called. cb={} ms={:.4f}",
+                        cb ? "SET" : "NULL", ms));
+                    ++dbgCount;
+                }
 
-	void LuaBindings::bindGameObjectHandle(sol::state& lua)
-	{
-		lua.new_usertype<GameObjectHandle>(
-			"GameObject",
-			sol::constructors<GameObjectHandle()>(),
-			"id", &GameObjectHandle::id
-		);
-	}
+                if (cb) cb("Transform", "moveX", ms);
+            },
 
-	void LuaBindings::registerBindings(sol::state& lua)
-	{
-		bindMath(lua);
-		bindCamera(lua);
-		bindInput(lua);
-		bindPhysics(lua);
-		bindUIText(lua);
-		bindAudio(lua);
+            "moveY", [cb](T* t, float y) {
+                auto t0 = Clock::now();
+                auto p = t->getPosition();
+                t->setPosition(V3(p.x, p.y + y, p.z));
+                float ms = elapsedMs(t0);
+                if (cb) cb("Transform", "moveY", ms);
+            },
 
-		// GameObject バインディング
-		lua.new_usertype<Core::GameObject>("GameObject",
-			"getName", &Core::GameObject::getName,
-			"getTransform", &Core::GameObject::getTransform,
-			"isActive", &Core::GameObject::isActive,
-			"setActive", &Core::GameObject::setActive,
-			// UITextコンポーネントを取得
-			"getUIText", [](Core::GameObject* obj) -> EngineUI::UIText* {
-				return obj->getComponent<EngineUI::UIText>();
-			},
-			// AudioComponentを取得
-			"getAudio", [](Core::GameObject* obj) -> Audio::AudioComponent* {
-				return obj->getComponent<Audio::AudioComponent>();
-			}
-		);
+            "moveZ", [cb](T* t, float z) {
+                auto t0 = Clock::now();
+                auto p = t->getPosition();
+                t->setPosition(V3(p.x, p.y, p.z + z));
+                float ms = elapsedMs(t0);
+                if (cb) cb("Transform", "moveZ", ms);
+            }
+        );
+    }
 
-		// Transform バインディング
-		lua.new_usertype<Core::Transform>("Transform",
-			"getPosition", &Core::Transform::getPosition,
-			"setPosition", sol::overload(
-				&Core::Transform::setPosition,
-				[](Core::Transform* t, float x, float y, float z) {
-					t->setPosition(Math::Vector3(x, y, z));
-				}
-			),
-			"getRotation", &Core::Transform::getRotation,
-			"setRotation", sol::overload(
-				&Core::Transform::setRotation,
-				[](Core::Transform* t, float x, float y, float z) {
-					t->setRotation(Math::Vector3(x, y, z));
-				}
-			),
-			"getScale", &Core::Transform::getScale,
-			"setScale", sol::overload(
-				&Core::Transform::setScale,
-				[](Core::Transform* t, float x, float y, float z) {
-					t->setScale(Math::Vector3(x, y, z));
-				}
-			),
-			"translate", sol::overload(
-				&Core::Transform::translate,
-				[](Core::Transform* t, float x, float y, float z) {
-					t->translate(Math::Vector3(x, y, z));
-				}
-			),
-			"rotate", sol::overload(
-				&Core::Transform::rotate,
-				[](Core::Transform* t, float x, float y, float z) {
-					t->rotate(Math::Vector3(x, y, z));
-				}
-			),
-			"move", [](Core::Transform* t, float x, float y, float z) {
-				t->translate(Math::Vector3(x, y, z));
-			},
-			"moveX", [](Core::Transform* t, float x) {
-				auto pos = t->getPosition();
-				t->setPosition(Math::Vector3(pos.x + x, pos.y, pos.z));
-			},
-			"moveY", [](Core::Transform* t, float y) {
-				auto pos = t->getPosition();
-				t->setPosition(Math::Vector3(pos.x, pos.y + y, pos.z));
-			},
-			"moveZ", [](Core::Transform* t, float z) {
-				auto pos = t->getPosition();
-				t->setPosition(Math::Vector3(pos.x, pos.y, pos.z + z));
-			}
-		);
-	}
+    void LuaBindings::registerBindings(sol::state& lua)
+    {
+        bindMath(lua);
+        bindCamera(lua);
+        bindInput(lua);
+        bindPhysics(lua);
+        bindAudio(lua);
+        bindUIText(lua);
+        bindTransform(lua);
+
+        lua.new_usertype<Core::GameObject>("GameObject",
+            "getName", &Core::GameObject::getName,
+            "getTransform", &Core::GameObject::getTransform,
+            "isActive", &Core::GameObject::isActive,
+            "setActive", &Core::GameObject::setActive,
+            "getUIText", [](Core::GameObject* obj) -> EngineUI::UIText* {
+                return obj->getComponent<EngineUI::UIText>();
+            },
+            "getAudio", [](Core::GameObject* obj) -> Audio::AudioComponent* {
+                return obj->getComponent<Audio::AudioComponent>();
+            }
+        );
+
+        bindGameObjectHandle(lua);
+    }
+
 }
-

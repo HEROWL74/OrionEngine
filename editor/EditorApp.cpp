@@ -1,4 +1,4 @@
-﻿// src/editor/EditorApp.cpp
+﻿// editor/EditorApp.cpp
 #include "EditorApp.hpp"
 #include <format>
 #include <filesystem>
@@ -159,7 +159,6 @@ namespace Editor
         Utils::log_info("Application terminated successfully.");
         return 0;
     }
-
     Engine::Utils::VoidResult EditorApp::initD3D()
     {
         Utils::log_info("Initializing DirectX 12...");
@@ -274,64 +273,29 @@ namespace Editor
         m_device.waitForGpu();
 
         // ============================================================
-        // Scene Load
-        // ProjectSettings から解決した DefaultScene パスを使用
+        // ConsoleWindow（Lua 初期化より前に作成）
+        // コンストラクタ内で LogDispatcher にリスナーが登録される
         // ============================================================
-        auto& settings = Engine::Core::ProjectSettings::get();
-        std::filesystem::path defaultScenePath = settings.getDefaultScenePath();
-        defaultScenePath = std::filesystem::weakly_canonical(defaultScenePath);
-
-        if (std::filesystem::exists(defaultScenePath))
-        {
-            auto loadResult = m_sceneSerializer.loadScene(
-                m_scene,
-                &m_device,
-                m_shaderManager.get(),
-                &m_materialManager,
-                &m_textureManager,
-                defaultScenePath
-            );
-            if (loadResult)
-            {
-                m_currentScenePath = defaultScenePath.string();
-                Utils::log_info("Default scene loaded: " + m_currentScenePath);
-            }
-            else
-            {
-                // ロード失敗時も正しい絶対パスをセット
-                m_currentScenePath = defaultScenePath.string();
-                Utils::log_warning("Failed to load default scene, creating initial scene");
-                createInitialScene();
-            }
-        }
-        else
-        {
-            // ファイルが存在しない場合も絶対パスをセット
-            m_currentScenePath = defaultScenePath.string();
-            createInitialScene();
-        }
-
-        Utils::log_info(std::format("Checking for default scene: {}", defaultScenePath.string()));
-
-        // シーンにすでにMainCameraが存在する場合（保存済みシーンをロードした場合）、
-        // GameViewWindowにGameObjectを通知してリサイズ時のCameraComponent同期を有効にする
-        // （m_gameViewWindowはこの時点ではまだ未作成のため、後で initD3D末尾で行う。
-        //   → openScene/loadScene時は都度通知する）
+        m_consoleWindow = std::make_unique<UI::ConsoleWindow>();
 
         // ============================================================
-        // PlayModeController
+        // GameLogicConsoleWindow + Profiler
+        // LuaBindings より前に作成して installLeafCallback を呼ぶ
         // ============================================================
-        m_playModeController.initialize(&m_scene);
-        m_playModeController.setSceneLoadContext(
-            &m_device, m_shaderManager.get(),
-            &m_materialManager, &m_textureManager,
-            m_currentScenePath
-        );
+        m_gameLogicConsole = std::make_unique<UI::GameLogicConsoleWindow>();
+        m_gameLogicProfiler = std::make_unique<UI::GameLogicProfiler>();
+        m_gameLogicProfiler->setWindow(m_gameLogicConsole.get());
 
         // ============================================================
         // Lua
         // ============================================================
         m_luaBindings = std::make_unique<Engine::Scripting::LuaBindings>();
+
+        // LeafCallback を LuaBindings に注入する。
+        // registerBindings() より前に呼ぶことが必須。
+        // bindTransform() がコールバックをキャプチャして usertype を登録するため。
+        m_gameLogicProfiler->installLeafCallback(m_luaBindings.get());
+
         auto& scriptMgr = Scripting::ScriptManager::get();
 
         auto registerAllBindings = [this](sol::state& lua)
@@ -358,11 +322,56 @@ namespace Editor
         Utils::log_info("Lua scripting system initialized");
 
         // ============================================================
+        // Scene Load
+        // ============================================================
+        auto& settings = Engine::Core::ProjectSettings::get();
+        std::filesystem::path defaultScenePath = settings.getDefaultScenePath();
+        defaultScenePath = std::filesystem::weakly_canonical(defaultScenePath);
+
+        if (std::filesystem::exists(defaultScenePath))
+        {
+            auto loadResult = m_sceneSerializer.loadScene(
+                m_scene,
+                &m_device,
+                m_shaderManager.get(),
+                &m_materialManager,
+                &m_textureManager,
+                defaultScenePath
+            );
+            if (loadResult)
+            {
+                m_currentScenePath = defaultScenePath.string();
+                Utils::log_info("Default scene loaded: " + m_currentScenePath);
+            }
+            else
+            {
+                m_currentScenePath = defaultScenePath.string();
+                Utils::log_warning("Failed to load default scene, creating initial scene");
+                createInitialScene();
+            }
+        }
+        else
+        {
+            m_currentScenePath = defaultScenePath.string();
+            createInitialScene();
+        }
+
+        Utils::log_info(std::format("Checking for default scene: {}", defaultScenePath.string()));
+
+        // ============================================================
+        // PlayModeController
+        // ============================================================
+        m_playModeController.initialize(&m_scene);
+        m_playModeController.setSceneLoadContext(
+            &m_device, m_shaderManager.get(),
+            &m_materialManager, &m_textureManager,
+            m_currentScenePath
+        );
+
+        // ============================================================
         // ProjectWindow
-        // AssetRootPath = project-templates/3d/Assets を渡す
         // ============================================================
         std::string assetRootPath = settings.getAssetRootPath().string();
-        // パス区切りを統一（Windows でも '/' で扱う）
         std::replace(assetRootPath.begin(), assetRootPath.end(), '\\', '/');
 
         Utils::log_info("ProjectWindow asset root: " + assetRootPath);
@@ -386,16 +395,43 @@ namespace Editor
         m_cameraController->setMovementSpeed(5.0f);
         m_cameraController->setMouseSensitivity(0.1f);
 
-        // === UIウィンドウ作成 ===
+        // ============================================================
+        // UIウィンドウ作成
+        // ============================================================
         m_debugWindow = std::make_unique<UI::DebugWindow>();
         m_hierarchyWindow = std::make_unique<UI::SceneHierarchyWindow>();
         m_inspectorWindow = std::make_unique<UI::InspectorWindow>();
-        m_gameLogicConsole = std::make_unique<UI::GameLogicConsoleWindow>();
         m_toolbarWindow = std::make_unique<UI::ToolbarWindow>();
         m_toolbarWindow->setPlayModeController(&m_playModeController);
-
         m_editorViewWindow = std::make_unique<UI::EditorViewWindow>();
 
+        // ============================================================
+        // プレイ開始時: カウンタリセット + 全 LuaScriptComponent を登録
+        // registerComponent() が ProfileCallback と ScopeCallback を両方セットする
+        // ============================================================
+        m_playModeController.setOnPlayCallback([this]()
+            {
+                m_gameLogicProfiler->reset();
+
+                int registered = 0;
+                for (auto& obj : m_scene.getGameObjects())
+                {
+                    if (!obj) continue;
+                    auto* luaComp = m_scene.getComponent<Engine::Scripting::LuaScriptComponent>(obj.get());
+                    Utils::log_info(std::format("  [Profiler] {} -> LuaComp: {}",
+                        obj->getName(), luaComp ? "FOUND" : "NULL"));
+                    if (luaComp)
+                    {
+                        m_gameLogicProfiler->registerComponent(luaComp);
+                        registered++;
+                    }
+                }
+                Utils::log_info(std::format("[Profiler] registered {} components", registered));
+            });
+
+        // ============================================================
+        // InputManager
+        // ============================================================
         auto* inputManager = m_window.getInputManager();
         if (!inputManager)
         {
@@ -428,7 +464,6 @@ namespace Editor
                 .get<Engine::World::CameraComponent>(mainCamObj->getId());
             Utils::log_info(std::format("[DEBUG] CameraComponent via batch: {}",
                 camComp ? "OK" : "NULL"));
-            // 念のり旧系統も確認
             auto* camCompOld = mainCamObj->getComponent<Engine::World::CameraComponent>();
             Utils::log_info(std::format("[DEBUG] CameraComponent via getComponent: {}",
                 camCompOld ? "OK" : "NULL"));
@@ -485,7 +520,6 @@ namespace Editor
             if (text) m_editorView.setSelectedObject(nullptr);
             });
 
-        // GameCameraをHierarchyのコンテキストメニュー（Create > Camera > Game Camera）から作成するコールバック
         m_hierarchyWindow->setCreateGameCameraCallback([this](const std::string& name) -> Core::GameObject* {
             return createGameCamera(name);
             });
@@ -686,6 +720,9 @@ namespace Editor
             m_scene.update(m_deltaTime);
             m_scene.lateUpdate(m_deltaTime);
             m_scene.processPendingDestroy();
+
+            // 全 LuaScriptComponent の計測結果を GameLogicConsoleWindow へ送信
+            m_gameLogicProfiler->flushToWindow();
         }
         else
         {
@@ -711,7 +748,6 @@ namespace Editor
 
         processInput();
     }
-
     void EditorApp::render()
     {
         bool isResizing = false;
@@ -754,7 +790,7 @@ namespace Editor
         {
             Utils::log_warning("MainCamera found but NO CameraComponent!");
         }
-  
+
         m_gameView.render(m_scene, m_commandList.Get(), *gameCamera, m_frameIndex);
 
         HRESULT hrClose = m_commandList->Close();
@@ -839,13 +875,13 @@ namespace Editor
         {
             if (ImGui::BeginMenu("File"))
             {
-                if (ImGui::MenuItem("New Scene", "Ctrl+N"))     createNewScene();
-                if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))     openScene();
+                if (ImGui::MenuItem("New Scene", "Ctrl+N"))       createNewScene();
+                if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))       openScene();
                 ImGui::Separator();
-                if (ImGui::MenuItem("Save Scene", "Ctrl+S"))     saveScene();
+                if (ImGui::MenuItem("Save Scene", "Ctrl+S"))       saveScene();
                 if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S")) saveSceneAs();
                 ImGui::Separator();
-                if (ImGui::MenuItem("Exit", "Alt+F4"))   PostQuitMessage(0);
+                if (ImGui::MenuItem("Exit", "Alt+F4"))       PostQuitMessage(0);
                 ImGui::EndMenu();
             }
 
@@ -882,6 +918,7 @@ namespace Editor
         m_hierarchyWindow->draw();
         m_inspectorWindow->draw();
         m_gameLogicConsole->draw();
+        m_consoleWindow->draw();      // ← 追加
         m_debugWindow->draw();
         m_projectWindow->draw();
         m_buildWindow->draw();
@@ -919,7 +956,6 @@ namespace Editor
 
         waitForPreviousFrame();
     }
-
     void EditorApp::updateDeltaTime()
     {
         auto currentTime = std::chrono::high_resolution_clock::now();
@@ -1201,6 +1237,7 @@ namespace Editor
             ImGui::DockBuilderDockWindow("Game", dockCenter);
             ImGui::DockBuilderDockWindow("Project", dockBottom);
             ImGui::DockBuilderDockWindow("Debug info", dockBottom);
+            ImGui::DockBuilderDockWindow("Console", dockBottom); // ← 追加
             ImGui::DockBuilderFinish(dockspaceID);
 
             m_layoutInitialized = true;
@@ -1628,7 +1665,7 @@ namespace Editor
             // ロードしたシーンにMainCameraがあればGameViewWindowに通知する
             if (auto* mainCamObj = m_scene.findGameObject("MainCamera"))
             {
-                if (auto* camComp = mainCamObj->getComponent<Engine::World::CameraComponent>())
+                if (auto* camComp = m_scene.getComponent<Engine::World::CameraComponent>(mainCamObj))
                 {
                     camComp->syncFromTransform();
                     m_gameCamera = camComp->getCamera();

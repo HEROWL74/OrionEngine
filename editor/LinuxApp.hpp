@@ -1,4 +1,4 @@
-﻿// src/editor/LinuxApp.hpp
+﻿// editor/LinuxApp.hpp
 #pragma once
 
 #ifndef _WIN32

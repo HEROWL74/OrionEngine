@@ -1,4 +1,4 @@
-﻿// src/engine/UI/UITextRenderer.hpp
+﻿// engine/UI/UITextRenderer.hpp
 #pragma once
 #include "Device.hpp"
 #include "ShaderManager.hpp"

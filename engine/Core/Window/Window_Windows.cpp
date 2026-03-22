@@ -1,4 +1,4 @@
-﻿// src/engine/Core/Window/Window_Window.cpp
+﻿// engine/Core/Window/Window_Window.cpp
 #include "Window_Windows.hpp"
 
 #ifdef _WIN32

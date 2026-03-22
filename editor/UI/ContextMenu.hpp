@@ -1,4 +1,4 @@
-﻿//src/UI/ContextMenu.hpp
+﻿// editor/UI/ContextMenu.hpp
 #pragma once
 
 #include <functional>

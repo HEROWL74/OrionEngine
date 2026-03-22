@@ -1,4 +1,4 @@
-﻿// src/editor/Utils/RayPicking.hpp
+﻿// editor/Utils/RayPicking.hpp
 #pragma once
 #include "../engine/Math/Math.hpp"
 #include "../engine/World/Camera.hpp"

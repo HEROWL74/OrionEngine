@@ -1,4 +1,4 @@
-﻿// src/Graphics/SplashScreen.cpp
+﻿// engine/World/SplashScreen.cpp
 #include "../Core/ProjectSettings.hpp"
 #include "SplashScreen.hpp"
 #include <format>

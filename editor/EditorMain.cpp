@@ -1,4 +1,4 @@
-﻿// src/editor/EditorMain.cpp
+﻿// editor/EditorMain.cpp
 
 // Windows Editor
 #ifdef _WIN32

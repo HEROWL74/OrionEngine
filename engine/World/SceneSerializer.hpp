@@ -1,4 +1,4 @@
-﻿// src/Graphics/SceneSerializer.hpp
+﻿// engine/World/SceneSerializer.hpp
 #pragma once
 #include <string>
 #include <fstream>

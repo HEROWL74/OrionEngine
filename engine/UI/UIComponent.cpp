@@ -1,4 +1,4 @@
-﻿// src/engine/UI/UIComponent.cpp
+﻿// engine/UI/UIComponent.cpp
 #include "UIComponent.hpp"
 
 namespace Engine::EngineUI

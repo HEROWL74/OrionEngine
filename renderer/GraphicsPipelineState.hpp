@@ -1,4 +1,4 @@
-﻿// src/engine/Graphics/GraphicsPipelineState.hpp
+﻿// renderer/GraphicsPipelineState.hpp
 #pragma once
 #include "RootSignature.hpp"
 

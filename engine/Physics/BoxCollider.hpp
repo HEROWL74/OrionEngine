@@ -1,4 +1,4 @@
-﻿// src/engine/Physics/BoxCollider.hpp
+﻿// engine/Physics/BoxCollider.hpp
 #pragma once
 
 #include "../Core/GameObject.hpp"

@@ -1,4 +1,4 @@
-﻿// src/Scripting/LuaAPI.hpp
+﻿// engine/Scripting/LuaAPI.hpp
 #pragma once
 #include "../Core/EntityID.hpp"
 #include "../Core/GameObject.hpp"

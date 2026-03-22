@@ -1,4 +1,4 @@
-﻿// src/engine/Core/ProjectSettings.hpp
+﻿// engine/Core/ProjectSettings.hpp
 #pragma once
 
 #include <string>

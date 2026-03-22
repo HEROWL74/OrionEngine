@@ -1,4 +1,4 @@
-﻿// src/engine/Core/Window/Window_Linux.hpp
+﻿// engine/Core/Window/Window_Linux.hpp
 #pragma once
 #include "IWindow.hpp"
 

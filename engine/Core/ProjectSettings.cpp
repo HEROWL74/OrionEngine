@@ -1,4 +1,4 @@
-﻿// src/engine/Core/ProjectSettings.cpp
+﻿// engine/Core/ProjectSettings.cpp
 #include "ProjectSettings.hpp"
 #include "../Utils/Common.hpp"
 

@@ -1,4 +1,4 @@
-﻿// src/engine/Graphics/CameraComponent.hpp
+﻿// engine/World/CameraComponent.hpp
 #pragma once
 
 #include "../Core/GameObject.hpp"

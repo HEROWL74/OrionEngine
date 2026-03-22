@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include "LuaBindings.hpp"
 #include "../Utils/Common.hpp"
+#include "../Utils/LogDispatcher.hpp"
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -22,9 +23,56 @@ namespace Engine::Scripting
 
     void ScriptManager::initialize()
     {
-        m_lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::os, sol::lib::string, sol::lib::table);
+        m_lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::os,
+            sol::lib::string, sol::lib::table);
         Utils::log_info("Lua VM initialized.");
 
+        // ------------------------------------------------------------------
+        // Lua の print() を ConsoleWindow へ転送
+        // sol::variadic_args で全引数を受け取り、文字列結合して dispatch
+        // ------------------------------------------------------------------
+        m_lua["print"] = [](sol::variadic_args args)
+            {
+                std::string message;
+                for (auto it = args.begin(); it != args.end(); ++it)
+                {
+                    if (it != args.begin()) message += "\t";
+
+                    sol::object obj = *it;
+                    switch (obj.get_type())
+                    {
+                    case sol::type::string:
+                        message += obj.as<std::string>();
+                        break;
+                    case sol::type::number:
+                    {
+                        // 整数か小数かで表示形式を分ける
+                        double d = obj.as<double>();
+                        if (d == static_cast<long long>(d))
+                            message += std::to_string(static_cast<long long>(d));
+                        else
+                            message += std::to_string(d);
+                    }
+                    break;
+                    case sol::type::boolean:
+                        message += obj.as<bool>() ? "true" : "false";
+                        break;
+                    case sol::type::nil:
+                        message += "nil";
+                        break;
+                    default:
+                        message += "(userdata)";
+                        break;
+                    }
+                }
+
+                Engine::Utils::LogDispatcher::get().dispatch(
+                    Engine::Utils::LogLevel::Log, message);
+            };
+
+        // ------------------------------------------------------------------
+        // バインディングコールバック実行
+        // ------------------------------------------------------------------
         if (m_bindingCallback)
         {
             Utils::log_info("Executing initial Lua bindings...");
@@ -44,10 +92,10 @@ namespace Engine::Scripting
         }
         else
         {
-            Utils::log_warning(" Binding callback not set. Call setBindingCallback() before initialize()");
+            Utils::log_warning("Binding callback not set. Call setBindingCallback() before initialize()");
         }
 
-        // Assets ディレクトリ全体をスキャン（統一）
+        // Assets ディレクトリ全体をスキャン
         fs::path assetsDir = resolveAssetPath("");
 
         if (fs::exists(assetsDir))
@@ -478,7 +526,8 @@ namespace Engine::Scripting
             allScriptPaths[path] = script.type;
         }
 
-        Utils::log_info("Invalidating " + std::to_string(m_registeredComponents.size()) + " registered LuaScriptComponents before VM reset...");
+        Utils::log_info("Invalidating " + std::to_string(m_registeredComponents.size()) +
+            " registered LuaScriptComponents before VM reset...");
         invalidateAllComponents();
 
         Utils::log_info("Clearing script data...");
@@ -489,6 +538,46 @@ namespace Engine::Scripting
         m_lua = sol::state();
         m_lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::os,
             sol::lib::string, sol::lib::table);
+
+        // ------------------------------------------------------------------
+        // VM 再作成後に print フックを再登録
+        // ------------------------------------------------------------------
+        m_lua["print"] = [](sol::variadic_args args)
+            {
+                std::string message;
+                for (auto it = args.begin(); it != args.end(); ++it)
+                {
+                    if (it != args.begin()) message += "\t";
+
+                    sol::object obj = *it;
+                    switch (obj.get_type())
+                    {
+                    case sol::type::string:
+                        message += obj.as<std::string>();
+                        break;
+                    case sol::type::number:
+                    {
+                        double d = obj.as<double>();
+                        if (d == static_cast<long long>(d))
+                            message += std::to_string(static_cast<long long>(d));
+                        else
+                            message += std::to_string(d);
+                    }
+                    break;
+                    case sol::type::boolean:
+                        message += obj.as<bool>() ? "true" : "false";
+                        break;
+                    case sol::type::nil:
+                        message += "nil";
+                        break;
+                    default:
+                        message += "(userdata)";
+                        break;
+                    }
+                }
+                Engine::Utils::LogDispatcher::get().dispatch(
+                    Engine::Utils::LogLevel::Log, message);
+            };
 
         if (m_bindingCallback)
         {
@@ -515,7 +604,6 @@ namespace Engine::Scripting
         Utils::log_info("Reloading SharedObjects...");
         for (const auto& path : scriptableObjPaths)
         {
-            // cacheKey（相対パス）から実ファイルパスを解決して存在確認
             fs::path resolved = resolveAssetPath(path);
             if (fs::exists(resolved))
             {

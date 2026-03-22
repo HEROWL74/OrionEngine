@@ -1,4 +1,4 @@
-﻿//src/Core/EditorState.hpp
+﻿// editor/Core/EditorState.hpp
 #pragma once
 #include <functional>
 namespace Editor::EditorCore

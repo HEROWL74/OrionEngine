@@ -1,4 +1,4 @@
-﻿// src/Math/Math.hpp
+﻿// engine/Math/Math.hpp
 #pragma once
 
 #include <cmath>

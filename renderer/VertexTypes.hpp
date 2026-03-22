@@ -1,5 +1,5 @@
 ﻿#pragma once
-// src/Graphics/VertexTypes.hpp
+// renderer/VertexTypes.hpp
 #pragma once
 
 namespace Renderer

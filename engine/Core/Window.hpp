@@ -1,4 +1,4 @@
-﻿// src/Core/Window.hpp
+﻿// engine/Core/Window.hpp
 #pragma once
 
 #include <Windows.h>

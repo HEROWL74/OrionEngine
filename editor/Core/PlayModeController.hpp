@@ -1,4 +1,4 @@
-﻿// src/Core/PlayModeController.hpp
+﻿// editor/Core/PlayModeController.hpp
 #pragma once
 
 #include "EditorState.hpp"
@@ -60,6 +60,15 @@ namespace Editor::EditorCore
         // コールバック登録
         void addStateChangedCallback(EditorStateChangedCallback callback);
 
+        // ---------------------------------------------------------------
+        // プレイ開始直前に呼ばれるコールバック
+        //   GameLogicProfiler のリセット・コンポーネント登録などに使う
+        // ---------------------------------------------------------------
+        void setOnPlayCallback(std::function<void()> callback)
+        {
+            m_onPlayCallback = std::move(callback);
+        }
+
         void setSceneLoadContext(
             Renderer::Device* device,
             Renderer::ShaderManager* shaderManager,
@@ -82,6 +91,9 @@ namespace Editor::EditorCore
     private:
         EditorState m_currentState = EditorState::Edit;
         Engine::World::Scene* m_scene = nullptr;
+
+        // プレイ開始コールバック
+        std::function<void()> m_onPlayCallback;
 
         std::vector<EditorStateChangedCallback> m_stateChangedCallbacks;
 

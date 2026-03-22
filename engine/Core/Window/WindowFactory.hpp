@@ -1,4 +1,4 @@
-﻿// src/engine/Core/Window/WindowFactory.hpp
+﻿// engine/Core/Window/WindowFactory.hpp
 #pragma once
 #include "IWindow.hpp"
 #include <memory>

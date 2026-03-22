@@ -1,4 +1,4 @@
-﻿// src/engine/Graphics/CameraComponent.cpp
+﻿// engine/World/CameraComponent.cpp
 #include "CameraComponent.hpp"
 
 namespace Engine::World

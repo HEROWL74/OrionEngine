@@ -1,4 +1,4 @@
-﻿// src/engine/Core/Window/Window_Linux.cpp
+﻿// engine/Core/Window/Window_Linux.cpp
 #include "Window_Linux.hpp"
 
 #ifndef _WIN32

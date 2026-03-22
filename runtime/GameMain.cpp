@@ -1,4 +1,4 @@
-﻿// src/runtime/GameMain.cpp
+﻿// runtime/GameMain.cpp
 // OrionGame.exe のエントリポイント（ランチャー）
 
 // 実行時の流れ:

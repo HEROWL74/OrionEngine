@@ -1,4 +1,4 @@
-﻿// src/engine/Audio/AudioComponent.hpp
+﻿// engine/Audio/AudioComponent.hpp
 #pragma once
 #include <miniaudio.h>
 #include <string>

@@ -1,4 +1,4 @@
-﻿// src/editor/Views/EditorView.hpp
+﻿// editor/Views/EditorView.hpp
 #pragma once
 #include <d3d12.h>
 #include <memory>

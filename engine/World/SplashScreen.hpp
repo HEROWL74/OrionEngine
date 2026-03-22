@@ -1,4 +1,4 @@
-﻿// src/Graphics/SplashScreen.hpp
+﻿// engine/World/SplashScreen.hpp
 #pragma once
 
 #include <Windows.h>

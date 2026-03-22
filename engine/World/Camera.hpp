@@ -1,4 +1,4 @@
-﻿// src/Graphics/Camera.hpp
+﻿// engine/World/Camera.hpp
 #pragma once
 
 #include "../Math/Math.hpp"

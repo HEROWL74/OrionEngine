@@ -1,4 +1,4 @@
-﻿//src/UI/ImGuiManager.cpp
+﻿//editor/UI/ImGuiManager.cpp
 #include "ImGuiManager.hpp"
 #include "ProjectWindow.hpp"  // AssetInfoを使う
 #include "../engine/Scripting/LuaScriptComponent.hpp"
@@ -1034,7 +1034,7 @@ namespace Editor::UI
 		}
 
 		// LuaScriptComponentがあれば表示
-		auto* scriptComponent = m_selectedObject->getComponent<Scripting::LuaScriptComponent>();
+		auto* scriptComponent = m_scene->getComponent<Scripting::LuaScriptComponent>(m_selectedObject);
 
 		// AudioComponentがあれば表示
 		auto* audioComponent = m_selectedObject->getComponent<Audio::AudioComponent>();
@@ -1067,7 +1067,7 @@ namespace Editor::UI
 			{
 				if (ImGui::Button("Audio", ImVec2(-1, 30)))
 				{
-					auto* newAudio = m_selectedObject->addComponent<Audio::AudioComponent>();
+					auto* newAudio = m_scene->addComponent<Audio::AudioComponent>(m_selectedObject);
 					if (newAudio)
 					{
 						auto initResult = newAudio->initialize();
@@ -1101,7 +1101,7 @@ namespace Editor::UI
 						const AssetPayload* dropped = static_cast<const AssetPayload*>(payload->Data);
 						if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
 						{
-							auto* newScript = m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
+							auto* newScript = m_scene->addComponent<Engine::Scripting::LuaScriptComponent>(m_selectedObject, dropped->path);
 							if (newScript)
 							{
 								Utils::log_info(std::format("Lua script attached: {}", dropped->path));
@@ -1138,7 +1138,7 @@ namespace Editor::UI
 						if (dropped && dropped->type == static_cast<int>(UI::AssetInfo::Type::Script))
 						{
 							// 既存のスクリプトを削除して新しいものを追加
-							m_selectedObject->removeComponent<Engine::Scripting::LuaScriptComponent>();
+							m_scene->getComponentBatch().destroyEntity(m_selectedObject->getId());
 							auto* newScript = m_selectedObject->addComponent<Engine::Scripting::LuaScriptComponent>(dropped->path);
 							if (newScript)
 							{
@@ -1282,7 +1282,7 @@ namespace Editor::UI
 				{
 					if (ImGui::Button("Box Collider", ImVec2(-1, 30)))
 					{
-						auto* newCollider = gameObject->addComponent<Physics::BoxCollider>();
+						auto* newCollider = m_scene->addComponent<Physics::BoxCollider>(m_selectedObject);
 						if (newCollider)
 						{
 							newCollider->setSize(Math::Vector3(1.0f, 1.0f, 1.0f));
