@@ -1,6 +1,7 @@
 {
   "name": "orionengine",
   "version-string": "1.0.0",
+  "builtin-baseline": "e7d7451462697d77ef319ddf2da8ff7320a82662",
   "dependencies": [
     "sol2",
     "lua",
@@ -27,13 +28,21 @@
     },
     {
       "name": "directx12-agility",
+      "version>=": "1.615.0",
+      "platform": "windows"
+    },
+    {
+      "name": "winpixevent",
       "platform": "windows"
     },
     {
       "name": "directxtex",
       "platform": "windows"
     },
-    "directx-headers",
+    {
+      "name": "directx-headers",
+      "version>=": "1.615.0"
+    },
     {
       "name": "glfw3",
       "platform": "linux"
@@ -41,6 +50,16 @@
     {
       "name": "vulkan",
       "platform": "linux"
+    }
+  ],
+  "overrides": [
+    {
+      "name": "directx-headers",
+      "version": "1.615.0"
+    },
+    {
+      "name": "directx12-agility",
+      "version": "1.615.0"
     }
   ]
 }

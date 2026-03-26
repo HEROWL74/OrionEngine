@@ -1,4 +1,5 @@
 ﻿// editor/EditorApp.cpp
+#include "PixWrapper.hpp" 
 #include "EditorApp.hpp"
 #include <format>
 #include <filesystem>
@@ -773,10 +774,13 @@ namespace Editor
         m_commandAllocator->Reset();
         m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
+        PIXBeginEvent(m_commandList.Get(), PIX_COLOR_INDEX(1), "3D Scene Pass");
+
+        PIXBeginEvent(m_commandList.Get(), PIX_COLOR_INDEX(2), "Editor View Render");
         m_editorView.render(m_scene, m_commandList.Get(), m_editorCamera, m_frameIndex);
+        PIXEndEvent(m_commandList.Get());
 
         const World::Camera* gameCamera = &m_gameCamera;
-
         if (auto* camObj = m_scene.findGameObject("MainCamera"))
         {
             Utils::log_info(std::format("[DEBUG] render: MainCamera id=({},{})",
@@ -791,7 +795,11 @@ namespace Editor
             Utils::log_warning("MainCamera found but NO CameraComponent!");
         }
 
+        PIXBeginEvent(m_commandList.Get(), PIX_COLOR_INDEX(3), "Game View Render");
         m_gameView.render(m_scene, m_commandList.Get(), *gameCamera, m_frameIndex);
+        PIXEndEvent(m_commandList.Get());
+
+        PIXEndEvent(m_commandList.Get());
 
         HRESULT hrClose = m_commandList->Close();
         if (FAILED(hrClose))
@@ -825,6 +833,8 @@ namespace Editor
                 m_editorCamera.getPosition().z));
             firstFrame = false;
         }
+
+        PIXBeginEvent(m_commandList.Get(), PIX_COLOR_INDEX(4), "UI & ImGui Pass");
 
         D3D12_RESOURCE_BARRIER barrier{};
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -875,13 +885,13 @@ namespace Editor
         {
             if (ImGui::BeginMenu("File"))
             {
-                if (ImGui::MenuItem("New Scene", "Ctrl+N"))       createNewScene();
+                if (ImGui::MenuItem("New Scene", "Ctrl+N"))           createNewScene();
                 if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))       openScene();
                 ImGui::Separator();
-                if (ImGui::MenuItem("Save Scene", "Ctrl+S"))       saveScene();
+                if (ImGui::MenuItem("Save Scene", "Ctrl+S"))          saveScene();
                 if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S")) saveSceneAs();
                 ImGui::Separator();
-                if (ImGui::MenuItem("Exit", "Alt+F4"))       PostQuitMessage(0);
+                if (ImGui::MenuItem("Exit", "Alt+F4"))           PostQuitMessage(0);
                 ImGui::EndMenu();
             }
 
@@ -918,7 +928,7 @@ namespace Editor
         m_hierarchyWindow->draw();
         m_inspectorWindow->draw();
         m_gameLogicConsole->draw();
-        m_consoleWindow->draw();      // ← 追加
+        m_consoleWindow->draw();
         m_debugWindow->draw();
         m_projectWindow->draw();
         m_buildWindow->draw();
@@ -926,6 +936,7 @@ namespace Editor
         if (isResizing)
         {
             ImGui::Render();
+            PIXEndEvent(m_commandList.Get());
             m_commandList->Close();
             return;
         }
@@ -935,6 +946,8 @@ namespace Editor
         barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
         barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
         m_commandList->ResourceBarrier(1, &barrier);
+
+        PIXEndEvent(m_commandList.Get());
 
         hrClose = m_commandList->Close();
         if (FAILED(hrClose))
@@ -956,6 +969,7 @@ namespace Editor
 
         waitForPreviousFrame();
     }
+
     void EditorApp::updateDeltaTime()
     {
         auto currentTime = std::chrono::high_resolution_clock::now();

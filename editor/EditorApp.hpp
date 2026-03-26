@@ -2,9 +2,9 @@
 #pragma once
 
 #include <Windows.h>
+#include <d3d12.h> 
 #include <memory>
 #include <wrl.h>
-#include <d3d12.h>
 #include <dxgi1_6.h>
 #include <chrono>
 #include <mutex>

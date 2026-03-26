@@ -37,11 +37,13 @@ target_include_directories(OrionEngine PUBLIC
 if(WIN32)
     find_package(directxtex      CONFIG REQUIRED)
     find_package(directx-headers CONFIG REQUIRED)
+    find_package(directx12-agility CONFIG REQUIRED)
 
     target_link_libraries(OrionEngine PUBLIC
         ${LUA_LIBRARIES}
-        sol2
+        sol2::sol2
         Microsoft::DirectX-Headers
+        Microsoft::DirectX12-Agility
         d3d12 dxgi dxguid d3dcompiler
     )
     target_link_libraries(OrionEngine PRIVATE
@@ -51,8 +53,10 @@ if(WIN32)
     if(MSVC)
         target_compile_definitions(OrionEngine PRIVATE
             $<$<CONFIG:Debug>:_DEBUG>
+            $<$<CONFIG:Debug>:USE_PIX>
             $<$<CONFIG:Release>:NDEBUG>
             $<$<CONFIG:RelWithDebInfo>:NDEBUG>
+            $<$<CONFIG:RelWithDebInfo>:USE_PIX>
         )
     endif()
 
