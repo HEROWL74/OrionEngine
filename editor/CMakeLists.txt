@@ -1,9 +1,12 @@
 ﻿# editor/CMakeLists.txt
 
 find_package(imgui CONFIG REQUIRED)
-find_package(WinPixEvent CONFIG REQUIRED)
-find_package(directx-headers CONFIG REQUIRED)
-find_package(directx12-agility CONFIG REQUIRED)
+
+if(WIN32)
+    find_package(WinPixEvent CONFIG REQUIRED)
+    find_package(directx-headers CONFIG REQUIRED)
+    find_package(directx12-agility CONFIG REQUIRED)
+endif()
 if(WIN32)
     # -------------------------------------------------------------------------
     # Windows: 既存の全ソースをそのまま使う（変更なし）

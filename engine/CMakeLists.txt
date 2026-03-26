@@ -66,7 +66,7 @@ else()
 
     target_link_libraries(OrionEngine PUBLIC
         ${LUA_LIBRARIES}
-        sol2
+        sol2::sol2
         Vulkan::Vulkan
         glfw
     )
