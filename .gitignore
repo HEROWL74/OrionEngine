@@ -42,6 +42,7 @@ Win32/
 project/
 !/tools/dxc/bin/x64/*.exe
 !/tools/dxc/bin/x64/*.dll
+PIXData/
 
 # ===== Platforms =====
 renderer/Platforms/Switch/
