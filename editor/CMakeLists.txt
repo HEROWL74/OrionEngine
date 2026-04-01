@@ -1,6 +1,12 @@
 ﻿# editor/CMakeLists.txt
 
 find_package(imgui CONFIG REQUIRED)
+
+if(WIN32)
+    find_package(WinPixEvent CONFIG REQUIRED)
+    find_package(directx-headers CONFIG REQUIRED)
+    find_package(directx12-agility CONFIG REQUIRED)
+endif()
 if(WIN32)
     # -------------------------------------------------------------------------
     # Windows: 既存の全ソースをそのまま使う（変更なし）
@@ -16,10 +22,13 @@ if(WIN32)
     )
 
     target_link_libraries(OrionEditor
+        PRIVATE Microsoft::DirectX-Headers
+        PRIVATE Microsoft::DirectX12-Agility
         PRIVATE OrionEngine
         PRIVATE OrionRenderer
         PRIVATE OrionBuildSystem
         PRIVATE imgui::imgui
+        PRIVATE Microsoft::WinPixEventRuntime
     )
 
     if(TARGET Shaders)

@@ -182,7 +182,7 @@ namespace Editor::UI
 
     // -------------------------------------------------------------------------
     GameLogicConsoleWindow::GameLogicConsoleWindow()
-        : ImGuiWindow("Game Logic Console", true)
+        : ImGuiWindow("Game Logic Structure", true)
     {
     }
 
