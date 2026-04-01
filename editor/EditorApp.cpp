@@ -1246,12 +1246,12 @@ namespace Editor
 
             ImGui::DockBuilderDockWindow("Scene Hierarchy", dockLeft);
             ImGui::DockBuilderDockWindow("Inspector", dockRight);
-            ImGui::DockBuilderDockWindow("Game Logic Console", dockRight);
+            ImGui::DockBuilderDockWindow("Game Logic Structure", dockRight);
             ImGui::DockBuilderDockWindow("Scene", dockCenter);
             ImGui::DockBuilderDockWindow("Game", dockCenter);
             ImGui::DockBuilderDockWindow("Project", dockBottom);
             ImGui::DockBuilderDockWindow("Debug info", dockBottom);
-            ImGui::DockBuilderDockWindow("Console", dockBottom); // ← 追加
+            ImGui::DockBuilderDockWindow("Console", dockBottom);
             ImGui::DockBuilderFinish(dockspaceID);
 
             m_layoutInitialized = true;
