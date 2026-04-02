@@ -58,7 +58,15 @@ if(WIN32)
         VS_DEBUGGER_COMMAND_ARGUMENTS "--project \"${CMAKE_SOURCE_DIR}/project\""
     )
 
-    target_compile_options(OrionEditor     PRIVATE /W4 /EHsc)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Clang-CL 用の設定
+    # /arch:AVX2 などが原因で落ちるのを防ぐため、SSE2 に制限して互換性を高める
+    target_compile_options(OrionEditor PRIVATE /W4 /EHsc /arch:SSE2)
+    else()
+    # MSVC 用の設定（従来通り）
+    target_compile_options(OrionEditor PRIVATE /W4 /EHsc)
+    endif()
+
     target_compile_definitions(OrionEditor PRIVATE UNICODE _UNICODE)
 
 else()

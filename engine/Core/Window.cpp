@@ -1,6 +1,6 @@
 ﻿// engine/Core/Window.cpp
 #include "Window.hpp"
-#include "../resources/orion_resource.h"
+#include "resources/orion_resource.h"
 #include <format>
 
 namespace Engine::Core {

@@ -4,7 +4,7 @@
 #include "../engine/Scripting/LuaScriptComponent.hpp"
 #include <format>
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 namespace Editor::UI
 {
@@ -358,7 +358,12 @@ namespace Editor::UI
 			ImGui::SetCurrentContext(m_context);
 		}
 
-		ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
+		if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	Utils::VoidResult ImGuiManager::createDescriptorHeap()

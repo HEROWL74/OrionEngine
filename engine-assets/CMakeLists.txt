@@ -1,6 +1,6 @@
 # engine-assets/CMakeLists.txt
 
-# Linux ‚Å‚ÍƒVƒF[ƒ_[ƒrƒ‹ƒh•s—v‚Ì‚½‚ßƒXƒLƒbƒv
+# Linux ã®å ´åˆã¯ã¾ã hlslã‚’ä½¿ã‚ãªã„ãŸã‚ return ã§å›é¿ 
 if(NOT WIN32)
     return()
 endif()

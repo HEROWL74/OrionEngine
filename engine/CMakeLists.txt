@@ -2,7 +2,7 @@
 
 if(WIN32)
     # -------------------------------------------------------------------------
-    # Windows: engine‚ðŽg‚¤
+    # Windows: engine
     # -------------------------------------------------------------------------
     file(GLOB_RECURSE ENGINE_SOURCES
         ${CMAKE_SOURCE_DIR}/engine/*.cpp
@@ -29,7 +29,8 @@ find_package(Lua  REQUIRED)
 find_package(sol2 CONFIG REQUIRED)
 
 target_include_directories(OrionEngine PUBLIC
-    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/engine
     ${MINIAUDIO_INCLUDE_DIRS}
     ${LUA_INCLUDE_DIR}
 )

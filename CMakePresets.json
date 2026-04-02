@@ -7,25 +7,32 @@
   },
   "configurePresets": [
     {
-      "name": "x64-debug",
-      "displayName": "Windows x64 Debug (VS2026)",
-      "generator": "Visual Studio 18 2026",
-      "architecture": "x64",
-      "binaryDir": "${sourceDir}/build/x64-debug",
+      "name": "base-win",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-windows"
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "x64-debug",
+      "displayName": "Windows x64 Debug (Clang-cl + Ninja)",
+      "inherits": "base-win",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
       "name": "x64-release-local",
-      "displayName": "Windows x64 Release (VS2026)",
-      "generator": "Visual Studio 18 2026",
-      "architecture": "x64",
-      "binaryDir": "${sourceDir}/build/x64-release-local",
+      "displayName": "Windows x64 Release (Clang-cl + Ninja)",
+      "inherits": "base-win",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-windows"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
@@ -42,6 +49,9 @@
     },
     {
       "name": "x64-relwithdebinfo-ci",
+      "displayName": "Windows x64 RelWithDebInfo CI",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/x64-relwithdebinfo-ci",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
@@ -88,13 +98,6 @@
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Linux"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
-          "hostOS": [
-            "Linux"
-          ]
-        }
       }
     },
     {
@@ -114,14 +117,21 @@
       "name": "editor-debug",
       "displayName": "Build Editor (Debug)",
       "configurePreset": "x64-debug",
-      "configuration": "Debug",
+      "targets": [
+        "OrionEditor"
+      ]
+    },
+    {
+      "name": "editor-release-local",
+      "displayName": "Build Editor (Release Local)",
+      "configurePreset": "x64-release-local",
       "targets": [
         "OrionEditor"
       ]
     },
     {
       "name": "editor-relwithdebinfo-ci",
-      "displayName": "Build Editor (RelWithDebInfo CI) ★デバッグシンボル付きRelease",
+      "displayName": "Build Editor (RelWithDebInfo CI)",
       "configurePreset": "x64-relwithdebinfo-ci",
       "targets": [
         "OrionEditor"
@@ -147,15 +157,6 @@
       "name": "linux-editor-release-ci",
       "displayName": "Build Linux (Release CI)",
       "configurePreset": "linux-release-ci",
-      "targets": [
-        "OrionEditor"
-      ]
-    },
-    {
-      "name": "editor-release-local",
-      "displayName": "Build Editor (Release Local)",
-      "configurePreset": "x64-release-local",
-      "configuration": "Release",
       "targets": [
         "OrionEditor"
       ]
