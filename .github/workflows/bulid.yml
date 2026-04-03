@@ -68,6 +68,8 @@ jobs:
           SCCACHE_DIR: ${{ github.workspace }}/.sccache_storage
           VCPKG_BINARY_SOURCES: "clear;files,${{ matrix.vcpkg_cache_path }},readwrite"
           MSYS_NO_PATHCONV: 1
+          CFLAGS: ${{ runner.os == 'Windows' && '/Z7' || '' }}
+          CXXFLAGS: ${{ runner.os == 'Windows' && '/Z7 /std:c++latest' || '-std=c++26' }}
         run: |
           mkdir -p "$SCCACHE_DIR"
           mkdir -p "${{ matrix.vcpkg_cache_path }}"
@@ -77,19 +79,15 @@ jobs:
               -DCMAKE_C_COMPILER=clang-cl \
               -DCMAKE_CXX_COMPILER=clang-cl \
               -DCMAKE_CXX_STANDARD=26 \
-              -DCMAKE_CXX_STANDARD_REQUIRED=OFF \
-              -DCMAKE_CXX_FLAGS="/Z7 /std:c++latest" \
-              -DCMAKE_C_FLAGS="/Z7"
+              -DCMAKE_CXX_STANDARD_REQUIRED=OFF
           else
             export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
-            export CC=clang
-            export CXX=clang++
             cmake --preset ${{ matrix.preset }} \
               -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
               -DCMAKE_C_COMPILER=clang \
               -DCMAKE_CXX_COMPILER=clang++ \
               -DCMAKE_CXX_STANDARD=26 \
-              -DCMAKE_CXX_FLAGS="-std=c++26"
+              -DCMAKE_CXX_STANDARD_REQUIRED=OFF
           fi
 
       - name: Build
