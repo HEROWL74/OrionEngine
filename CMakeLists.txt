@@ -18,7 +18,7 @@ endif()
 include(OrionCompileOptions)
 ORION_SETUP_COMPILER_ENVIRONMENT()
 
-set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ---------------------------------------------------------
