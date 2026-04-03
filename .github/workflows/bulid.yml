@@ -28,7 +28,6 @@ jobs:
         with:
           lfs: true
 
-      # --- コンパイラセットアップ (Windows: llvm, Linux: clang) ---
       - name: Install LLVM/Clang (Windows)
         if: runner.os == 'Windows'
         run: choco install llvm -y
@@ -49,7 +48,6 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla/sccache-action@v0.0.5
 
-      # --- Restore Caches ---
       - name: Restore Caches
         uses: actions/cache@v4
         with:
@@ -64,7 +62,6 @@ jobs:
       - name: Configure
         shell: bash
         env:
-          # sccacheをCMakeのランチャーとして登録
           CMAKE_C_COMPILER_LAUNCHER: sccache
           CMAKE_CXX_COMPILER_LAUNCHER: sccache
           SCCACHE_GHA_ENABLED: "false"
@@ -76,21 +73,23 @@ jobs:
           mkdir -p "${{ matrix.vcpkg_cache_path }}"
           
           if [ "${{ runner.os }}" == "Windows" ]; then
-            # Windows: clang-cl を使用 (BuildToolsのMSVC互換)
             cmake --preset ${{ matrix.preset }} \
               -DCMAKE_C_COMPILER=clang-cl \
               -DCMAKE_CXX_COMPILER=clang-cl \
-              -DCMAKE_CXX_FLAGS="/Z7" \
+              -DCMAKE_CXX_STANDARD=26 \
+              -DCMAKE_CXX_STANDARD_REQUIRED=OFF \
+              -DCMAKE_CXX_FLAGS="/Z7 /std:c++latest" \
               -DCMAKE_C_FLAGS="/Z7"
           else
-            # Linux: Clang を使用
             export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
             export CC=clang
             export CXX=clang++
             cmake --preset ${{ matrix.preset }} \
               -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
               -DCMAKE_C_COMPILER=clang \
-              -DCMAKE_CXX_COMPILER=clang++
+              -DCMAKE_CXX_COMPILER=clang++ \
+              -DCMAKE_CXX_STANDARD=26 \
+              -DCMAKE_CXX_FLAGS="-std=c++26"
           fi
 
       - name: Build
