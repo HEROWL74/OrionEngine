@@ -1,10 +1,8 @@
+# runtime/CMakeLists.txt
+
 if(NOT WIN32)
     return()
 endif()
-
-# ---------------------------------------------------------
-# Runtime DLL ��
-# ---------------------------------------------------------
 
 if(NOT DEFINED RUNTIME_PROJECT_NAME)
     set(RUNTIME_PROJECT_NAME "OrionRuntime")
@@ -12,18 +10,32 @@ endif()
 
 message(STATUS "Runtime DLL Name: ${RUNTIME_PROJECT_NAME}")
 
+# アイコンパス（editor と共通）
+set(ORION_ICON_PATH "${CMAKE_SOURCE_DIR}/engine-assets/images/OrionEngineIcon.ico")
+
 # ---------------------------------------------------------
-# Launcher
+# Launcher (OrionGame.exe)
 # ---------------------------------------------------------
 
 add_executable(OrionGame WIN32
     ${CMAKE_CURRENT_SOURCE_DIR}/GameMain.cpp
-    ${CMAKE_SOURCE_DIR}/resources/app.rc
+    # app.rc を除去。アイコンは POST_BUILD で OrionResourceInjector が注入する。
 )
 
 target_link_libraries(OrionGame
     PRIVATE OrionEngine
     PRIVATE OrionRenderer
+)
+
+# OrionGame へのアイコン注入
+# （editor の POST_BUILD で player/ にコピーした後にも再注入されるが、
+#   単体実行時のために runtime 出力先にも適用しておく）
+add_custom_command(
+    TARGET OrionGame POST_BUILD
+    COMMAND "$<TARGET_FILE:OrionResourceInjector>"
+            "$<TARGET_FILE:OrionGame>"
+            "${ORION_ICON_PATH}"
+    COMMENT "Injecting icon into OrionGame.exe"
 )
 
 # ---------------------------------------------------------
@@ -53,7 +65,7 @@ target_link_libraries(${RUNTIME_PROJECT_NAME}
 )
 
 # ---------------------------------------------------------
-# �o�̓f�B���N�g��
+# 出力ディレクトリ
 # ---------------------------------------------------------
 
 set_target_properties(OrionGame PROPERTIES

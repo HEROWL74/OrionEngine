@@ -7,9 +7,10 @@ if(WIN32)
     find_package(directx-headers CONFIG REQUIRED)
     find_package(directx12-agility CONFIG REQUIRED)
 endif()
+
 if(WIN32)
     # -------------------------------------------------------------------------
-    # Windows: 既存の全ソースをそのまま使う（変更なし）
+    # Windows
     # -------------------------------------------------------------------------
     file(GLOB_RECURSE EDITOR_SOURCES
         ${CMAKE_SOURCE_DIR}/editor/*.cpp
@@ -18,7 +19,6 @@ if(WIN32)
 
     add_executable(OrionEditor WIN32
         ${EDITOR_SOURCES}
-        ${CMAKE_SOURCE_DIR}/resources/app.rc
     )
 
     target_link_libraries(OrionEditor
@@ -35,8 +35,13 @@ if(WIN32)
         add_dependencies(OrionEditor Shaders)
     endif()
 
+    # アイコンパス
+    set(ORION_ICON_PATH "${CMAKE_SOURCE_DIR}/engine-assets/images/OrionEngineIcon.ico")
+
     add_custom_command(
         TARGET OrionEditor POST_BUILD
+
+        # engine-assets / player バンドル（従来通り）
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:OrionEditor>/player"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_SOURCE_DIR}/engine-assets/fonts"
@@ -51,7 +56,18 @@ if(WIN32)
             "$<TARGET_FILE:OrionGame>"    "$<TARGET_FILE_DIR:OrionEditor>/player/OrionGame.exe"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_FILE:OrionRuntime>" "$<TARGET_FILE_DIR:OrionEditor>/OrionRuntime.dll"
-        COMMENT "Bundling engine-assets and player runtime into editor directory"
+
+        # アイコン注入（OrionEditor.exe 本体）
+        COMMAND "$<TARGET_FILE:OrionResourceInjector>"
+                "$<TARGET_FILE:OrionEditor>"
+                "${ORION_ICON_PATH}"
+
+        # アイコン注入（player/OrionGame.exe にも適用）
+        COMMAND "$<TARGET_FILE:OrionResourceInjector>"
+                "$<TARGET_FILE_DIR:OrionEditor>/player/OrionGame.exe"
+                "${ORION_ICON_PATH}"
+
+        COMMENT "Bundling assets and injecting icons"
     )
 
     set_target_properties(OrionEditor PROPERTIES
@@ -59,20 +75,16 @@ if(WIN32)
     )
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    # Clang-CL 用の設定
-    # /arch:AVX2 などが原因で落ちるのを防ぐため、SSE2 に制限して互換性を高める
-    target_compile_options(OrionEditor PRIVATE /W4 /EHsc /arch:SSE2)
+        target_compile_options(OrionEditor PRIVATE /W4 /EHsc /arch:SSE2)
     else()
-    # MSVC 用の設定（従来通り）
-    target_compile_options(OrionEditor PRIVATE /W4 /EHsc)
+        target_compile_options(OrionEditor PRIVATE /W4 /EHsc)
     endif()
 
     target_compile_definitions(OrionEditor PRIVATE UNICODE _UNICODE)
 
 else()
     # -------------------------------------------------------------------------
-    # Linux: EditorMain / LinuxApp のみ
-    #   Phase 2 以降: Vulkan描画・ImGui等をここに追加していく
+    # Linux
     # -------------------------------------------------------------------------
     add_executable(OrionEditor
         ${CMAKE_SOURCE_DIR}/editor/EditorMain.cpp

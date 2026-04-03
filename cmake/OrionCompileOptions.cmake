@@ -28,6 +28,6 @@ macro(orion_setup_compiler_environment)
     endif()
 
     # 共通の言語設定
-    set(CMAKE_CXX_STANDARD 23 CACHE STRING "")
+    set(CMAKE_CXX_STANDARD 26 CACHE STRING "")
     set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE STRING "")
 endmacro()
