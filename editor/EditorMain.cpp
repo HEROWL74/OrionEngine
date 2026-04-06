@@ -5,7 +5,6 @@
 #include "EditorEntry.hpp"
 #include <Windows.h>
 #include <filesystem>
-#include <iostream>
 
 extern "C" {
 __declspec(dllexport) extern const UINT D3D12SDKVersion = 615;
@@ -13,14 +12,6 @@ __declspec(dllexport) extern const UINT D3D12SDKVersion = 615;
 
 extern "C" {
 __declspec(dllexport) extern const char *D3D12SDKPath = ".\\D3D12\\";
-}
-
-void RunCpp26Tests()
-{
-  auto [x, _, z] = std::tuple{1, 2, 3};
-
-    std::string msg = "x=" + std::to_string(x) +"_=" + std::to_string(_) + ", z=" + std::to_string(z) + "\n";
-    OutputDebugStringA(msg.c_str());
 }
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPSTR,
@@ -36,7 +27,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPSTR,
   }
   LocalFree(argv);
 
-  RunCpp26Tests();
   return Editor::RunEditor(hInstance, nCmdShow, projectPath);
 }
 
@@ -44,7 +34,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPSTR,
 #include "LinuxApp.hpp"
 #include <cstdio>
 #include <filesystem>
-
 
 int main(int argc, char *argv[]) {
   std::filesystem::path projectPath;
