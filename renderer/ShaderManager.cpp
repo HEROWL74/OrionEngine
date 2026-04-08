@@ -92,7 +92,6 @@ Shader::initialize(const std::string &shaderCode, const std::string &entryPoint,
   m_entryPoint = entryPoint;
   m_filePath = filePath;
 
-  // 繧ｳ繝ｳ繝代う繝ｫ繝輔Λ繧ｰ
   UINT compileFlags = 0;
   if (enableDebug) {
     compileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
@@ -100,10 +99,8 @@ Shader::initialize(const std::string &shaderCode, const std::string &entryPoint,
     compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
   }
 
-  // 繝槭け繝ｭ螟画鋤
   auto d3dMacros = convertMacros(macros);
 
-  // 繧ｷ繧ｧ繝ｼ繝繝ｼ繧ｿ繝ｼ繧ｲ繝・ヨ
   std::string target = shaderTypeToTarget(type);
 
   ComPtr<ID3DBlob> errorBlob;
@@ -180,11 +177,6 @@ Utils::VoidResult ShaderManager::initialize(Device *device) {
   auto defaultShadersResult = createDefaultShaders();
   if (!defaultShadersResult) {
     return defaultShadersResult;
-  }
-
-  auto defaultPipelinesResult = createDefaultPipelines();
-  if (!defaultPipelinesResult) {
-    return defaultPipelinesResult;
   }
 
   m_initialized = true;

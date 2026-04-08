@@ -11,7 +11,6 @@
 #include <vector>
 #include <wrl.h>
 
-
 using Microsoft::WRL::ComPtr;
 
 namespace Renderer {
@@ -145,7 +144,6 @@ private:
 
   // 初期化ヘルパー
   [[nodiscard]] Utils::VoidResult createDefaultShaders();
-  [[nodiscard]] Utils::VoidResult createDefaultPipelines();
 
   // ユーティリティ
   std::string generateShaderKey(const ShaderCompileDesc &desc) const;
