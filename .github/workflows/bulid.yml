@@ -71,14 +71,14 @@ jobs:
         run: |
           mkdir -p "$SCCACHE_DIR"
           mkdir -p "${{ matrix.vcpkg_cache_path }}"
-          
+
           if [ "${{ runner.os }}" == "Windows" ]; then
             cmake --preset ${{ matrix.preset }} \
               -DCMAKE_C_COMPILER=clang-cl \
               -DCMAKE_CXX_COMPILER=clang-cl \
               -DCMAKE_CXX_STANDARD=23 \
               -DCMAKE_CXX_STANDARD_REQUIRED=ON \
-              -DCMAKE_CXX_FLAGS="/Z7" \
+              -DCMAKE_CXX_FLAGS="/Z7 /EHsc" \
               -DCMAKE_C_FLAGS="/Z7"
           else
             export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
@@ -89,7 +89,8 @@ jobs:
               -DCMAKE_C_COMPILER=clang \
               -DCMAKE_CXX_COMPILER=clang++ \
               -DCMAKE_CXX_STANDARD=23 \
-              -DCMAKE_CXX_STANDARD_REQUIRED=ON
+              -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+              -DCMAKE_CXX_FLAGS="-fexceptions"
           fi
 
       - name: Build
