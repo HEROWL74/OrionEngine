@@ -1,4 +1,6 @@
-﻿# editor/CMakeLists.txt
+﻿# -------------------------------------------------------------------------
+# editor/CMakeLists.txt
+# -------------------------------------------------------------------------
 
 find_package(imgui CONFIG REQUIRED)
 
@@ -10,7 +12,7 @@ endif()
 
 if(WIN32)
     # -------------------------------------------------------------------------
-    # Windows
+    # Windows Implementation
     # -------------------------------------------------------------------------
     file(GLOB_RECURSE EDITOR_SOURCES
         ${CMAKE_SOURCE_DIR}/editor/*.cpp
@@ -31,45 +33,35 @@ if(WIN32)
         PRIVATE Microsoft::WinPixEventRuntime
     )
 
+    # 依存関係を明示 (これが無いと POST_BUILD で Injector が見つからない)
     if(TARGET Shaders)
         add_dependencies(OrionEditor Shaders)
     endif()
+    
+    # ターゲットが存在する場合、強制的に先にビルドさせる
+    if(TARGET OrionResourceInjector)
+        add_dependencies(OrionEditor OrionResourceInjector)
+    endif()
 
-    # アイコンパス
+    # -------------------------------------------------------------------------
+    # Build Tool Integration (OrionAssetsBuilder)
+    # -------------------------------------------------------------------------
+    
+    set(ASSET_BUILDER_EXE "${CMAKE_SOURCE_DIR}/target/debug/OrionAssetsBuilder.exe")
     set(ORION_ICON_PATH "${CMAKE_SOURCE_DIR}/engine-assets/images/OrionEngineIcon.ico")
-
-    add_custom_command(
-        TARGET OrionEditor POST_BUILD
-
-        # engine-assets / player バンドル（従来通り）
-        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:OrionEditor>/player"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/engine-assets/fonts"
-            "$<TARGET_FILE_DIR:OrionEditor>/engine-assets/fonts"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/engine-assets/skybox"
-            "$<TARGET_FILE_DIR:OrionEditor>/engine-assets/skybox"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/engine-assets/images"
-            "$<TARGET_FILE_DIR:OrionEditor>/engine-assets/images"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:OrionGame>"    "$<TARGET_FILE_DIR:OrionEditor>/player/OrionGame.exe"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:OrionRuntime>" "$<TARGET_FILE_DIR:OrionEditor>/OrionRuntime.dll"
-
-        # アイコン注入（OrionEditor.exe 本体）
-        COMMAND "$<TARGET_FILE:OrionResourceInjector>"
-                "$<TARGET_FILE:OrionEditor>"
-                "${ORION_ICON_PATH}"
-
-        # アイコン注入（player/OrionGame.exe にも適用）
-        COMMAND "$<TARGET_FILE:OrionResourceInjector>"
-                "$<TARGET_FILE_DIR:OrionEditor>/player/OrionGame.exe"
-                "${ORION_ICON_PATH}"
-
-        COMMENT "Bundling assets and injecting icons"
+    add_custom_target(RunAssetBuilder ALL
+        COMMAND ${ASSET_BUILDER_EXE}
+                --src "${CMAKE_SOURCE_DIR}"
+                --dst "$<TARGET_FILE_DIR:OrionEditor>"
+                --icon "${ORION_ICON_PATH}"
+                --injector "$<TARGET_FILE:OrionResourceInjector>"
+        COMMENT "OrionAssetsBuilder: Syncing assets and injecting icon..."
+        VERBATIM
     )
 
+    # -------------------------------------------------------------------------
+    # Compiler Settings
+    # -------------------------------------------------------------------------
     set_target_properties(OrionEditor PROPERTIES
         VS_DEBUGGER_COMMAND_ARGUMENTS "--project \"${CMAKE_SOURCE_DIR}/project\""
     )
@@ -84,7 +76,7 @@ if(WIN32)
 
 else()
     # -------------------------------------------------------------------------
-    # Linux
+    # Linux Implementation
     # -------------------------------------------------------------------------
     add_executable(OrionEditor
         ${CMAKE_SOURCE_DIR}/editor/EditorMain.cpp
@@ -95,9 +87,11 @@ else()
     target_link_libraries(OrionEditor
         PRIVATE OrionEngine
     )
-
 endif()
 
+# -------------------------------------------------------------------------
+# Common Output Directory Settings
+# -------------------------------------------------------------------------
 set_target_properties(OrionEditor PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY                "${CMAKE_BINARY_DIR}/editor"
     RUNTIME_OUTPUT_DIRECTORY_DEBUG          "${CMAKE_BINARY_DIR}/editor"

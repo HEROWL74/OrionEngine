@@ -28,11 +28,17 @@ jobs:
         with:
           lfs: true
 
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
       - name: Install LLVM/Clang (Windows)
         if: runner.os == 'Windows'
         run: choco install llvm -y
 
-      - name: Set up MSVC Environment (For clang-cl/vcpkg)
+      - name: Set up MSVC Environment
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
@@ -47,6 +53,9 @@ jobs:
 
       - name: Run sccache-cache
         uses: mozilla/sccache-action@v0.0.5
+
+      - name: Build OrionAssetsBuilder
+        run: cargo build -p OrionAssetsBuilder --release
 
       - name: Restore Caches
         uses: actions/cache@v4
@@ -79,7 +88,8 @@ jobs:
               -DCMAKE_CXX_STANDARD=23 \
               -DCMAKE_CXX_STANDARD_REQUIRED=ON \
               -DCMAKE_CXX_FLAGS="/Z7 /EHsc" \
-              -DCMAKE_C_FLAGS="/Z7"
+              -DCMAKE_C_FLAGS="/Z7" \
+              -DASSET_BUILDER_EXE="${{ github.workspace }}/target/release/OrionAssetsBuilder.exe"
           else
             export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
             export CC=clang

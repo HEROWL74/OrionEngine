@@ -43,6 +43,7 @@ project/
 !/tools/dxc/bin/x64/*.exe
 !/tools/dxc/bin/x64/*.dll
 PIXData/
+target/
 
 # ===== Platforms =====
 renderer/Platforms/Switch/
@@ -55,6 +56,7 @@ renderer/Platforms/PS5/
 .vscode/
 .idea/
 *.code-workspace
+Cargo.lock
 
 # ===== OS\ =====
 .DS_Store
