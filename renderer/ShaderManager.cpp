@@ -128,19 +128,19 @@ Shader::initialize(const std::string &shaderCode, const std::string &entryPoint,
 std::string Shader::shaderTypeToTarget(ShaderType type) {
   switch (type) {
   case ShaderType::Vertex:
-    return "vs_5_1";
+    return "vs_6_0";
   case ShaderType::Pixel:
-    return "ps_5_1";
+    return "ps_6_0";
   case ShaderType::Geometry:
-    return "gs_5_1";
+    return "gs_6_0";
   case ShaderType::Hull:
-    return "hs_5_1";
+    return "hs_6_0";
   case ShaderType::Domain:
-    return "ds_5_1";
+    return "ds_6_0";
   case ShaderType::Compute:
-    return "cs_5_1";
+    return "cs_6_0";
   default:
-    return "vs_5_1";
+    return "vs_6_0";
   }
 }
 
@@ -174,11 +174,6 @@ Utils::VoidResult ShaderManager::initialize(Device *device) {
 
   m_device = device;
 
-  auto defaultShadersResult = createDefaultShaders();
-  if (!defaultShadersResult) {
-    return defaultShadersResult;
-  }
-
   m_initialized = true;
   Utils::log_info("ShaderManager initialized successfully");
   return {};
@@ -201,7 +196,7 @@ ShaderManager::loadShader(const ShaderCompileDesc &desc) {
       std::filesystem::path(desc.filePath).extension().string();
   Utils::Result<std::shared_ptr<Shader>> shaderResult;
 
-  if (ext == ".cso") {
+  if (ext == ".cso", ext == ".dxil") {
     Utils::log_info(
         std::format("Loading precompiled shader: {}", desc.filePath));
     shaderResult = Shader::loadFromCSO(desc.filePath, desc.type);
@@ -237,35 +232,6 @@ void ShaderManager::removeShader(const std::string &name) {
   if (it != m_shaders.end()) {
     m_shaders.erase(it);
   }
-}
-
-Utils::VoidResult ShaderManager::createDefaultShaders() {
-  auto &settings = Engine::Core::ProjectSettings::get();
-  ShaderCompileDesc vsDesc;
-  vsDesc.filePath = settings.getEngineAssetPath("shaders/PBR_VS.cso").string();
-  vsDesc.entryPoint = "main";
-  vsDesc.type = ShaderType::Vertex;
-
-  auto vsResult = Shader::loadFromCSO(vsDesc.filePath, vsDesc.type);
-  if (!vsResult) {
-    return std::unexpected(vsResult.error());
-  }
-
-  ShaderCompileDesc psDesc;
-  psDesc.filePath = settings.getEngineAssetPath("shaders/PBR_PS.cso").string();
-  psDesc.entryPoint = "main";
-  psDesc.type = ShaderType::Pixel;
-
-  auto psResult = Shader::loadFromCSO(psDesc.filePath, psDesc.type);
-  if (!psResult) {
-    return std::unexpected(psResult.error());
-  }
-
-  m_shaders["DefaultPBR_VS"] = *vsResult;
-  m_shaders["DefaultPBR_PS"] = *psResult;
-
-  Utils::log_info("Default PBR shaders loaded successfully");
-  return {};
 }
 
 std::shared_ptr<Shader>

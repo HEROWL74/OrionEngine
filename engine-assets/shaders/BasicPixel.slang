@@ -1,0 +1,44 @@
+// BasicPixel.slang
+// Basic Pixel Shader
+
+struct VertexOutput
+{
+    float4 position : SV_POSITION;
+    float3 worldPos : WORLD_POSITION;
+    float3 color : COLOR;
+    float2 uv : TEXCOORD;
+};
+
+cbuffer MaterialConstants : register(b2)
+{
+    float4 albedo;                      // xyz: albedo, w: metallic
+    float4 roughnessAoEmissiveStrength; // x: roughness, y: ao, z: emissiveStrength, w: padding
+    float4 emissive;                    // xyz: emissive, w: normalStrength
+    float4 alphaParams;                 // x: alpha, y: useAlphaTest, z: alphaTestThreshold, w: heightScale
+    float4 uvTransform;                 // xy: uvScale, zw: uvOffset
+    int hasAlbedoTexture;
+    int matPad0;
+    int matPad1;
+    int matPad2;
+};
+
+Texture2D albedoTexture : register(t0);
+SamplerState linearSampler : register(s0);
+
+[shader("fragment")]
+float4 main(VertexOutput input) : SV_TARGET
+{
+    float3 baseColor;
+
+    if (hasAlbedoTexture > 0) // int比較
+    {
+        float3 texColor = albedoTexture.Sample(linearSampler, input.uv).rgb;
+        baseColor = texColor * albedo.rgb;
+    }
+    else
+    {
+        baseColor = albedo.rgb;
+    }
+
+    return float4(baseColor, alphaParams.x);
+}

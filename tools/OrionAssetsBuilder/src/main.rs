@@ -17,7 +17,7 @@ fn main() -> std::io::Result<()> {
     let injector_exe = build_dir.join("tools/OrionResourceInjector.exe");
     let editor_exe = build_dir.join("editor/OrionEditor.exe");
 
-    println!("--- [1/3] Synchronizing Assets ---");
+    println!("--- [1/2] Synchronizing Assets ---");
     let asset_dirs = vec!["fonts", "skybox", "images"];
     for dir in asset_dirs {
         let src = src_root.join("engine-assets").join(dir);
@@ -28,21 +28,7 @@ fn main() -> std::io::Result<()> {
         }
     }
 
-    println!("--- [2/3] Building OrionEditor via CMake ---");
-    // CMakeを呼び出してOrionEditorをビルドさせる
-    let cmake_status = Command::new("cmake")
-        .arg("--build")
-        .arg(&build_dir)
-        .arg("--target")
-        .arg("OrionEditor")
-        .status()?;
-
-    if !cmake_status.success() {
-        eprintln!("Build failed!");
-        std::process::exit(1);
-    }
-
-    println!("--- [3/3] Injecting Resources ---");
+    println!("--- [2/2] Injecting Resources ---");
     if injector_exe.exists() && editor_exe.exists() && icon_path.exists() {
         let status = Command::new(injector_exe)
             .arg(&editor_exe)

@@ -468,7 +468,7 @@ namespace Renderer
         auto& settings = Engine::Core::ProjectSettings::get();
 
         ShaderCompileDesc vsDesc;
-        vsDesc.filePath = settings.getEngineAssetPath("shaders/UITextVS.cso").string();
+        vsDesc.filePath = settings.getEngineAssetPath("shaders/UITextVS.dxil").string();
         vsDesc.entryPoint = "main";
         vsDesc.type = ShaderType::Vertex;
 
@@ -480,7 +480,7 @@ namespace Renderer
         }
 
         ShaderCompileDesc psDesc;
-        psDesc.filePath = settings.getEngineAssetPath("shaders/UITextPS.cso").string();
+        psDesc.filePath = settings.getEngineAssetPath("shaders/UITextPS.dxil").string();
         psDesc.entryPoint = "main";
         psDesc.type = ShaderType::Pixel;
 

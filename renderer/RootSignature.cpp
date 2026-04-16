@@ -117,10 +117,10 @@ namespace RootSignatureFactory {
 Utils::Result<RootSignature> createPBR(Device *device) {
   RootSignature sig;
   sig.addCBV(0, D3D12_SHADER_VISIBILITY_ALL);             // Slot0: Camera
-  sig.addCBV(1, D3D12_SHADER_VISIBILITY_VERTEX);          // Slot1: Object
-  sig.addCBV(2, D3D12_SHADER_VISIBILITY_PIXEL);           // Slot2: Material
-  sig.addSRVTable(6, 0, D3D12_SHADER_VISIBILITY_PIXEL);   // Slot3: t0-t5
-  sig.addLinearSampler(0, D3D12_SHADER_VISIBILITY_PIXEL); // s0
+  sig.addCBV(1, D3D12_SHADER_VISIBILITY_ALL);          // Slot1: Object
+  sig.addCBV(2, D3D12_SHADER_VISIBILITY_ALL);           // Slot2: Material
+  sig.addSRVTable(6, 0, D3D12_SHADER_VISIBILITY_ALL);   // Slot3: t0-t5
+  sig.addLinearSampler(0, D3D12_SHADER_VISIBILITY_ALL); // s0
 
   auto result = sig.finalize(device);
   if (!result) {

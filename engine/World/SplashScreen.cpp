@@ -157,7 +157,7 @@ namespace Engine::World
         auto& settings = Engine::Core::ProjectSettings::get();
         // Load shaders
         Renderer::ShaderCompileDesc vsDesc;
-        vsDesc.filePath = settings.getEngineAssetPath("shaders/SplashVertex.cso").string();
+        vsDesc.filePath = settings.getEngineAssetPath("shaders/SplashVertex.dxil").string();
         vsDesc.entryPoint = "main";
         vsDesc.type = Renderer::ShaderType::Vertex;
         vsDesc.enableDebug = true;
@@ -170,7 +170,7 @@ namespace Engine::World
         }
 
         Renderer::ShaderCompileDesc psDesc;
-        psDesc.filePath = settings.getEngineAssetPath("shaders/SplashPixel.cso").string();
+        psDesc.filePath = settings.getEngineAssetPath("shaders/SplashPixel.dxil").string();
         psDesc.entryPoint = "main";
         psDesc.type = Renderer::ShaderType::Pixel;
         psDesc.enableDebug = true;

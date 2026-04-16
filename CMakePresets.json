@@ -69,42 +69,50 @@
       }
     },
     {
-      "name": "linux-debug",
-      "displayName": "Linux Debug",
+      "name": "base-linux",
+      "hidden": true,
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/linux-debug",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_TOOLCHAIN_FILE": "/home/pc_user/vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-linux"
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "CMAKE_CXX_SCAN_FOR_MODULES": "OFF"
+      },
+      "vendor": {
+        "jetbrains.com/clion": {
+          "toolchain": "WSL"
+        },
+        "jetbrains.com/rider": {
+          "toolchain": "WSL"
+        }
+      }
+    },
+    {
+      "name": "linux-debug",
+      "displayName": "Linux Debug",
+      "inherits": "base-linux",
+      "binaryDir": "${sourceDir}/build/linux-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
       "name": "linux-release-local",
       "displayName": "Linux Release",
-      "generator": "Ninja",
+      "inherits": "base-linux",
       "binaryDir": "${sourceDir}/build/linux-release-local",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_TOOLCHAIN_FILE": "/home/pc_user/vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-linux"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
       "name": "linux-release-ci",
       "displayName": "Linux Release CI",
-      "generator": "Ninja",
+      "inherits": "base-linux",
       "binaryDir": "${sourceDir}/build/linux-release-ci",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_TOOLCHAIN_FILE": "/home/pc_user/vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-linux"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ],

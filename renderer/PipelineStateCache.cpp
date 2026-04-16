@@ -61,7 +61,7 @@ namespace Renderer
 
 		// シェーダーロード
 		ShaderCompileDesc vsDesc;
-		vsDesc.filePath = settings.getEngineAssetPath("shaders/BasicVertex.cso").string();
+		vsDesc.filePath = settings.getEngineAssetPath("shaders/BasicVertex.dxil").string();
 		vsDesc.entryPoint = "main";
 		vsDesc.type = ShaderType::Vertex;
 
@@ -69,11 +69,11 @@ namespace Renderer
 		if (!vs)
 		{
 			return std::unexpected(Utils::make_error(Utils::ErrorType::ShaderCompilation,
-				"PipelineStateCache: Failed to load BasicVertex.cso"));
+				"PipelineStateCache: Failed to load BasicVertex.dxil"));
 		}
 
 		ShaderCompileDesc psDesc;
-		psDesc.filePath = settings.getEngineAssetPath("shaders/BasicPixel.cso").string();
+		psDesc.filePath = settings.getEngineAssetPath("shaders/BasicPixel.dxil").string();
 		psDesc.entryPoint = "main";
 		psDesc.type = ShaderType::Pixel;
 
@@ -81,7 +81,7 @@ namespace Renderer
 		if (!ps)
 		{
 			return std::unexpected(Utils::make_error(Utils::ErrorType::ShaderCompilation,
-				"PipelineStateCache: Failed to load BasicPixel.cso"));
+				"PipelineStateCache: Failed to load BasicPixel.dxil"));
 		}
 
 		// RootSignature 生成

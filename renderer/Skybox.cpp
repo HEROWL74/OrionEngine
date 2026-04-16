@@ -321,7 +321,7 @@ namespace Renderer
 		auto& settings = Engine::Core::ProjectSettings::get();
 
 		ShaderCompileDesc vsDesc;
-		vsDesc.filePath = settings.getEngineAssetPath("shaders/SkyboxVS.cso").string();
+		vsDesc.filePath = settings.getEngineAssetPath("shaders/SkyboxVS.dxil").string();
 		vsDesc.entryPoint = "main";
 		vsDesc.type = ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -334,7 +334,7 @@ namespace Renderer
 		}
 
 		ShaderCompileDesc psDesc;
-		psDesc.filePath = settings.getEngineAssetPath("shaders/SkyboxPS.cso").string();
+		psDesc.filePath = settings.getEngineAssetPath("shaders/SkyboxPS.dxil").string();
 		psDesc.entryPoint = "main";
 		psDesc.type = ShaderType::Pixel;
 		psDesc.enableDebug = true;

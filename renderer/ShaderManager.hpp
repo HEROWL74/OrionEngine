@@ -142,9 +142,6 @@ private:
   // シェーダーキャッシュ
   std::unordered_map<std::string, std::shared_ptr<Shader>> m_shaders;
 
-  // 初期化ヘルパー
-  [[nodiscard]] Utils::VoidResult createDefaultShaders();
-
   // ユーティリティ
   std::string generateShaderKey(const ShaderCompileDesc &desc) const;
 };
