@@ -62,3 +62,9 @@ Cargo.lock
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ===== Slang =====
+!/tools/slang/bin/*.exe
+!/tools/slang/lib/*.dll
+!/tools/slang/lib/*.so*
+!/tools/slang/lib/*.dylib
