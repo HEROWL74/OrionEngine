@@ -63,9 +63,9 @@ OrionEngine/
 ├── renderer/           # DirectX12 ラッパー (Device, SwapChain, PSO管理)
 ├── runtime/            # ゲーム実行用バイナリ & DLL差替システムの実装
 ├── editor/             # ImGuiベースのエディタ機能と専用描画ロジック
-├── tools/              # ビルド支援ツール (BuildWorker等)
+├── tools/              # 開発用&配布用ツール (OrionBuild(Rust製)等)
 ├── assets/             # ユーザー資産 (モデル、テクスチャ、Luaスクリプト)
-└── engine-assets/      # エンジン内蔵資産 (標準シェーダー、ビルド済みUI素材)
+└── engine-assets/      # エンジン内蔵資産 (標準シェーダー(開発はSlang,配布時はdxilに変換)、ビルド済みUI素材)
 ```
 
 ## 💡 工夫した点
@@ -85,5 +85,5 @@ OrionEngine/
 
 - 名前：HEROWL
 - X (旧Twitter)：[HRAKProgrammer](https://x.com/HRAKProgrammer)
-- 開発環境：Visual Studio 2022 / Windows 11 / C++20&23
+- 開発環境：JetBrains Rider & Visual Studio / Windows 11 / C++20&23
 - 興味分野：ゲームエンジン開発、ゲーム開発、バスケットボール、水上オートバイ運転
