@@ -19,7 +19,7 @@ DirectX12とC++を用いて、レンダリング・UI・スクリプト実行基
 - ゲームエンジンの仕組みを学びたい開発者
 - 小規模ゲームを高速に試作したい個人開発者
 
-## ✨ 現在の進捗 OrionEngine 第一作ミニゲーム完成
+## ✨ 現在の進捗 OrionEngine OrionBuildSystemをRustで代替完了
 https://github.com/HEROWL74/OrionEngine/releases/tag/GameVol.1
 
 ### エディタ画像
