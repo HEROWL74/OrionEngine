@@ -1,4 +1,4 @@
-// engine-assets/shaders/GridPS.clang
+// engine-assets/shaders/GridPS.slang
 struct PSInput
 {
     float4 position : SV_POSITION;

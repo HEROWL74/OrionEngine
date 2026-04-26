@@ -1,4 +1,4 @@
-// UITextPS.clang - 3D World Space用
+// UITextPS.slang - 3D World Space用
 Texture2D fontTexture : register(t0);
 SamplerState fontSampler : register(s0);
 

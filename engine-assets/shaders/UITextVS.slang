@@ -1,4 +1,4 @@
-// engine-assets/shaders/UITextVS.clang
+// engine-assets/shaders/UITextVS.slang
 cbuffer TextConstants : register(b0)
 {
     float4x4 world;

@@ -1,4 +1,4 @@
-// engine-assets/shaders/SkyboxVS.clang
+// engine-assets/shaders/SkyboxVS.slang
 TextureCube skyTex : register(t0);
 SamplerState samplerState : register(s0);
 

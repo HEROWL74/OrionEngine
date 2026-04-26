@@ -1,4 +1,4 @@
-// engine-assets/shaders/SkyboxVS.clang
+// engine-assets/shaders/SkyboxVS.slang
 cbuffer CameraCB : register(b0)
 {
     float4x4 viewNoTrans;

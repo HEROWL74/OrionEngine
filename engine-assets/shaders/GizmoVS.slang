@@ -1,4 +1,4 @@
-// engine-assets/shaders/GizmoVS.clang
+// engine-assets/shaders/GizmoVS.slang
 
 cbuffer GizmoConstants : register(b0)
 {

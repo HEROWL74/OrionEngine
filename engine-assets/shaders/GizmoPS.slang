@@ -1,4 +1,4 @@
-// engine-assets/shaders/GizmoPS.clang
+// engine-assets/shaders/GizmoPS.slang
 
 struct PSInput
 {

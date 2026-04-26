@@ -1,4 +1,4 @@
-// engine-assets/shaders/SplashVertex.clang
+// engine-assets/shaders/SplashVertex.slang
 // Splash Screen Vertex Shader - Fullscreen Quad
 
 struct VSInput

@@ -1,4 +1,4 @@
-// engine-assets/shaders/GridVS.clang
+// engine-assets/shaders/GridVS.slang
 cbuffer CameraConstants : register(b0)
 {
     float4x4 viewProjection;
