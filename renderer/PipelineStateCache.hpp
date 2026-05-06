@@ -43,6 +43,7 @@ namespace Renderer
 
 		// PBR標準PSO
 		GraphicsPipelineState* getDefaultPBR() const { return get("DefaultPBR"); }
+		GraphicsPipelineState* getDefalutModel() const {return get("DefaultModel");}
 
 	private:
 		Device* m_device = nullptr;
@@ -52,5 +53,6 @@ namespace Renderer
 
 		//起動時に登録するデフォルトPSOの生成
 		[[nodiscard]] Utils::VoidResult createDefaultPBR();
+		[[nodiscard]] Utils::VoidResult createDefalutModel();
 	};
 }

@@ -196,7 +196,7 @@ ShaderManager::loadShader(const ShaderCompileDesc &desc) {
       std::filesystem::path(desc.filePath).extension().string();
   Utils::Result<std::shared_ptr<Shader>> shaderResult;
 
-  if (ext == ".cso", ext == ".dxil") {
+  if (ext == ".cso" || ext == ".dxil") {
     Utils::log_info(
         std::format("Loading precompiled shader: {}", desc.filePath));
     shaderResult = Shader::loadFromCSO(desc.filePath, desc.type);

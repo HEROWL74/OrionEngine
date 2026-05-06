@@ -2,7 +2,6 @@
 #pragma once
 #include "../engine/Utils/Common.hpp"
 #include "Device.hpp"
-#include "ShaderManager.hpp"
 #include <d3d12.h>
 
 namespace Renderer {
