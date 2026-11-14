@@ -3,12 +3,16 @@
 on:
   push:
     branches: [develop, "feature/**", "refactor/**", "fix/**", "test/**"]
+    paths-ignore:
+      - "README.md"
   pull_request:
     branches: [develop, main]
+    paths-ignore:
+      - "README.md"
 
 jobs:
   build:
-    name: ${{ matrix.os }} Build
+    name: ${{ matrix.os }} (Clang) Build
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -17,12 +21,10 @@ jobs:
           - os: windows-latest
             preset: x64-release-ci
             build-preset: editor-release-ci
-            use_sccache: true
             vcpkg_cache_path: "D:/vcpkg_cache"
           - os: ubuntu-latest
             preset: linux-release-ci
             build-preset: linux-editor-release-ci
-            use_sccache: true
             vcpkg_cache_path: "/home/runner/.cache/vcpkg_bin"
 
     steps:
@@ -30,24 +32,35 @@ jobs:
         with:
           lfs: true
 
-      - name: Run sccache-cache
-        uses: mozilla/sccache-action@v0.0.5
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Set up MSVC
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install LLVM/Clang (Windows)
+        if: runner.os == 'Windows'
+        run: choco install llvm -y
+
+      - name: Set up MSVC Environment
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Clang (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config libxrandr-dev libxi-dev ninja-build
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
 
-      # --- Linux環境
-      - name: Install Linux Dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config libxrandr-dev libxi-dev
+      - name: Run sccache-cache
+        uses: mozilla/sccache-action@v0.0.5
 
-      # --- Restore Caches ---
+      - name: Build OrionAssetsBuilder
+        run: cargo build -p OrionAssetsBuilder --release
+
       - name: Restore Caches
         uses: actions/cache@v4
         with:
@@ -71,12 +84,27 @@ jobs:
         run: |
           mkdir -p "$SCCACHE_DIR"
           mkdir -p "${{ matrix.vcpkg_cache_path }}"
-          
+
           if [ "${{ runner.os }}" == "Windows" ]; then
-            cmake --preset ${{ matrix.preset }} -DCMAKE_CXX_FLAGS="/Z7" -DCMAKE_C_FLAGS="/Z7"
+            cmake --preset ${{ matrix.preset }} \
+              -DCMAKE_C_COMPILER=clang-cl \
+              -DCMAKE_CXX_COMPILER=clang-cl \
+              -DCMAKE_CXX_STANDARD=23 \
+              -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+              -DCMAKE_CXX_FLAGS="/Z7 /EHsc" \
+              -DCMAKE_C_FLAGS="/Z7" \
+              -DASSET_BUILDER_EXE="${{ github.workspace }}/target/release/OrionAssetsBuilder.exe"
           else
             export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
-            cmake --preset ${{ matrix.preset }} -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+            export CC=clang
+            export CXX=clang++
+            cmake --preset ${{ matrix.preset }} \
+              -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+              -DCMAKE_C_COMPILER=clang \
+              -DCMAKE_CXX_COMPILER=clang++ \
+              -DCMAKE_CXX_STANDARD=23 \
+              -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+              -DCMAKE_CXX_FLAGS="-fexceptions"
           fi
 
       - name: Build

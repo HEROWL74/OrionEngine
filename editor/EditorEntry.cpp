@@ -1,40 +1,44 @@
 ﻿
-#include <iostream>
 #include "../engine/Utils/Common.hpp"
 #include "EditorApp.hpp"
+#include <iostream>
 
-namespace Editor
-{
-    int RunEditor(HINSTANCE hInstance, int nCmdShow,
-        const std::filesystem::path& projectPath)
-    {
+
+namespace Editor {
+int RunEditor(HINSTANCE hInstance, int nCmdShow,
+              const std::filesystem::path &projectPath) {
 #ifdef _DEBUG
-        AllocConsole();
-        freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
-        freopen_s((FILE**)stderr, "CONOUT$", "w", stderr);
-        std::cout << "=== Orion Editor Debug Console ===\n";
+  AllocConsole();
+
+  FILE *fp;
+  freopen_s(&fp, "CONOUT$", "w", stdout);
+  freopen_s(&fp, "CONOUT$", "w", stderr);
+  freopen_s(&fp, "CONIN$", "r", stdin);
+
+  std::ios::sync_with_stdio(true);
+
+  std::cout << "=== Orion Editor Debug Console ===\n";
 #endif
 
-        Editor::EditorApp app;
+  Editor::EditorApp app;
 
-        auto initResult = app.initialize(hInstance, nCmdShow, projectPath);
-        if (!initResult)
-        {
-            std::string errorDetail = initResult.error().what();
+  auto initResult = app.initialize(hInstance, nCmdShow, projectPath);
+  if (!initResult) {
+    std::string errorDetail = initResult.error().what();
 
-            MessageBoxA(NULL, errorDetail.c_str(), "Orion Engine - Fatal Error", MB_ICONERROR | MB_OK);
+    MessageBoxA(NULL, errorDetail.c_str(), "Orion Engine - Fatal Error",
+                MB_ICONERROR | MB_OK);
 
-            Engine::Utils::log_error(initResult.error());
-            return -1;
-        }
+    Engine::Utils::log_error(initResult.error());
+    return -1;
+  }
 
-        const int exitCode = app.run();
+  const int exitCode = app.run();
 
 #ifdef _DEBUG
-        std::cout << "Editor exited with code: " << exitCode << std::endl;
-        FreeConsole();
+  std::cout << "Editor exited with code: " << exitCode << std::endl;
+  FreeConsole();
 #endif
-        return exitCode;
-    }
+  return exitCode;
 }
-
+} // namespace Editor

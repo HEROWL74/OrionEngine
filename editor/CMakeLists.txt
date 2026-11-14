@@ -1,4 +1,6 @@
-﻿# editor/CMakeLists.txt
+﻿# -------------------------------------------------------------------------
+# editor/CMakeLists.txt
+# -------------------------------------------------------------------------
 
 find_package(imgui CONFIG REQUIRED)
 
@@ -7,10 +9,48 @@ if(WIN32)
     find_package(directx-headers CONFIG REQUIRED)
     find_package(directx12-agility CONFIG REQUIRED)
 endif()
+
+# -------------------------------------------------------------------------
+# Rust Build Settings
+# -------------------------------------------------------------------------
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(RUST_BUILD_TYPE "debug")
+    set(RUST_FLAG "")
+else()
+    set(RUST_BUILD_TYPE "release")
+    set(RUST_FLAG "--release")
+endif()
+
+# OrionAssetsBuilder
+add_custom_target(OrionAssetsBuilderTool
+    COMMAND cargo build ${RUST_FLAG}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tools/OrionAssetsBuilder
+    COMMENT "Building OrionAssetsBuilder (Rust)"
+)
+
+# OrionBuild
+add_custom_target(OrionBuildTool
+    COMMAND cargo build ${RUST_FLAG}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tools/OrionBuild
+    COMMENT "Building OrionBuild (Rust)"
+)
+
+# 実行ファイルパス
+set(ASSET_BUILDER_EXE
+    "${CMAKE_SOURCE_DIR}/tools/OrionAssetsBuilder/target/${RUST_BUILD_TYPE}/OrionAssetsBuilder.exe"
+)
+
+set(ORION_BUILD_EXE
+    "${CMAKE_SOURCE_DIR}/tools/OrionBuild/target/${RUST_BUILD_TYPE}/OrionBuild.exe"
+)
+
+# -------------------------------------------------------------------------
+# Editor
+# -------------------------------------------------------------------------
+
 if(WIN32)
-    # -------------------------------------------------------------------------
-    # Windows: 既存の全ソースをそのまま使う（変更なし）
-    # -------------------------------------------------------------------------
+
     file(GLOB_RECURSE EDITOR_SOURCES
         ${CMAKE_SOURCE_DIR}/editor/*.cpp
         ${CMAKE_SOURCE_DIR}/editor/*.hpp
@@ -18,7 +58,6 @@ if(WIN32)
 
     add_executable(OrionEditor WIN32
         ${EDITOR_SOURCES}
-        ${CMAKE_SOURCE_DIR}/resources/app.rc
     )
 
     target_link_libraries(OrionEditor
@@ -31,41 +70,69 @@ if(WIN32)
         PRIVATE Microsoft::WinPixEventRuntime
     )
 
+    # ---------------------------------------------------------------------
+    # Dependencies
+    # ---------------------------------------------------------------------
+
     if(TARGET Shaders)
         add_dependencies(OrionEditor Shaders)
     endif()
 
-    add_custom_command(
-        TARGET OrionEditor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:OrionEditor>/player"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/engine-assets/fonts"
-            "$<TARGET_FILE_DIR:OrionEditor>/engine-assets/fonts"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/engine-assets/skybox"
-            "$<TARGET_FILE_DIR:OrionEditor>/engine-assets/skybox"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/engine-assets/images"
-            "$<TARGET_FILE_DIR:OrionEditor>/engine-assets/images"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:OrionGame>"    "$<TARGET_FILE_DIR:OrionEditor>/player/OrionGame.exe"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:OrionRuntime>" "$<TARGET_FILE_DIR:OrionEditor>/OrionRuntime.dll"
-        COMMENT "Bundling engine-assets and player runtime into editor directory"
+    if(TARGET OrionResourceInjector)
+        add_dependencies(OrionEditor OrionResourceInjector)
+    endif()
+
+    # 🔥 Rustツール依存
+    add_dependencies(OrionEditor
+        OrionAssetsBuilderTool
+        OrionBuildTool
     )
+
+    # ---------------------------------------------------------------------
+    # Asset Builder 実行
+    # ---------------------------------------------------------------------
+
+    set(ORION_ICON_PATH
+        "${CMAKE_SOURCE_DIR}/engine-assets/images/OrionEngineIcon.ico"
+    )
+
+    add_custom_target(RunAssetBuilder ALL
+        COMMAND ${ASSET_BUILDER_EXE}
+         --src "${CMAKE_SOURCE_DIR}"
+         --build-dir "${CMAKE_BINARY_DIR}"
+         --dst "$<TARGET_FILE_DIR:OrionEditor>"
+         --icon "${ORION_ICON_PATH}"
+         --injector "$<TARGET_FILE:OrionResourceInjector>"
+        COMMENT "OrionAssetsBuilder: Syncing assets and injecting icon..."
+        VERBATIM
+    )
+
+    # 実行順保証
+    add_dependencies(RunAssetBuilder OrionAssetsBuilderTool)
+    add_dependencies(OrionEditor RunAssetBuilder)
+
+    # ---------------------------------------------------------------------
+    # Debug Settings
+    # ---------------------------------------------------------------------
 
     set_target_properties(OrionEditor PROPERTIES
         VS_DEBUGGER_COMMAND_ARGUMENTS "--project \"${CMAKE_SOURCE_DIR}/project\""
     )
 
-    target_compile_options(OrionEditor     PRIVATE /W4 /EHsc)
+    # ---------------------------------------------------------------------
+    # Compiler Settings
+    # ---------------------------------------------------------------------
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(OrionEditor PRIVATE /W4 /EHsc /arch:SSE2)
+    else()
+        target_compile_options(OrionEditor PRIVATE /W4 /EHsc)
+    endif()
+
     target_compile_definitions(OrionEditor PRIVATE UNICODE _UNICODE)
 
 else()
-    # -------------------------------------------------------------------------
-    # Linux: EditorMain / LinuxApp のみ
-    #   Phase 2 以降: Vulkan描画・ImGui等をここに追加していく
-    # -------------------------------------------------------------------------
+
     add_executable(OrionEditor
         ${CMAKE_SOURCE_DIR}/editor/EditorMain.cpp
         ${CMAKE_SOURCE_DIR}/editor/LinuxApp.hpp
@@ -77,6 +144,10 @@ else()
     )
 
 endif()
+
+# -------------------------------------------------------------------------
+# Output Directory
+# -------------------------------------------------------------------------
 
 set_target_properties(OrionEditor PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY                "${CMAKE_BINARY_DIR}/editor"

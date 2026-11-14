@@ -239,7 +239,7 @@ namespace Editor::UI
 		auto& settings = Engine::Core::ProjectSettings::get();
 
 		Renderer::ShaderCompileDesc vsDesc;
-		vsDesc.filePath = settings.getEngineAssetPath("shaders/GizmoVS.cso").string();
+		vsDesc.filePath = settings.getEngineAssetPath("shaders/GizmoVS.dxil").string();
 		vsDesc.entryPoint = "main";
 		vsDesc.type = Renderer::ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -251,7 +251,7 @@ namespace Editor::UI
 		}
 
 		Renderer::ShaderCompileDesc psDesc;
-		psDesc.filePath = settings.getEngineAssetPath("shaders/GizmoPS.cso").string();
+		psDesc.filePath = settings.getEngineAssetPath("shaders/GizmoPS.dxil").string();
 		psDesc.entryPoint = "main";
 		psDesc.type = Renderer::ShaderType::Pixel;
 		psDesc.enableDebug = true;

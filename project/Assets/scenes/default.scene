@@ -29,8 +29,7 @@
         {
             "active": true,
             "lua": {
-                "name": "Lua",
-                "scriptPath": "C:/Users/PC_User/source/repos/VS2022Project/OrionEngine/project/Assets/scripts/Player.lua"
+                "scriptPath": "Assets/scripts/Player.lua"
             },
             "name": "Player",
             "renderComponent": {

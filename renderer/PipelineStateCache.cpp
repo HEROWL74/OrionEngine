@@ -6,8 +6,7 @@
 namespace Renderer
 {
 	Utils::VoidResult PipelineStateCache::initialize(Device* device, ShaderManager* shaderManager)
-	{
-		CHECK_CONDITION(device != nullptr, Utils::ErrorType::DeviceCreation, "Device is null");
+	{CHECK_CONDITION(device != nullptr, Utils::ErrorType::DeviceCreation, "Device is null");
 		CHECK_CONDITION(shaderManager != nullptr, Utils::ErrorType::DeviceCreation, "ShaderManager is null");
 		CHECK_CONDITION(shaderManager->isValid(), Utils::ErrorType::DeviceCreation,
 			"ShaderManager is not initialized");
@@ -61,7 +60,7 @@ namespace Renderer
 
 		// シェーダーロード
 		ShaderCompileDesc vsDesc;
-		vsDesc.filePath = settings.getEngineAssetPath("shaders/BasicVertex.cso").string();
+		vsDesc.filePath = settings.getEngineAssetPath("shaders/BasicVertex.dxil").string();
 		vsDesc.entryPoint = "main";
 		vsDesc.type = ShaderType::Vertex;
 
@@ -69,11 +68,11 @@ namespace Renderer
 		if (!vs)
 		{
 			return std::unexpected(Utils::make_error(Utils::ErrorType::ShaderCompilation,
-				"PipelineStateCache: Failed to load BasicVertex.cso"));
+				"PipelineStateCache: Failed to load BasicVertex.dxil"));
 		}
 
 		ShaderCompileDesc psDesc;
-		psDesc.filePath = settings.getEngineAssetPath("shaders/BasicPixel.cso").string();
+		psDesc.filePath = settings.getEngineAssetPath("shaders/BasicPixel.dxil").string();
 		psDesc.entryPoint = "main";
 		psDesc.type = ShaderType::Pixel;
 
@@ -81,7 +80,7 @@ namespace Renderer
 		if (!ps)
 		{
 			return std::unexpected(Utils::make_error(Utils::ErrorType::ShaderCompilation,
-				"PipelineStateCache: Failed to load BasicPixel.cso"));
+				"PipelineStateCache: Failed to load BasicPixel.dxil"));
 		}
 
 		// RootSignature 生成
@@ -111,6 +110,57 @@ namespace Renderer
 		m_cache["DefaultPBR"] = std::move(pso);
 
 		Utils::log_info("DefaultPBR PSO created and cached");
+		return {};
+	}
+
+	Utils::VoidResult PipelineStateCache::createDefalutModel()
+	{
+		auto& settings = Core::ProjectSettings::get();
+		
+		// シェーダーロード
+		ShaderCompileDesc vsDesc;
+		vsDesc.filePath = settings.getEngineAssetPath("shaders/ModelVertex.dxil").string();
+		vsDesc.entryPoint = "main";
+		vsDesc.type = ShaderType::Vertex;
+		
+		auto vs = m_shaderManager->loadShader(vsDesc);
+		if (!vs)
+		{
+			return std::unexpected(Utils::make_error(Utils::ErrorType::ShaderCompilation, "PipelineCache: Failed to load ModelVertex.dxil"));
+		}
+		
+		ShaderCompileDesc psDesc;
+		psDesc.filePath = settings.getEngineAssetPath("shaders/ModelPixel.dxil").string();
+		psDesc.entryPoint = "main";
+		psDesc.type = ShaderType::Pixel;
+		
+		auto ps = m_shaderManager->loadShader(psDesc);
+		if (!ps)
+		{
+			return std::unexpected(Utils::make_error(Utils::ErrorType::ShaderCompilation,"PipelineCache: Failed to load ModelPixel.dxil"));
+		}
+		
+		// RootSignature 生成
+		auto rootSigResult = RootSignatureFactory::createModel(m_device);
+		if (!rootSigResult)
+			return std::unexpected(rootSigResult.error());
+		
+		// Desc 組み立て
+		GraphicsPipelineStateDesc desc;
+		desc.vertexShader = vs;
+		desc.pixelShader = ps;
+		desc.inputLayout = StandardInputLayouts::PBRVertex;
+		desc.debugName = "DefaultModel";
+		
+		auto pso = std::make_unique<GraphicsPipelineState>();
+		auto initResult = pso->initialize(m_device, std::move(*rootSigResult), desc);
+		if (!initResult)
+			return initResult;
+		
+		// キャッシュに登録
+		m_cache["DefaultModel"] = std::move(pso);
+		
+		Utils::log_info("DefaultModel PSO created and cached");
 		return {};
 	}
 }

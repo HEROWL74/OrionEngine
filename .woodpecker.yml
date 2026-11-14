@@ -1,6 +1,0 @@
-steps:
-  hello-orion:
-    image: alpine
-    commands:
-      - echo "OrionEditor Local CI System is Online!"
-      - echo "Checking build environment..."

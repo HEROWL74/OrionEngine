@@ -43,6 +43,7 @@ project/
 !/tools/dxc/bin/x64/*.exe
 !/tools/dxc/bin/x64/*.dll
 PIXData/
+target/
 
 # ===== Platforms =====
 renderer/Platforms/Switch/
@@ -55,8 +56,15 @@ renderer/Platforms/PS5/
 .vscode/
 .idea/
 *.code-workspace
+Cargo.lock
 
 # ===== OS\ =====
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ===== Slang =====
+!/tools/slang/bin/*.exe
+!/tools/slang/lib/*.dll
+!/tools/slang/lib/*.so*
+!/tools/slang/lib/*.dylib

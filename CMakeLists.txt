@@ -5,6 +5,12 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 if(WIN32)
     project(Orion LANGUAGES CXX RC)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        # RCコンパイラとして直接 rc.exe を指定し、Clang経由のプリプロセスをバイパスする
+        set(CMAKE_RC_COMPILER "rc.exe")
+        # 余計なフラグが渡らないように空にする
+        set(CMAKE_RC_FLAGS "/rv /DWIN32")
+    endif()
 else()
     project(Orion LANGUAGES CXX)
 endif()
@@ -14,6 +20,7 @@ ORION_SETUP_COMPILER_ENVIRONMENT()
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 # ---------------------------------------------------------
 # 出力ディレクトリ
@@ -35,6 +42,12 @@ add_subdirectory(engine)
 add_subdirectory(renderer)
 add_subdirectory(engine-assets)
 add_subdirectory(tools/buildworker)
+
+# アイコン注入ツール（OrionGame / OrionEditor の POST_BUILD より先にビルドされる必要がある）
+if(WIN32)
+    add_subdirectory(tools/OrionResourceInjector)
+endif()
+
 if(WIN32)
     add_subdirectory(runtime)
 endif()

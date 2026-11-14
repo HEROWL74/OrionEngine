@@ -151,7 +151,7 @@ namespace Renderer
 		auto& settings = Engine::Core::ProjectSettings::get();
 
 		ShaderCompileDesc vsDesc;
-		vsDesc.filePath = settings.getEngineAssetPath("shaders/FXAA_VS.cso").string();
+		vsDesc.filePath = settings.getEngineAssetPath("shaders/FXAA_VS.dxil").string();
 		vsDesc.entryPoint = "main";
 		vsDesc.type = ShaderType::Vertex;
 		vsDesc.enableDebug = true;
@@ -162,7 +162,7 @@ namespace Renderer
 		));
 
 		ShaderCompileDesc psDesc;
-		psDesc.filePath = settings.getEngineAssetPath("shaders/FXAA_PS.cso").string();
+		psDesc.filePath = settings.getEngineAssetPath("shaders/FXAA_PS.dxil").string();
 		psDesc.entryPoint = "main";
 		psDesc.type = ShaderType::Pixel;
 		psDesc.enableDebug = true;

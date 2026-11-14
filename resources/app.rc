@@ -1,3 +1,0 @@
-﻿#include "orion_resource.h"
-
-IDI_APP_ICON ICON "OrionEngineIcon.ico"

@@ -297,7 +297,7 @@ namespace Editor::UI
         auto& settings = Engine::Core::ProjectSettings::get();
 
         Renderer::ShaderCompileDesc vsDesc;
-        vsDesc.filePath = settings.getEngineAssetPath("shaders/GridVS.cso").string();
+        vsDesc.filePath = settings.getEngineAssetPath("shaders/GridVS.dxil").string();
         vsDesc.entryPoint = "main";
         vsDesc.type = Renderer::ShaderType::Vertex;
         vsDesc.enableDebug = true;
@@ -306,7 +306,7 @@ namespace Editor::UI
             Utils::ErrorType::ShaderCompilation, "Failed to load grid vertex shader"));
 
         Renderer::ShaderCompileDesc psDesc;
-        psDesc.filePath = settings.getEngineAssetPath("shaders/GridPS.cso").string();
+        psDesc.filePath = settings.getEngineAssetPath("shaders/GridPS.dxil").string();
         psDesc.entryPoint = "main";
         psDesc.type = Renderer::ShaderType::Pixel;
         psDesc.enableDebug = true;
