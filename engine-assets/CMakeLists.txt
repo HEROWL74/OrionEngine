@@ -4,12 +4,12 @@ if(NOT WIN32)
     return()
 endif()
 
-set(SLANGC_EXECUTABLE "${CMAKE_SOURCE_DIR}/tools/slang/bin/slangc.exe")
+find_package(slang CONFIG REQUIRED)
 
-if(NOT EXISTS "${SLANGC_EXECUTABLE}")
-    message(FATAL_ERROR "slangc.exe not found at: ${SLANGC_EXECUTABLE}")
-endif()
-message(STATUS "Using Slang Compiler: ${SLANGC_EXECUTABLE}")
+target_link_libraries(OrionEngine PRIVATE
+        slang::slang
+)
+
 
 set(SHADER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 set(SHADER_OUT_DIR "${CMAKE_BINARY_DIR}/editor/engine-assets/shaders")

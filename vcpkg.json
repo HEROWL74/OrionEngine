@@ -8,6 +8,7 @@
     "nlohmann-json",
     "stb",
     "miniaudio",
+    "shader-slang",
     {
       "name": "imgui",
       "platform": "windows",

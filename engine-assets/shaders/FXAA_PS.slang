@@ -37,19 +37,16 @@ float4 main(PSInput input) : SV_TARGET
     float lumaMax = max(lumaM, max(max(lumaN, lumaS), max(lumaE, lumaW)));
     float lumaRange = lumaMax - lumaMin;
 
-    //  繧ｨ繝・ず讀懷・・・in蛻ｶ蠕｡莉倥″・・
     if (lumaRange < max(fxaaQualityEdgeThresholdMin, lumaMax * fxaaQualityEdgeThreshold))
     {
         return float4(rgbM, 1.0);
     }
 
-    // --- 蟇ｾ隗偵し繝ｳ繝励Ν ---
     float lumaNW = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(-rcpFrame.x, -rcpFrame.y)).rgb);
     float lumaNE = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(rcpFrame.x, -rcpFrame.y)).rgb);
     float lumaSW = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(-rcpFrame.x, rcpFrame.y)).rgb);
     float lumaSE = rgb2luma(sourceTexture.Sample(sourceSampler, uv + float2(rcpFrame.x, rcpFrame.y)).rgb);
 
-    // --- 繧ｨ繝・ず譁ｹ蜷題ｨ育ｮ・---
     float edgeHorz =
         abs(lumaNW + lumaNE - 2.0 * lumaN) +
         abs(lumaSW + lumaSE - 2.0 * lumaS) +
@@ -64,7 +61,6 @@ float4 main(PSInput input) : SV_TARGET
 
     float2 stepDir = isHorizontal ? float2(rcpFrame.x, 0) : float2(0, rcpFrame.y);
 
-    // --- 繧ｨ繝・ず謗｢邏｢・育ｰ｡譏・tap・・---
     float lumaNeg = rgb2luma(sourceTexture.Sample(sourceSampler, uv - stepDir).rgb);
     float lumaPos = rgb2luma(sourceTexture.Sample(sourceSampler, uv + stepDir).rgb);
 
@@ -75,7 +71,6 @@ float4 main(PSInput input) : SV_TARGET
 
     float blend = saturate((gradient / lumaRange) * fxaaQualitySubpix);
 
-    // --- 譛邨ゅヶ繝ｬ繝ｳ繝・---
     float2 offset = stepDir * blend * 0.5;
 
     float3 rgbA = sourceTexture.Sample(sourceSampler, uv + offset).rgb;
