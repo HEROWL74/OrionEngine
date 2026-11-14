@@ -6,8 +6,7 @@
 namespace Renderer
 {
 	Utils::VoidResult PipelineStateCache::initialize(Device* device, ShaderManager* shaderManager)
-	{
-		CHECK_CONDITION(device != nullptr, Utils::ErrorType::DeviceCreation, "Device is null");
+	{CHECK_CONDITION(device != nullptr, Utils::ErrorType::DeviceCreation, "Device is null");
 		CHECK_CONDITION(shaderManager != nullptr, Utils::ErrorType::DeviceCreation, "ShaderManager is null");
 		CHECK_CONDITION(shaderManager->isValid(), Utils::ErrorType::DeviceCreation,
 			"ShaderManager is not initialized");
