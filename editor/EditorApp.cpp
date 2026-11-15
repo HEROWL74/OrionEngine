@@ -3,9 +3,6 @@
 #include "PixWrapper.hpp"
 #include <filesystem>
 #include <format>
-#include <pxr/usd/usd/stage.h>
-#include <pxr/usd/usdGeom/cube.h>
-#include <pxr/usd/usdGeom/xform.h>
 
 namespace Editor {
 using namespace Engine;

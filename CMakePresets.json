@@ -37,7 +37,6 @@
     },
     {
       "name": "x64-release-local",
-      "hidden": true,
       "displayName": "Windows x64 Release (Clang-cl + Ninja)",
       "inherits": "base-win",
       "binaryDir": "${sourceDir}/build/x64-release-local",

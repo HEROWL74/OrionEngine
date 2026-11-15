@@ -57,17 +57,19 @@ if(WIN32)
     )
 
     add_executable(OrionEditor WIN32
-        ${EDITOR_SOURCES}
+            ${EDITOR_SOURCES}
     )
 
     target_link_libraries(OrionEditor
-        PRIVATE Microsoft::DirectX-Headers
-        PRIVATE OrionEngine
-        PRIVATE OrionRenderer
-        PRIVATE OrionBuildSystem
-        PRIVATE imgui::imgui
-        PRIVATE Microsoft::WinPixEventRuntime 
-            PRIVATE usd sdf usdGeom
+            PRIVATE
+            OrionEngine
+            OrionRenderer
+            OrionBuildSystem
+            imgui::imgui
+            Microsoft::DirectX-Headers
+            Microsoft::WinPixEventRuntime
+            usd
+            usdGeom
     )
     
     add_compile_definitions(
@@ -88,7 +90,7 @@ if(WIN32)
         add_dependencies(OrionEditor OrionResourceInjector)
     endif()
 
-    # 🔥 Rustツール依存
+    # Rustツール依存
     add_dependencies(OrionEditor
         OrionAssetsBuilderTool
         OrionBuildTool
@@ -113,9 +115,19 @@ if(WIN32)
         VERBATIM
     )
 
-    # 実行順保証
     add_dependencies(RunAssetBuilder OrionAssetsBuilderTool)
     add_dependencies(OrionEditor RunAssetBuilder)
+    add_custom_command(TARGET OrionEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin/usd"
+            "$<TARGET_FILE_DIR:OrionEditor>/usd"
+            
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/plugin/usd"
+            "$<TARGET_FILE_DIR:OrionEditor>/plugin/usd"
+
+            COMMENT "Copying correct OpenUSD core bin/usd assets for Windows..."
+    )
 
     # ---------------------------------------------------------------------
     # Debug Settings
