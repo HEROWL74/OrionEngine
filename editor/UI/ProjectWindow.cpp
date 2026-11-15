@@ -139,7 +139,7 @@ namespace Editor::UI
     {
         const float panelWidth = ImGui::GetContentRegionAvail().x;
         const float cellSize = m_iconSize + 16.0f;
-        const int columnCount = max(1, (int)(panelWidth / cellSize));
+        const int columnCount = std::max(1, (int)(panelWidth / cellSize));
 
         int index = 0;
         for (auto& asset : m_assets)

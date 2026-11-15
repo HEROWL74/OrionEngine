@@ -5,14 +5,7 @@
 #include "EditorEntry.hpp"
 #include <Windows.h>
 #include <filesystem>
-
-extern "C" {
-__declspec(dllexport) extern const UINT D3D12SDKVersion = 615;
-}
-
-extern "C" {
-__declspec(dllexport) extern const char *D3D12SDKPath = ".\\D3D12\\";
-}
+#include <shellapi.h>
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPSTR,
                    _In_ int nCmdShow) {

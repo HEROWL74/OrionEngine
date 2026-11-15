@@ -68,9 +68,11 @@ Utils::VoidResult ImGuiManager::initialize(Device *device, HWND hwnd,
       m_context = nullptr;
       return heapResult;
     }
+    
+    m_descHeapAlloc.Create(m_device->getDevice(), m_srvDescHeap.Get());
 
     m_nextFreeIndex = 1;
-
+    
     if (!ImGui_ImplWin32_Init(hwnd)) {
       ImGui::DestroyContext(m_context);
       m_context = nullptr;
@@ -87,17 +89,26 @@ Utils::VoidResult ImGuiManager::initialize(Device *device, HWND hwnd,
                             "CommandQueue became null before DX12 init"));
     }
 
-    if (!ImGui_ImplDX12_Init(
-            m_device->getDevice(), static_cast<int>(frameCount), rtvFormat,
-            m_srvDescHeap.Get(),
-            m_srvDescHeap->GetCPUDescriptorHandleForHeapStart(),
-            m_srvDescHeap->GetGPUDescriptorHandleForHeapStart())) {
-      ImGui_ImplWin32_Shutdown();
-      ImGui::DestroyContext(m_context);
-      m_context = nullptr;
-      return std::unexpected(Utils::make_error(
-          Utils::ErrorType::Unknown, "Failed to initialize ImGui DX12"));
-    }
+    ImGui_ImplDX12_InitInfo init_info = {};
+    init_info.Device = m_device->getDevice();
+    init_info.CommandQueue = m_commandQueue;
+    init_info.NumFramesInFlight = m_frameCount;
+    init_info.RTVFormat = m_rtvFormat;
+    init_info.DSVFormat = DXGI_FORMAT_UNKNOWN;
+    init_info.SrvDescriptorHeap = m_srvDescHeap.Get();
+    
+    // 必須となったアロケーションコールバックのバインド
+    init_info.UserData = &m_descHeapAlloc;
+    init_info.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle) {
+      auto* alloc = static_cast<ImGuiDescriptorHeapAllocator*>(info->UserData);
+      alloc->Alloc(out_cpu_handle, out_gpu_handle);
+    };
+    init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle) {
+      auto* alloc = static_cast<ImGuiDescriptorHeapAllocator*>(info->UserData);
+      alloc->Free(cpu_handle, gpu_handle);
+    };
+    
+    ImGui_ImplDX12_Init(&init_info);
 
     auto fontResult = createFontTextureManually();
     if (!fontResult) {
@@ -426,14 +437,25 @@ Utils::VoidResult ImGuiManager::reinitializeForResize() {
 
   ImGui_ImplDX12_Shutdown();
 
-  if (!ImGui_ImplDX12_Init(
-          m_device->getDevice(), static_cast<int>(m_frameCount), m_rtvFormat,
-          m_srvDescHeap.Get(),
-          m_srvDescHeap->GetCPUDescriptorHandleForHeapStart(),
-          m_srvDescHeap->GetGPUDescriptorHandleForHeapStart())) {
-    return std::unexpected(Utils::make_error(
-        Utils::ErrorType::Unknown, "Failed to reinitialize ImGui DX12"));
-  }
+  ImGui_ImplDX12_InitInfo init_info = {};
+  init_info.Device = m_device->getDevice();
+  init_info.CommandQueue = m_commandQueue;
+  init_info.NumFramesInFlight = m_frameCount;
+  init_info.RTVFormat = m_rtvFormat;
+  init_info.DSVFormat = DXGI_FORMAT_UNKNOWN;
+  init_info.SrvDescriptorHeap = m_srvDescHeap.Get();
+
+  init_info.UserData = &m_descHeapAlloc;
+  init_info.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle) {
+    auto* alloc = static_cast<ImGuiDescriptorHeapAllocator*>(info->UserData);
+    alloc->Alloc(out_cpu_handle, out_gpu_handle);
+  };
+  init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle) {
+    auto* alloc = static_cast<ImGuiDescriptorHeapAllocator*>(info->UserData);
+    alloc->Free(cpu_handle, gpu_handle);
+  };
+
+  ImGui_ImplDX12_Init(&init_info);
 
   auto fontResult = createFontTextureManually();
   if (!fontResult) {

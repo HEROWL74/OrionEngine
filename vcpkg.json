@@ -51,15 +51,15 @@
     {
       "name": "vulkan",
       "platform": "linux"
+    },
+    {
+      "name": "usd",
+      "platform": "windows"
     }
   ],
   "overrides": [
     {
       "name": "directx-headers",
-      "version": "1.615.0"
-    },
-    {
-      "name": "directx12-agility",
       "version": "1.615.0"
     }
   ]

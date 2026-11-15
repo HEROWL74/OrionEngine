@@ -7,7 +7,7 @@ find_package(imgui CONFIG REQUIRED)
 if(WIN32)
     find_package(WinPixEvent CONFIG REQUIRED)
     find_package(directx-headers CONFIG REQUIRED)
-    find_package(directx12-agility CONFIG REQUIRED)
+    find_package(pxr CONFIG REQUIRED)
 endif()
 
 # -------------------------------------------------------------------------
@@ -62,13 +62,19 @@ if(WIN32)
 
     target_link_libraries(OrionEditor
         PRIVATE Microsoft::DirectX-Headers
-        PRIVATE Microsoft::DirectX12-Agility
         PRIVATE OrionEngine
         PRIVATE OrionRenderer
         PRIVATE OrionBuildSystem
         PRIVATE imgui::imgui
-        PRIVATE Microsoft::WinPixEventRuntime
+        PRIVATE Microsoft::WinPixEventRuntime 
+            PRIVATE usd sdf usdGeom
     )
+    
+    add_compile_definitions(
+            NOMINMAX
+            WIN32_LEAN_AND_MEAN
+    )
+
 
     # ---------------------------------------------------------------------
     # Dependencies

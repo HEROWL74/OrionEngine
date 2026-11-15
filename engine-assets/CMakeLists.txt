@@ -10,7 +10,6 @@ target_link_libraries(OrionEngine PRIVATE
         slang::slang
 )
 
-
 set(SHADER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 set(SHADER_OUT_DIR "${CMAKE_BINARY_DIR}/editor/engine-assets/shaders")
 

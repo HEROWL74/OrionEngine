@@ -1,7 +1,22 @@
 ﻿// editor/EditorApp.hpp
 #pragma once
 
-#include <Windows.h>
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include <windows.h>
+#include <windowsx.h>
+
+// 強制的にマクロを消去
+#undef GetNextSibling
+#undef GetFirstChild
+#undef GetPrevSibling
+#undef GetChild
 #include <d3d12.h> 
 #include <memory>
 #include <wrl.h>

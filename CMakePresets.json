@@ -37,6 +37,7 @@
     },
     {
       "name": "x64-release-local",
+      "hidden": true,
       "displayName": "Windows x64 Release (Clang-cl + Ninja)",
       "inherits": "base-win",
       "binaryDir": "${sourceDir}/build/x64-release-local",
@@ -46,6 +47,7 @@
     },
     {
       "name": "x64-release-ci",
+      "hidden": true,
       "displayName": "Windows x64 Release CI",
       "inherits": "base-win",
       "generator": "Ninja",
@@ -57,6 +59,7 @@
     },
     {
       "name": "x64-relwithdebinfo-ci",
+      "hidden": true,
       "displayName": "Windows x64 RelWithDebInfo CI",
       "inherits": "base-win",
       "generator": "Ninja",
@@ -90,6 +93,7 @@
     },
     {
       "name": "linux-debug",
+      "hidden": true,
       "displayName": "Linux Debug",
       "inherits": "base-linux",
       "binaryDir": "${sourceDir}/build/linux-debug",
@@ -99,6 +103,7 @@
     },
     {
       "name": "linux-release-local",
+      "hidden": true,
       "displayName": "Linux Release",
       "inherits": "base-linux",
       "binaryDir": "${sourceDir}/build/linux-release-local",
@@ -108,6 +113,7 @@
     },
     {
       "name": "linux-release-ci",
+      "hidden": true,
       "displayName": "Linux Release CI",
       "inherits": "base-linux",
       "binaryDir": "${sourceDir}/build/linux-release-ci",

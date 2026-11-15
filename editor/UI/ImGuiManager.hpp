@@ -36,6 +36,42 @@ namespace Editor::UI
 	using namespace Engine;
 	using namespace Renderer;
 
+	struct ImGuiDescriptorHeapAllocator {
+		ID3D12DescriptorHeap* Heap = nullptr;
+		D3D12_CPU_DESCRIPTOR_HANDLE HeapStartCpu{};
+		D3D12_GPU_DESCRIPTOR_HANDLE HeapStartGpu{};
+		UINT HeapHandleIncrement = 0;
+		ImVector<int> FreeIndices;
+
+		void Create(ID3D12Device* device, ID3D12DescriptorHeap* heap) {
+			Heap = heap;
+			auto desc = heap->GetDesc();
+			HeapStartCpu = Heap->GetCPUDescriptorHandleForHeapStart();
+			HeapStartGpu = Heap->GetGPUDescriptorHandleForHeapStart();
+			HeapHandleIncrement = device->GetDescriptorHandleIncrementSize(desc.Type);
+			FreeIndices.reserve((int)desc.NumDescriptors);
+			for (int n = desc.NumDescriptors; n > 0; n--)
+				FreeIndices.push_back(n - 1);
+		}
+
+		void Destroy() {
+			Heap = nullptr;
+			FreeIndices.clear();
+		}
+
+		void Alloc(D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle) {
+			IM_ASSERT(FreeIndices.Size > 0);
+			int idx = FreeIndices.back();
+			FreeIndices.pop_back();
+			out_cpu_desc_handle->ptr = HeapStartCpu.ptr + ((size_t)idx * HeapHandleIncrement);
+			out_gpu_desc_handle->ptr = HeapStartGpu.ptr + ((uint64_t)idx * HeapHandleIncrement);
+		}
+
+		void Free(D3D12_CPU_DESCRIPTOR_HANDLE out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE out_gpu_desc_handle) {
+			int cpu_idx = (int)((out_cpu_desc_handle.ptr - HeapStartCpu.ptr) / HeapHandleIncrement);
+			FreeIndices.push_back(cpu_idx);
+		}
+	};
 	//======================================================================
 	// ImGuiマネージャークラス
 	//======================================================================
@@ -81,6 +117,7 @@ namespace Editor::UI
 		DXGI_FORMAT m_rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 		ComPtr<ID3D12DescriptorHeap> m_srvDescHeap;
+		ImGuiDescriptorHeapAllocator m_descHeapAlloc;
 		ID3D12CommandQueue* m_commandQueue = nullptr;
 		UINT m_frameCount = 2;
 
