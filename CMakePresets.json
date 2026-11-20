@@ -46,7 +46,6 @@
     },
     {
       "name": "x64-release-ci",
-      "hidden": true,
       "displayName": "Windows x64 Release CI",
       "inherits": "base-win",
       "generator": "Ninja",
